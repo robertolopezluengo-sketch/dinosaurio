@@ -1,15 +1,22 @@
-# Dinosaurio
+# Dino Runner
 
-Clon local del juego del dinosaurio de Google Chrome. Un único archivo HTML, sin dependencias ni conexión a internet.
+Endless runner de un dinosaurio en un único `index.html` (HTML + CSS + JavaScript puro con `<canvas>`, sin librerías ni conexión a internet). El dinosaurio y el resto de gráficos son pixel art propio.
 
 ## Cómo jugar
 
-Abre `index.html` en cualquier navegador (doble clic).
+Abre `index.html` en cualquier navegador moderno (doble clic).
 
-- **Espacio / ↑**: saltar
-- **↓**: agacharse (en el aire, cae más rápido)
-- **P / Esc**: pausa
-- **M**: activar/desactivar sonido
-- **Móvil**: toca la mitad superior para saltar y la inferior para agacharte
+| Acción | Teclado | Móvil |
+|---|---|---|
+| Saltar / doble salto | Espacio o ↑ (otra vez en el aire) | Tocar |
+| Deslizarse / caída rápida | ↓ | Deslizar hacia abajo |
+| Cambiar de carril | W / S | Deslizar con dos dedos ↕ o botones ▲ ▼ |
+| Rugido (rompe rocas y pájaros) | X | Botón «Rugido» |
+| Pausa | P / Esc | Botón ❚❚ |
+| Sonido | M | — |
 
-Incluye cactus, pterodáctilos (a partir de 300 puntos), velocidad creciente, ciclo día/noche, sonidos y récord guardado en el navegador.
+**Power-ups:** Escudo (absorbe un golpe, 5 s), Imán (atrae monedas, 8 s), Cámara lenta (50 %, 5 s) y Turbo (x2 e invencible, 4 s).
+
+## Ajustar la dificultad
+
+Todas las constantes de balance están en el objeto `CONFIG`, al principio del `<script>` de `index.html`, comentadas una a una.
