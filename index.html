@@ -253,7 +253,7 @@
 <div id="menu" class="overlay">
   <div class="card">
     <h1>DINO RUNNER</h1>
-    <p class="sub">Corre, salta y ruge a través de 6 biomas… y vence a sus jefes</p>
+    <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus 10 jefes</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
@@ -932,15 +932,29 @@ const CONFIG = {
   EGG_VALUE: 50,             // monedas por huevo (en Fácil se multiplica por EASY.COIN_VALUE)
   EGG_WINDOWS: [[0.15, 0.4], [0.55, 0.8]], // tramo del nivel (0–1) en el que aparece cada huevo
 
-  // --- Jefes (motor del kit) ---
-  BOSS_BY_BIOME: { jungle: "mandragora", volcano: "coloso", glacier: "wyrm", city: "mecharex" },
-  BOSS_AT_IN_LEVEL: 900,     // puntos dentro del nivel en los que llega el jefe (1900, 2900, 3900, 5900…)
+  // --- Niveles: 10 niveles de 1000 puntos (0–10 000), cada uno con su bioma y su jefe ---
+  // tier = refuerzo del jefe (0 = normal, 1 = reforzado con BOSS_CYCLE). Tras el nivel 10 se repite con +1 de refuerzo.
+  LEVELS: [
+    { biome: "desert",  boss: "escorpion",  tier: 0 },   //  1 · 0–999
+    { biome: "jungle",  boss: "mandragora", tier: 0 },   //  2 · 1000–1999
+    { biome: "volcano", boss: "coloso",     tier: 0 },   //  3
+    { biome: "glacier", boss: "wyrm",       tier: 0 },   //  4
+    { biome: "night",   boss: "ptero",      tier: 0 },   //  5
+    { biome: "city",    boss: "mecharex",   tier: 0 },   //  6
+    { biome: "swamp",   boss: "mandragora", tier: 1 },   //  7
+    { biome: "magma",   boss: "coloso",     tier: 1 },   //  8
+    { biome: "crystal", boss: "wyrm",       tier: 1 },   //  9
+    { biome: "citadel", boss: "mecharex",   tier: 1 },   // 10 · 9000–9999: jefe final
+  ],
+
+  // --- Jefes (motor del kit + 2 jefes nuevos en el mismo formato) ---
+  BOSS_AT_IN_LEVEL: 900,     // puntos dentro del nivel en los que llega el jefe (900, 1900, 2900… 9900)
   BOSS_WARNING_TIME: 2,      // s de aviso "¡PELIGRO!"
   BOSS_RESULT_DELAY: 2.5,    // s que se deja ver el resultado antes de volver al runner
-  BOSS_REWARDS: { mandragora: 200, coloso: 400, wyrm: 700, mecharex: 1200 }, // monedas por derrotarlo
+  BOSS_REWARDS: { escorpion: 100, mandragora: 200, coloso: 400, wyrm: 700, ptero: 900, mecharex: 1200 }, // monedas por derrotarlo
   BOSS_POINTS: 250,          // puntos por derrotarlo
   BOSS_CANVAS_SCALE: 4,      // escala del canvas del combate (224 × 104 nativos)
-  BOSS_CYCLE: {              // cambios por cada vuelta completa a los biomas (se suman por vuelta)
+  BOSS_CYCLE: {              // cambios por cada punto de refuerzo (tier): niveles 7–10 = 1, cada vuelta de 10 niveles suma 1
     HP: 0.25, SPEED: 0.10, GAP: -0.10, TELE: -0.10, COINS: 0.5,
   },
 
@@ -965,7 +979,7 @@ const CONFIG = {
   // --- Tienda ---
   DEFAULT_SKIN: "selva-camuflaje", // gratis y equipado por defecto
   CHECKPOINT_PRICE_STEP: 500,// precio = CHECKPOINT_PRICE_STEP × (nivel − 1): Nivel 2 = 500, Nivel 3 = 1000…
-  CHECKPOINT_LEVELS: 12,     // hasta qué nivel se venden checkpoints (dos vueltas a los biomas)
+  CHECKPOINT_LEVELS: 10,     // hasta qué nivel se venden checkpoints
   EDITOR_PRICE: 10000,       // precio del editor de skins
   EDITOR_SLOTS: 3,           // ranuras de diseños propios
 
@@ -1007,15 +1021,15 @@ const ACHIEVEMENTS = [
   { id: "corredor", cat: "carrera", name: "Corredor", desc: "Consigue 1000 puntos en una partida", reward: 50, goal: 1000, stat: "bestScore" },
   { id: "maratoniano", cat: "carrera", name: "Maratoniano", desc: "Consigue 5000 puntos en una partida", reward: 200, goal: 5000, stat: "bestScore" },
   { id: "leyenda-jurasica", cat: "carrera", name: "Leyenda jurásica", desc: "Consigue 10000 puntos en una partida (solo Normal)", reward: 1000, skin: "corona-campeon", goal: 10000, stat: "bestScoreNormal", normalOnly: true },
-  { id: "explorador", cat: "carrera", name: "Explorador", desc: "Visita los 6 biomas en una partida", reward: 300, goal: 6, stat: "bestBiomes" },
-  { id: "vuelta-al-mundo", cat: "carrera", name: "Vuelta al mundo", desc: "Completa el ciclo y vuelve al Desierto", reward: 500 },
+  { id: "explorador", cat: "carrera", name: "Explorador", desc: "Visita los 10 biomas en una partida", reward: 300, goal: 10, stat: "bestBiomes" },
+  { id: "vuelta-al-mundo", cat: "carrera", name: "Vuelta al mundo", desc: "Completa los 10 niveles y vuelve al Desierto", reward: 500 },
   // Jefes
   { id: "primer-trofeo", cat: "jefes", name: "Primer trofeo", desc: "Derrota a tu primer jefe", reward: 50, goal: 1, stat: "bossesTotal" },
-  { id: "cazador-jefes", cat: "jefes", name: "Cazador de jefes", desc: "Derrota a los 4 jefes (en cualquier partida)", reward: 500, goal: 4, stat: "bossTypes" },
+  { id: "cazador-jefes", cat: "jefes", name: "Cazador de jefes", desc: "Derrota a los 6 jefes distintos (en cualquier partida)", reward: 500, goal: 6, stat: "bossTypes" },
   { id: "sin-rasguno", cat: "jefes", name: "Sin un rasguño", desc: "Derrota a un jefe sin perder ningún corazón", reward: 150 },
   { id: "apagon", cat: "jefes", name: "Apagón", desc: "Derrota a MECHA-REX Ω", reward: 400 },
   { id: "exterminador", cat: "jefes", name: "Exterminador", desc: "Derrota 25 jefes en total", reward: 800, goal: 25, stat: "bossesTotal" },
-  { id: "tirano", cat: "jefes", name: "Tirano", desc: "Derrota a los 4 jefes en una misma partida (solo Normal)", reward: 1500, skin: "rey-jefes", normalOnly: true },
+  { id: "tirano", cat: "jefes", name: "Tirano", desc: "Derrota a los 6 jefes distintos en una misma partida (solo Normal)", reward: 1500, skin: "rey-jefes", normalOnly: true },
   // Habilidad
   { id: "saltarin", cat: "habilidad", name: "Saltarín", desc: "Salta 500 veces en total", reward: 50, goal: 500, stat: "jumps" },
   { id: "rugido-destructor", cat: "habilidad", name: "Rugido destructor", desc: "Destruye 200 obstáculos con el rugido", reward: 150, goal: 200, stat: "roarKills" },
@@ -1126,6 +1140,25 @@ const BIOMES = [
   { id: "city", name: "Ciudad futurista", accent: "#ff2e97", sky: "none", stars: true, deco: ["city"], ridges: false,
     pal: { skyTop: "#0b0820", skyBot: "#2a0f4a", far: "#1c1238", near: "#120a26", ground: "#0b0820", band: "#1e1436", bandHi: "#ff2e97", bandEdge: "#41e1ff", pebble: "#7a1a5a",
            neonA: "#ff2e97", neonB: "#41e1ff" },
+    far: { min: 0, max: 0, rough: 0, step: 10 }, near: { min: 0, max: 0, rough: 0, step: 10 },
+    obstacles: { ground: "neon", rock: "crate", flyer: "drone" } },
+  { id: "swamp", name: "Pantano", accent: "#b8f06a", sky: "moon", clouds: "#3a4a3a", ambient: "leaves", deco: ["trees", "lianas"],
+    pal: { skyTop: "#14221c", skyBot: "#4a6a4a", far: "#2a3f2e", near: "#1f3024", ground: "#2a2418", band: "#3a4a2a", bandHi: "#5f7a3a", bandEdge: "#1a2412", pebble: "#6a8a3a",
+           trunk: "#2a1f14", canopy: "#23402a", canopyHi: "#3a6a3a", liana: "#2a4a24" },
+    far: { min: 30, max: 80, rough: 0.25, step: 14 }, near: { min: 10, max: 36, rough: 0.2, step: 10 },
+    obstacles: { ground: "log", rock: "mossrock", flyer: "ptero" } },
+  { id: "magma", name: "Corazón del volcán", accent: "#ffb020", sky: "none", clouds: "#4a1a10", ambient: "ash", deco: ["volcano", "lava"],
+    pal: { skyTop: "#1a0604", skyBot: "#8a2a0a", far: "#2a0a08", near: "#160604", ground: "#2a1410", band: "#3a1a14", bandHi: "#ff7a1a", bandEdge: "#140804", pebble: "#ffb020",
+           lava: "#ff5a1a", lavaHi: "#ffe066" },
+    far: { min: 40, max: 120, rough: 0.55, step: 12 }, near: { min: 12, max: 44, rough: 0.5, step: 8 },
+    obstacles: { ground: "obsidian", rock: "lavarock", flyer: "ptero" } },
+  { id: "crystal", name: "Caverna de cristal", accent: "#c9a6ff", sky: "none", stars: true, ambient: "snow", deco: ["sparkle", "aurora"], patternBiome: "glacier",
+    pal: { skyTop: "#0a0620", skyBot: "#2a1a5a", far: "#3a2a7a", near: "#4a3a9a", ground: "#6a5ab0", band: "#8a7ad0", bandHi: "#e6d6ff", bandEdge: "#3a2a6a", pebble: "#ffffff", cap: "#c9a6ff" },
+    far: { min: 40, max: 130, rough: 0.5, step: 12, cap: true }, near: { min: 12, max: 50, rough: 0.3, step: 10, cap: true },
+    obstacles: { ground: "crystal", rock: "icerock", flyer: "ptero" } },
+  { id: "citadel", name: "Fortaleza de MECHA-REX", accent: "#ff3b3b", sky: "none", stars: true, deco: ["city"], ridges: false,
+    pal: { skyTop: "#1a0408", skyBot: "#4a0a1a", far: "#2a0a14", near: "#16060c", ground: "#12060a", band: "#2a0e18", bandHi: "#ff3b3b", bandEdge: "#ffd23f", pebble: "#7a1a2a",
+           neonA: "#ff3b3b", neonB: "#ffd23f" },
     far: { min: 0, max: 0, rough: 0, step: 10 }, near: { min: 0, max: 0, rough: 0, step: 10 },
     obstacles: { ground: "neon", rock: "crate", flyer: "drone" } },
 ];
@@ -1250,7 +1283,12 @@ const SkinCatalog = {
   exists(id) { return !!SE.get(id); },
 };
 SkinCatalog.rebuild();
-BE.init(BOSSES_DATA);   // para las fichas del manual (el combate lo vuelve a iniciar con los stats ajustados)
+// Jefes nuevos (Escorpión Rey y Pterodáctilo Sombra) en el mismo formato que BOSSES_DATA; los datos del kit no se tocan
+const EXTRA_BOSSES = {"bosses":[{"id":"escorpion","name":"Escorpión Rey","level":"Desierto","order":1,"difficulty":"Muy fácil","stars":1,"scene":"volcano","sceneArt":"desert","bg":"#f6d38a","bg2":"#fde9b8","ground":"#d9a35e","ink":"#ffe9a8","stats":{"hp":3,"gap":130,"tele":60,"speed":1.4,"lives":3},"attacks":[{"id":"arena","name":"Bola de arena","hint":"Salta","shots":[{"p":"sand","y":2,"d":0}]},{"id":"aguijon","name":"Aguijón alto","hint":"¡No saltes!","shots":[{"p":"sting","y":23,"d":0,"s":1.3}]},{"id":"tormenta","name":"Tormenta de arena","hint":"Salta dos veces","shots":[{"p":"sand","y":2,"d":0},{"p":"sand","y":2,"d":34}]}],"blurb":"Un escorpión gigante de caparazón dorado que vigila las dunas. Sus ataques son lentos: el jefe perfecto para aprender que la franja amarilla significa «no saltes».","frames":{"idle0":{"rows":["................................................................","................................................................","................................................................","................................................................","........................................o.......................","......................................oodoo.....................",".....................................odddddoooo.................","....................................odllllddbbbooo..............","...................................oddddddddlbbobbo.............","..................................oddvvdddddlbbllbboo...........",".................................odvvvdddddbbsbllbbbbo..........",".................................ovvoooodooobbbbbbblbbo.........","..................................oo....o...ooobbbblbbo.........","...............................................oobbbbbbo........","................................................obbsbbbbo.......",".................................................oobllbbo.......","..................................................obbbbbo.......","..................................................obbbbbbo......","...................................................olblbbbo.....","...................................................obllbbbo.....","...................................................obbbbbo......","...................................................obbsbbo......","...................................................olllbbbo.....","...o...............................................obllbbbo.....","..odo.ooooooo......................................obbbbbbo.....","...ooopppppppoo....................................obbbbbo......","...oppppllllllpo..................................obllbbbo......","....oppllllllllpo.................................oblllbbo......",".....oopllllllpppo................................obllbbbo......","...ooopppppppppppdo..............ooooooooooo......obbbbbbo......","..opppppppppppppddo.........ooooobbbbbbbbbbbooooo.obbbsbo.......","...opppppppppppdddooooooo..osblllsllllsllllslbbbsobllbbo........","...ooopppppppooooobbbbbbboolsllllsllllsllllsllllsblllbbbo.......","..odo.oooooooodddddddddddddlsllllsllllsllllsllllsblllbbbo.......","...o..........oeeleeleellbblsllllsllllsllllsllllsbbbbbbbo.......",".............oblllllllllllbbsblllsllllsllllslbbbsbbbbbbo........",".............obblllllllllbbbsbbbbsbbbbsbbbbsbbbbsbbbbbo.........","...o.....o..obbbbbbblbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","..odooooopoooobbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","...oopppppppppbbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbo...........","...opppllllllllpbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsboo............","....oopllllllllppdbbbbbbbbbtsbbbbsbbbbsbbbbsbbbbsooo............","....oooppppppppppdbbbbbbbdddddddddddddddddddddddddddo...........","...opppppppppppppdttooootttooootttooootttooooooooooo............","..opppppppppppppotto...otto...otto...otto.......................","...oopppppppppoo.oto....oto....oto....oto.......................","...o.oooopoooo..otto...otto...otto...otto.......................","..odo....o......oto....oto....oto....oto........................"],"pal":{"o":"#2a1606","b":"#c8892e","l":"#f0c060","d":"#7a4a18","s":"#6a3a10","e":"#ff3b3b","v":"#8bff3a","p":"#e0a040","t":"#8a5a20"},"glow":["e","v"]},"idle1":{"rows":["................................................................","................................................................","................................................................","................................................................","................................................................","................................................................",".........................................o......................",".......................................oodoo....................","......................................odddddooo.................",".....................................odllllddbbooo..............","....................................oddddddddlbbbboo............","...................................oddvvdddddbbbllbbo...........","..................................odvvvdddddbsbbllbbbo..........","..................................ovvoooodooobbbbbbbbbo.........","...................................oo....o...oobbbblbbbo........","...............................................oobbbbbbbo.......",".................................................obsbbbbo.......","..................................................obllbbbo......","..................................................obbbbbbo......","...................................................obbbbbo......","...................................................obllbbbo.....","...................................................obbbbbbo.....","...................................................obbsbbo......","...................................................obbbbbbo.....","...................................................obllbbbo.....","...o..ooooooo......................................obbbbbbo.....","..odoopppppppoo....................................obbbbbbo.....","...oppppllllllpo..................................oblbbbbo......","...opppllllllllpo.................................oblllbbo......","....ooopllllllpppo................................obllbbbo......","...ooppppppppppppdo..............ooooooooooo......obbbbbbo......","..opppppppppppppddo.........ooooobbbbbbbbbbbooooo.obbbsbbo......","...opppppppppppdddooooooo..osblllsllllsllllslbbbsobllbboo.......","...ooopppppppooooobbbbbbboolsllllsllllsllllsllllsblllbbbo.......","..odo.oooooooodddddddddddddlsllllsllllsllllsllllsblllbbbo.......","...o..........oeeleeleellbblsllllsllllsllllsllllsbbbbbbbo.......",".............oblllllllllllbbsblllsllllsllllslbbbsbbbbbbo........",".............obblllllllllbbbsbbbbsbbbbsbbbbsbbbbsbbbbbo.........","...o.....o..obbbbbbblbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","..odooooopoooobbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","...oopppppppppbbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbo...........","..oppppllllllllpbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsboo............","...ooopllllllllppdbbbbbbbbbtsbbbbsbbbbsbbbbsbbbbsooo............","....oooppppppppppdbbbbbbbdddddddddddddddddddddddddddo...........","...opppppppppppppdttoooootttoottttoooootttoooooooooo............","..opppppppppppppttoo....otto.ottoo....otto......................","...oopppppppppootto.....otto.otto.....otto......................","..odooooopoooo.oto......oto..oto......oto......................."],"pal":{"o":"#2a1606","b":"#c8892e","l":"#f0c060","d":"#7a4a18","s":"#6a3a10","e":"#ff3b3b","v":"#8bff3a","p":"#e0a040","t":"#8a5a20"},"glow":["e","v"]},"windup":{"rows":["............................................oodoo...............","...........................................odddddooo............","..........................................odllllddbboo..........",".........................................oddddddddbbbbo.........",".......................................ooddvvdddddbblbbo........","......................................oddvvvdddddbsblbboo.......","......................................ovvooooodooobbbbbbbo......",".....................................ovoo.....o...obbbbbbo......","....................................ovoovo.........obblbbbo.....",".....................................o..o..........obbsbbbo.....","....................................................obbbbbbo....","....................................................obllbbbo....","....................................................obbbbbbo....",".....................................................obbbbo.....",".....................................................olllbbo....","....................................................oblllbbo....","....................................................obbbbbbo....",".....................................................obbsbbo....",".....................................................obbbbo.....","....................................................obllbbbo....","....................................................obllbbbo....","....................................................obbbbbbo....","...o................................................obbbbbbo....","..odo...............................................obbbbbo.....","...o..ooooooo......................................oblbbbo......","....oopppppppoo...................................oblllbbbo.....","...oppppllllllpo..................................oblllbbbo.....","....oopllllllllpo.................................obbbbbbbo.....","......opllllllpppo.................................obbbbbo......",".....ooppppppppppdo..............ooooooooooo.......oobsbbo......","....opppppppppppddo.........ooooobbbbbbbbbbbooooo.obbbooo.......","...opppppppppppdddooooooo..osblllsllllsllllslbbbsobllbbo........","....oopppppppooooobbbbbbboolsllllsllllsllllsllllsblllbbbo.......","......oooooooodddddddddddddlsllllsllllsllllsllllsblllbbbo.......","...o..........oeeleeleellbblsllllsllllsllllsllllsbbbbbbbo.......","..odo........oblllllllllllbbsblllsllllsllllslbbbsbbbbbbo........","..odo........obblllllllllbbbsbbbbsbbbbsbbbbsbbbbsbbbbbo.........","...o.....o..obbbbbbblbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........",".....oooopoooobbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","....opppppppppbbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbo...........","....oppllllllllpbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsboo............",".....oollllllllppdbbbbbbbbbtsbbbbsbbbbsbbbbsbbbbsooo............","......oopppppppppdbbbbbbbdddddddddddddddddddddddddddo...........","....oopppppppppppdttooootttooootttooootttooooooooooo............","...oppppppppppppotto...otto...otto...otto.......................","....opppppppppoo.oto....oto....oto....oto.......................",".....oooopoooo..otto...otto...otto...otto.......................",".........o......oto....oto....oto....oto........................"],"pal":{"o":"#2a1606","b":"#c8892e","l":"#f0c060","d":"#7a4a18","s":"#6a3a10","e":"#ff3b3b","v":"#c8ff6a","p":"#e0a040","t":"#8a5a20"},"glow":["e","v"]},"attack":{"rows":["................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................",".......................................oo.......................","..............................o...ooo.obbooooo..................","............................oodooollbollbbblbboo................","...........................odddddbllbbllbbblbbbbo...............",".........................oodllllddbbbbbbbbblbbbbbo..............","........................odddddddddbsbobbbbbbbblbbbo.............","......................oodddvvdddddooo.oooobsbblbbbbo............",".....................odvvvvddddddo........oobbbbbbbbo...........","....................ovvvoooooodoo...........obbbblbbo...........","...................ovooo......o..............obblbbbo...........","..................ovoovo......................obbbbbbo..........","...................o..o.......................obbsbbbbo.........","...............................................oblllbbo.........","...............................................obllbbbo.........","...............................................obbbbbbo.........","...ooooooo......................................obbbbbo.........","ooopppppppoo....................................oblllbbo........","dppppllllllpooo.................................oblllbbo........","ppppllllllllpbboo...............................oblllbbbo.......","oooopllllllpppbbbo..............................obbbbbbo........","ppppppppppppppbbbdo..............ooooooooooo.....obbsbbo........","pppppppppppppdddddo.........ooooobbbbbbbbbbbooooo.obbbo.........","opppppppppppodddddooooooo..osblllsllllsllllslbbbsobllbbo........","doopppppppoo.ooooobbbbbbboolsllllsllllsllllsllllsblllbbbo.......","o..ooooooo...odddddddddddddlsllllsllllsllllsllllsblllbbbo.......","..............oeeleeleellbblsllllsllllsllllsllllsbbbbbbbo.......",".............oblllllllllllbbsblllsllllsllllslbbbsbbbbbbo........",".............obblllllllllbbbsbbbbsbbbbsbbbbsbbbbsbbbbbo.........","......o.....obbbbbbblbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","o.oooopoooo..obbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","dopppppppppooobbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbo...........","ppppllllllllpbbbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsboo............","opppllllllllppbbbdbbbbbbbbbtsbbbbsbbbbsbbbbsbbbbsooo............","ooooppppppppppddddbbbbbbbdddddddddddddddddddddddddddo...........","ppppppppppppppddddttoooootttoottttoooootttoooooooooo............","pppppppppppppooottoo....otto.ottoo....otto......................","dopppppppppoo...oto......oto..oto......oto......................","o.oooopoooo....otto.....otto.otto.....otto......................","......o........oto......oto..oto......oto......................."],"pal":{"o":"#2a1606","b":"#c8892e","l":"#f0c060","d":"#7a4a18","s":"#6a3a10","e":"#ff3b3b","v":"#8bff3a","p":"#e0a040","t":"#8a5a20"},"glow":["e","v"]},"hurt":{"rows":["................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","..........................................o.....................","........................................oodoo...................",".......................................odddddooo................","......................................odllllddlboooo............","......................................odddddddlbblbbo...........",".....................................odvvdddddbbblbboo..........","....................................odvvdddddbsbblbbbbo.........","....................................ovvooodooooobbbblbbo........",".....................................oo...o.....obblbbbbo.......",".................................................obbsbbbbo......","..................................................obbbbbbo......","..................................................obbbbbbo......","...................................................obbbbbbo.....","...................................................obbbbbbo.....","...................................................obbbbbbo.....","...................................................obbbbbo......","...................................................obbsbbbo.....","...o...............................................obllbbbo.....","..odo.ooooooo......................................obbbbbbo.....","...ooopppppppoo....................................obbbbbbo.....","...oppppllllllpo..................................oblbbbbo......","....oppllllllllpo.................................oblllbbo......",".....oopllllllpppo................................obllbbbbo.....","....oopppppppppppdo..............ooooooooooo......obbbbbbo......","...oppppppppppppddo.........ooooobbbbbbbbbbbooooo.obbbsbbo......","...opppppppppppdddooooooo..osblllsllllsllllslbbbsobllbboo.......","....oopppppppooooobbbbbbboolsllllsllllsllllsllllsblllbbbo.......","...o..oooooooodddddddddddddlsllllsllllsllllsllllsblllbbbo.......","..odo.........oeeleeleellbblsllllsllllsllllsllllsbbbbbbbo.......","...o.........oblllllllllllbbsblllsllllsllllslbbbsbbbbbbo........","...o.........obblllllllllbbbsbbbbsbbbbsbbbbsbbbbsbbbbbo.........","..odo....o..obbbbbbblbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","...o.oooopoooobbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbbo..........","....opppppppppbbbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsbbbo...........","...opppllllllllpbbbbbbbbbbbbsbbbbsbbbbsbbbbsbbbbsboo............","....oopllllllllppdbbbbbbbbbtsbbbbsbbbbsbbbbsbbbbsooo............",".....ooppppppppppdbbbbbbbdddddddddddddddddddddddddddo...........","...ooppppppppppppdttooootttooootttooootttooooooooooo............","..opppppppppppppotto...otto...otto...otto.......................","...oopppppppppoootto...otto...otto...otto.......................",".....oooopoooo..oto....oto....oto....oto........................"],"pal":{"o":"#2a0606","b":"#ff8a5a","l":"#ffd0b0","d":"#b04a2a","s":"#a03a20","e":"#ffffff","v":"#d0ffb0","p":"#ffb08a","t":"#c06a40"},"glow":["e","v"]}}},{"id":"ptero","name":"Pterodáctilo Sombra","level":"Noche estrellada","order":5,"difficulty":"Difícil","stars":3,"scene":"ice","sceneArt":"night","bg":"#050820","bg2":"#262a5c","ground":"#34325a","ink":"#e6d6ff","stats":{"hp":7,"gap":74,"tele":32,"speed":2.4,"lives":3},"attacks":[{"id":"picado","name":"Pluma rasante","hint":"Salta","shots":[{"p":"feather","y":3,"d":0,"s":1.4}]},{"id":"graznido","name":"Pluma alta","hint":"¡No saltes!","shots":[{"p":"feather","y":23,"d":0,"s":1.4}]},{"id":"orbe","name":"Orbe lunar","hint":"Salta cuando baje","shots":[{"p":"orb","y":14,"d":0,"s":0.8,"wave":12}]},{"id":"abanico","name":"Abanico de plumas","hint":"Salta, quieto, salta","shots":[{"p":"feather","y":3,"d":0},{"p":"feather","y":24,"d":22},{"p":"feather","y":3,"d":44}]}],"blurb":"Una sombra alada que solo sale en las noches sin nubes. Rápido y traicionero: mezcla plumas bajas, altas y un orbe que sube y baja.","frames":{"idle0":{"rows":["................................................................","................................................................",".............................................................oo.","...........................................................oohho","...oo....................................................oohhhho","..ohhoo.................................................ohhhhho.","..ohhhhoo......................o.......................ohhhhho..","...ohhhhho....................oco....................oohhhhmo...","....ohhhhhoo.................oco....................ohhhhhmmo...",".....oohhhhhoo....o.........occo..................oohhhhmmmmo...","......ommhhhhho..oho.......occco.................ohhhhhmmmmo....",".......ommhhhhhooohho.....occco................oohhhhmmmmmmo....","........ommmhhhhhooho....occcco...............ohhhhhmmmmmmo.....",".........ommmhhhhhhhho..occcco...............ohhhhhmmmmmmmo.....","..........ommhhhhhhhboooccccco.............oohhhhmmmmmmmmo......","...........ommhmmbbbbbbcccccco............ohhhhhmmmmmmmmmo......","............omhbblllllbbbccco...........oohhhhmmmmmmmmmmo.......","..........oooomkkleellbbbboo...........ohhhhhmmmmmmmmmmmo.......","......ooookkkkkkkbbbbbbbbbboo........oohhhhmmmmmmmmmmmmo........",".....okkkkkkkkkkkbbbbbbbbbhhho....o.ohhhhhmmmmmmmmmmmmo.........","......ooookkkkkkkbbbbbbbbbbbhhoooobohhhhhmmmmmmmmmmmmmo.........","..........oooooohbbbbbbbbbbbbhhbbbbbbbbmmmmmmmmmmmmmmo..........","................ohoobmmhbbbbbbhblbbbbbbbbmmmmmmmmmmmmo..........","................ohhoommhhbbbbblllllllbbbbbmmmmmmmmmmo...........",".................oho.oomhmmbbbllllllllbbbbbmmmmmmmmo............","..................o....oommmmllllllllbbbbbbmmmmmmoo.............","........................obbmbbbblbbbbbbbbbbbmmmoo...............",".........................obbbbbbbbbbbbbbbbbmmoo.................",".........................obbbbbbbbbbbbbbbbbboo..................","..........................obbbbbbbbbbbbbbbbbbboo................","...........................obbbbbbbbbbbbbobbbbbboooooo..........","............................oobbtbbbbtboo.oobbbbbccccco.........","..............................ootobooto.....oobbbbccco..........","..............................oto.o.oto.......oobbcco...........","..............................oto..otto.........oocco...........",".............................otto..oto............oo............",".............................oto...oto..........................","..............................o.....o...........................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................"],"pal":{"o":"#0a0614","m":"#3a2466","b":"#4a2f7a","l":"#7a5ac0","h":"#a88bff","c":"#ff5cf0","e":"#41e1ff","k":"#c9b8ff","t":"#1a1030"},"glow":["c","e"]},"idle1":{"rows":["................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","...............................o................................","..............................oco...............................",".............................oco................................","............................occo................................","...........................occco............................ooo.","..........................occco..........................ooohhho","...ooo...................occcco........................oohhhhhho","..ohhhoooo..........o...occcco......................ooohhhhhhho.","..ohhhhhhhooo....oooboooccccco....................oohhhhhhhmmo..","...oohhhhhhhhoooobbbbbbcccccco.................ooohhhhhhmmmmo...",".....ommhhhhhhhbblllllbbbccco...............ooohhhhhhhmmmmmmo...","......ommmmhhhhkkleellbbbboo..............oohhhhhhhmmmmmmmmmo...","......ommmkkkkkkkbbbbbbbbbbo...........ooohhhhhhmmmmmmmmmmmo....",".....okkkkkkkkkkkbbbbbbbbbooo.....o.ooohhhhhhhmmmmmmmmmmmmmo....","......ooomkkkkkkkbbbbbbbbbbbhooooobohhhhhhhmmmmmmmmmmmmmmmo.....",".........ommmmhhmbbbbbbbbbbbbhhbbbbbbbbhhmmmmmmmmmmmmmmmmo......","..........ooommhhmmmbmhmbbbbbbhblbbbbbbbbmmmmmmmmmmmmmmoo.......",".............ooohhommmmhmbbbbblllllllbbbbbmmmmmmmmmmmoo.........","................oohoooomhmmbbbllllllllbbbbbmmmmmmmmoo...........","..................o....oommmmllllllllbbbbbbmmmmmmoo.............","........................obbmbbbblbbbbbbbbbbbmmmoo...............",".........................obbbbbbbbbbbbbbbbbmmoo.................",".........................obbbbbbbbbbbbbbbbbboo..................","..........................obbbbbbbbbbbbbbbbbbboo................","...........................obbbbbbbbbbbbbobbbbbboooooo..........","............................oobbtbbbbtboo.oobbbbbccccco.........","..............................ootobooto.....oobbbbccco..........","..............................oto.o.oto.......oobbcco...........","..............................oto..otto.........oocco...........","..............................oto..oto............oo............",".............................oto...oto..........................",".............................oto...oto..........................","..............................o.....o...........................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................"],"pal":{"o":"#0a0614","m":"#3a2466","b":"#4a2f7a","l":"#7a5ac0","h":"#a88bff","c":"#ff5cf0","e":"#41e1ff","k":"#c9b8ff","t":"#1a1030"},"glow":["c","e"]},"windup":{"rows":["...oo.....................................................ohhhho","..ohhoo..................................................ohhhho.","..ohhhhoo......................o.......................oohhhho..","...ohhhhho....................oco.....................ohhhhho...","....ohhhhho..................oco.....................ohhhhmmo...",".....oohhhhoo.....o.........occo...................oohhhhmmmo...","......omhhhhho...oho.......occco..................ohhhhhmmmo....",".......ommhhhhoo.ohho.....occco..................ohhhhmmmmmo....","........ommhhhhho.oho....occcco................oohhhhmmmmmo.....",".........ommmhhhhooho...occcco................ohhhhhmmmmmmo.....",".........ommmhhhhhhoboooccccco...............ohhhhhmmmmmmo......","..........ommmhhhbbbbbbcccccco..............ohhhhmmmmmmmmo......","...........ommhbblllllbbbccco.............oohhhhmmmmmmmmo.......","..........ooomhkkleellbbbboo.............ohhhhhmmmmmmmmmo.......",".....oooookkkkkkkbbbbbbbbbbo............ohhhhmmmmmmmmmmo........","....okkkkkkkkkkkkbbbbbbbbbo...........oohhhhmmmmmmmmmmmo........",".....oooookkkkkkkbbbbbbbbbboo........ohhhhhmmmmmmmmmmmmo........",".........oookkkkkbbbbbbbbbbbho....o.ohhhhmmmmmmmmmmmmmo.........","........okkkkkkkkhmmbmhhbbbbbhoooobohhhhmmmmmmmmmmmmmmo.........",".........oooooooohommmmhbbbbbhhbbbbbbbbmmmmmmmmmmmmmmo..........","................ohoommmhmbbbbbhblbbbbbbbbmmmmmmmmmmmmo..........","................ohhoommmhmbbbblllllllbbbbbmmmmmmmmmmo...........",".................oho.oomhmmbbbllllllllbbbbbmmmmmmmmo............","..................o....oommmmllllllllbbbbbbmmmmmmoo.............","........................obbmbbbblbbbbbbbbbbbmmmoo...............",".........................obbbbbbbbbbbbbbbbbmmoo.................",".........................obbbbbbbbbbbbbbbbbboo..................","..........................obbbbbbbbbbbbbbbbbbboo................","...........................obbbbbbbbbbbbbobbbbbboooooo..........","............................oobbtbbbbtboo.oobbbbbccccco.........","..............................ootobooto.....oobbbbccco..........","..............................oto.o.oto.......oobbcco...........","..............................oto..otto.........oocco...........",".............................otto..oto............oo............",".............................oto...oto..........................","..............................o.....o...........................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................"],"pal":{"o":"#0a0614","m":"#3a2466","b":"#4a2f7a","l":"#7a5ac0","h":"#a88bff","c":"#ffa0ff","e":"#bff8ff","k":"#c9b8ff","t":"#1a1030"},"glow":["c","e"]},"attack":{"rows":["................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","...........................o....................................","..........................oco...................................",".........................oco....................................","........................occo....................................",".......................occco....................................","......................occco.....................................",".....................occcco.....................................","................o...occcco..................................ooo.",".............oooboooccccco..............................oooohhho","...oooo....oobbbbbbcccccco..........................oooohhhhhhho","..ohhhhoooobblllllbbbccco.......................oooohhhhhhhhhoo.","..ohhhhhhhhkkleellbbbboo....................oooohhhhhhhhhmmmmo..",".oooomkkkkkkkbbbbbbbbbbo.................ooohhhhhhhhhhmmmmmmo...","okkkkkkkkkkkkbbbbbbbbbbooooo......o..oooohhhhhhhhhmmmmmmmmmmo...",".oooookkkkkkkbbbbbbbbbbbbbhhooooooboohhhhhhhhhmmmmmmmmmmmmmmo...",".....oomkkkkkbbbbbbbbbbbbbbbhhhbbbbbbbbhhhmmmmmmmmmmmmmmmmmo....","....okkkkkkkkhhmbmmmhbbbbbbbbbhblbbbbbbbbmmmmmmmmmmmmmmmmmmo....",".....oooommmmmhhhmmmmhhbbbbbbblllllllbbbbbmmmmmmmmmmmmmmmmo.....",".........ommmmmmohhoooohhmbbbbllllllllbbbbbmmmmmmmmooooooo......","..........oooooo.oo....oommmmllllllllbbbbbbmmmmmmoo.............","........................obbmbbbblbbbbbbbbbbbmmmoo...............",".........................obbbbbbbbbbbbbbbbbmmoo.................",".........................obbbbbbbbbbbbbbbbbboo..................","..........................obbbbbbbbbbbbbbbbbbboo................","...........................obbbbbbbbbbbbbobbbbbboooooo..........","............................oobbtbbbbtboo.oobbbbbccccco.........","..............................ootobooto.....oobbbbccco..........","..............................ottoo.oto.......oobbcco...........","..............................oto...oto.........oocco...........","..............................oto..otto...........oo............","..............................oto..oto..........................",".............................oto...oto..........................",".............................oto...oto..........................","..............................o.....o...........................","................................................................","................................................................","................................................................","................................................................","................................................................"],"pal":{"o":"#0a0614","m":"#3a2466","b":"#4a2f7a","l":"#7a5ac0","h":"#a88bff","c":"#ff5cf0","e":"#41e1ff","k":"#c9b8ff","t":"#1a1030"},"glow":["c","e"]},"hurt":{"rows":["................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","............................................................ooo.","..........................................................oohhho","...ooo.........................o.........................ohhhhho","..ohhhoo......................oco......................oohhhhho.","..ohhhhhoo...................oco.....................oohhhhhmo..","...ohhhhhhoo................occo...................oohhhhhmmo...","....oomhhhhhooo............occco.................oohhhhhmmmmo...","......ommhhhhhhoo.o.......occco................oohhhhhmmmmmmo...","......ommmmhhhhhhoho.....occcco..............oohhhhhhmmmmmmo....",".......ommmmhhhhhhhho...occcco..............ohhhhhhmmmmmmmmo....","........ommmmhmhhhhhboooccccco............oohhhhhmmmmmmmmmo.....",".........ommmhhmmbbbbbbcccccco..........oohhhhhmmmmmmmmmmmo.....","..........ommmhbblllllbbbccco.........oohhhhhmmmmmmmmmmmmo......","..........ooommkkleellbbbbhooo....o.oohhhhhmmmmmmmmmmmmmo.......","......ooookkkkkkkbbbbbbbbbbhhhoooobohhhhhmmmmmmmmmmmmmmo........",".....okkkkkkkkkkkbbbbbbbbbbbhhhbbbbbbbbhmmmmmmmmmmmmmmo.........","......ooookkkkkkkbbbbbbbbbbbbbhblbbbbbbbbmmmmmmmmmmmmo..........","..........ooooooobbbbbbbbbbbbblllllllbbbbbmmmmmmmmmmo...........",".................ohoboomhbbbbbllllllllbbbbbmmmmmmmmo............","..................o.o..oommmmllllllllbbbbbbmmmmmmoo.............","........................obbmbbbblbbbbbbbbbbbmmmoo...............",".........................obbbbbbbbbbbbbbbbbmmoo.................",".........................obbbbbbbbbbbbbbbbbboo..................","..........................obbbbbbbbbbbbbbbbbbboo................","...........................obbbbbbbbbbbbbobbbbbboooooo..........","............................oobbtbbbbtboo.oobbbbbccccco.........","..............................ootobooto.....oobbbbccco..........","..............................oto.o.oto.......oobbcco...........","..............................oto..otto.........oocco...........",".............................otto..oto............oo............",".............................oto...oto..........................","..............................o.....o...........................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................"],"pal":{"o":"#1a0610","m":"#8a4a9a","b":"#b06ac0","l":"#e8b0ff","h":"#ffffff","c":"#ffd0f8","e":"#ffffff","k":"#ffffff","t":"#6a3a70"},"glow":["c","e"]}}}],"projectiles":{"sand":{"rows":[".oooo.","oSSsso","oSsssd","osssdd","osddd.",".ooo.."],"pal":{"o":"#5a3a10","S":"#fff0b0","s":"#e0b060","d":"#a07030"},"glow":[]},"sting":{"rows":["..vvvvvvvv","gvVVVVVVVv","..vvvvvvvv"],"pal":{"v":"#4aa81a","V":"#c8ff6a","g":"#8bff3a"},"glow":["V","g"]},"feather":{"rows":[".hhhhhhc.","hmmmmmmcc",".hhhhhhc."],"pal":{"h":"#a88bff","m":"#3a2466","c":"#ff5cf0"},"glow":["c"]},"orb":{"rows":[".cccc.","cwwEEc","cwEEEc","cEEEEc","cEEEEc",".cccc."],"pal":{"c":"#1a8fff","E":"#41e1ff","w":"#ffffff"},"glow":["E","w"]}}};
+const BOSS_DATA_ALL = { size: BOSSES_DATA.size, bosses: [...BOSSES_DATA.bosses, ...EXTRA_BOSSES.bosses],
+  projectiles: Object.assign({}, BOSSES_DATA.projectiles, EXTRA_BOSSES.projectiles) };
+const levelDef = l => CONFIG.LEVELS[(l - 1) % CONFIG.LEVELS.length];
+BE.init(BOSS_DATA_ALL);   // para las fichas del manual (el combate lo vuelve a iniciar con los stats ajustados)
 
 // Dibuja el raptor con el motor del kit. Solo avanza la estela y la animación cuando advance = true
 // (una vez por tick de CONFIG.SKIN_TICK); el resto de frames repinta el mismo estado.
@@ -2010,7 +2048,7 @@ class Spawner {
   }
   spawnPattern() {
     const g = this.game, L = g.level, biome = L.biome;
-    let pool = PATTERNS.filter(p => g.mode.patternLevel(p) <= L.level && (!p.biome || p.biome === biome.id));
+    let pool = PATTERNS.filter(p => g.mode.patternLevel(p) <= L.level && (!p.biome || p.biome === (biome.patternBiome || biome.id)));
     if (pool.length > 1) pool = pool.filter(p => p !== this.last);
     // Los patrones más avanzados pesan más cuando están disponibles
     const weights = pool.map(p => p.w * (1 + 0.35 * (p.lvl - 1)) * (p.biome ? 1.5 : 1));
@@ -2052,7 +2090,7 @@ class Spawner {
       const types = POWERUP_TYPES.filter(t => g.effects[t] <= 0 && !g.powerups.some(pu => pu.type === t));
       if (types.length) { puLane = randInt(0, 1); g.powerups.push(new PowerUp(choice(types), puLane, midX)); }
     }
-    const coinChance = CONFIG.COIN_LINE_CHANCE + (biome.id === "night" ? CONFIG.NIGHT_COIN_BONUS : 0);   // la Noche es el tramo de respiro
+    const coinChance = CONFIG.COIN_LINE_CHANCE + (biome.id === "night" ? CONFIG.NIGHT_COIN_BONUS : 0);   // la Noche tiene más monedas
     if (gap > 220 && Math.random() < coinChance) {
       const lane = puLane >= 0 ? 1 - puLane : randInt(0, 1);
       const n = Math.min(CONFIG.COIN_LINE_MAX, Math.floor(gap * 0.6 / 34));
@@ -2122,23 +2160,50 @@ class LevelManager {
 //  BossManager: envuelve DinoBossEngine.Fight (combate del kit) y lo conecta con el runner.
 //  Fases: null → "clearing" (sin obstáculos nuevos) → "warning" (¡PELIGRO!) → "fight" (canvas superpuesto).
 // =====================================================================
-// Copia de BOSSES_DATA con los stats ajustados al modo y a la vuelta (sin tocar el motor)
-function bossData(mode, cycle) {
-  const d = JSON.parse(JSON.stringify(BOSSES_DATA)), C = CONFIG.BOSS_CYCLE, M = mode.boss;
+// Copia de los datos de jefes con los stats ajustados al modo y al refuerzo (sin tocar el motor)
+function bossData(mode, tier, level) {
+  const d = JSON.parse(JSON.stringify(BOSS_DATA_ALL)), C = CONFIG.BOSS_CYCLE, M = mode.boss;
   for (const b of d.bosses) {
     const s = b.stats;
-    s.hp = Math.max(1, Math.ceil(s.hp * (1 + C.HP * cycle) * M.hp));
-    s.speed = s.speed * (1 + C.SPEED * cycle) * M.speed;
-    s.gap = s.gap * Math.max(0.4, 1 + C.GAP * cycle) * M.gap;
-    s.tele = s.tele * Math.max(0.4, 1 + C.TELE * cycle) * M.tele;
+    s.hp = Math.max(1, Math.ceil(s.hp * (1 + C.HP * tier) * M.hp));
+    s.speed = s.speed * (1 + C.SPEED * tier) * M.speed;
+    s.gap = s.gap * Math.max(0.4, 1 + C.GAP * tier) * M.gap;
+    s.tele = s.tele * Math.max(0.4, 1 + C.TELE * tier) * M.tele;
   }
+  const cur = d.bosses.find(b => b.id === levelDef(level).boss);   // cartel de entrada: nivel y bioma reales
+  if (cur) { cur.order = level; cur.level = biomeOfLevel(level).name; if (tier) cur.name += " " + "+".repeat(tier); }
   return d;
 }
+// Escenarios de combate de los jefes nuevos (224 × 104 nativos, suelo en la fila 90). Se enchufan en BE.SCENES
+// solo mientras dura su combate, porque el motor elige el escenario por la clave "scene".
+const CUSTOM_SCENES = {
+  desert(ctx, sc, t, sx) {
+    const S = BE.size, R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x) * sc, Math.round(y) * sc, Math.ceil(w) * sc, Math.ceil(h) * sc); };
+    const sky = ["#5fb4ea", "#7cc2ea", "#9ccfe6", "#bfdcd8", "#dfe6c6", "#f3e6b4", "#fde9b8"];
+    sky.forEach((c, i) => R(0, i * 13, S.w, 14, c));
+    R(170, 14, 22, 22, "#fff0a0"); R(166, 18, 30, 14, "#fff0a0"); R(174, 10, 14, 30, "#fff0a0");
+    for (let i = 0; i < 6; i++) { const x = ((i * 52 - sx * 0.1) % 300 + 300) % 300 - 40; R(x, 62, 70, 30, "#e8c07e"); R(x + 10, 56, 50, 8, "#e8c07e"); R(x + 22, 52, 26, 6, "#e8c07e"); }
+    for (let i = 0; i < 5; i++) { const x = ((i * 61 + 20 - sx * 0.3) % 300 + 300) % 300 - 30; R(x, 74, 3, 16, "#3f9a3c"); R(x - 4, 78, 4, 2, "#3f9a3c"); R(x - 4, 74, 2, 5, "#3f9a3c"); R(x + 3, 80, 4, 2, "#3f9a3c"); R(x + 5, 76, 2, 5, "#3f9a3c"); }
+    R(0, S.ground, S.w, S.h - S.ground, "#d9a35e"); R(0, S.ground, S.w, 2, "#f6e6b8");
+    for (let i = 0; i < 26; i++) R(((i * 17 - sx) % 240 + 240) % 240 - 8, S.ground + 4 + (i % 3) * 3, 3, 1, "#b08f50");
+  },
+  night(ctx, sc, t, sx) {
+    const S = BE.size, R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x) * sc, Math.round(y) * sc, Math.ceil(w) * sc, Math.ceil(h) * sc); };
+    ["#050820", "#0a0f30", "#10163c", "#161c48", "#1c2250", "#222858", "#262a5c"].forEach((c, i) => R(0, i * 13, S.w, 14, c));
+    for (let i = 0; i < 40; i++) { const x = (i * 53) % S.w, y = (i * 29) % 70; if ((i + (t >> 4)) % 5) R(x, y, 1, 1, i % 7 ? "#ffffff" : "#c8b8ff"); }
+    R(28, 12, 16, 16, "#f1efd8"); R(24, 16, 24, 8, "#f1efd8"); R(32, 16, 3, 3, "#d3cfb2"); R(38, 22, 2, 2, "#d3cfb2");
+    for (let i = 0; i < 6; i++) { const x = ((i * 50 - sx * 0.12) % 300 + 300) % 300 - 40; R(x, 66, 60, 26, "#1a1f45"); R(x + 12, 58, 30, 10, "#1a1f45"); R(x + 20, 52, 12, 8, "#1a1f45"); }
+    for (let i = 0; i < 5; i++) { const x = ((i * 67 + 30 - sx * 0.3) % 320 + 320) % 320 - 30; R(x, 70, 6, 20, "#9a6cf0"); R(x + 1, 66, 4, 4, "#e6d6ff"); }
+    R(0, S.ground, S.w, S.h - S.ground, "#2c2a45"); R(0, S.ground, S.w, 2, "#4a4880");
+    for (let i = 0; i < 26; i++) R(((i * 17 - sx) % 240 + 240) % 240 - 8, S.ground + 4 + (i % 3) * 3, 3, 1, "#6a68b0");
+  },
+};
+const sceneOf = b => (b.sceneArt && CUSTOM_SCENES[b.sceneArt]) || BE.SCENES[b.scene];
 class BossManager {
   constructor(game) { this.game = game; this.canvas = document.getElementById("bossCanvas"); this.fight = null; this.reset(); }
   reset() { this.stop(); this.phase = null; this.warn = 0; this.resultT = 0; this.id = null; this.cleared = new Set(); this.defeatedRun = new Set(); }
   get active() { return this.phase !== null; }
-  bossOfLevel(level) { return CONFIG.BOSS_BY_BIOME[biomeOfLevel(level).id] || null; }
+  bossOfLevel(level) { return levelDef(level).boss || null; }
   blocksLevel(level) { return !!this.bossOfLevel(level) && !this.cleared.has(level); }
   // Cada frame del runner: detecta el final del bioma, espera la pantalla despejada y avisa
   update(dt) {
@@ -2158,8 +2223,10 @@ class BossManager {
   }
   launch() {
     const g = this.game, lvl = g.level.level;
-    this.cycle = Math.floor((lvl - 1) / BIOMES.length);
-    BE.init(bossData(g.mode, this.cycle));
+    this.tier = levelDef(lvl).tier + Math.floor((lvl - 1) / CONFIG.LEVELS.length);
+    BE.init(bossData(g.mode, this.tier, lvl));
+    const bd = BE.get(this.id);
+    if (bd.sceneArt) { this.sceneBak = [bd.scene, BE.SCENES[bd.scene]]; BE.SCENES[bd.scene] = CUSTOM_SCENES[bd.sceneArt]; }
     for (const k of POWERUP_TYPES) g.effects[k] = 0;        // al empezar el combate se cancelan los power-ups
     g.powerups = []; g.coinsArr = []; g.eggs = []; g.obstacles = []; g.roarWave = null;
     this.canvas.classList.remove("hidden"); document.body.classList.add("fighting");
@@ -2179,7 +2246,7 @@ class BossManager {
     if (f.result === "win") {
       const flawless = f.pl.lives === f.b.stats.lives, id = this.id;
       this.stop(); this.phase = null; this.cleared.add(g.level.level); this.defeatedRun.add(id);
-      g.onBossWin(id, flawless, this.cycle);
+      g.onBossWin(id, flawless, this.tier);
     } else if (g.lives > 1) {                                // Fácil: se pierde una vida y se repite el combate
       g.lives--; g.sfx.lifeLost(); g.ach.event("bossLost"); g.ach.event("heartLost");
       this.resultT = 0; f.reset();
@@ -2188,7 +2255,8 @@ class BossManager {
     }
   }
   stop() {
-    if (this.fight) cancelAnimationFrame(this.fight.raf);
+    if (this.fight) { cancelAnimationFrame(this.fight.raf); BE.init(BOSS_DATA_ALL); }
+    if (this.sceneBak) { BE.SCENES[this.sceneBak[0]] = this.sceneBak[1]; this.sceneBak = null; }
     this.fight = null;
     if (this.canvas) this.canvas.classList.add("hidden");
     document.body.classList.remove("fighting");
@@ -2284,7 +2352,7 @@ class Biome {
     }
     // Suelo y carriles
     c.fillStyle = P.ground; c.fillRect(-10, 212, W + 20, H - 202);
-    const glow = this.has("sparkle") || this.id === "volcano";
+    const glow = this.has("sparkle") || this.id === "volcano" || this.id === "magma";
     for (let i = 0; i < 2; i++) {
       const { y: gy, s } = LANES[i];
       c.fillStyle = P.band; c.fillRect(-10, gy - 14 * s, W + 20, 26 * s);
@@ -2473,7 +2541,7 @@ class UI {
       c.fillStyle = "rgba(0,0,0,0.45)"; c.fillRect(0, 96, W, 110);
       if (Math.floor(g.time * 6) % 2 === 0) this.text(c, "¡PELIGRO!", W / 2, 134, 56, "#ff3b3b", "center");
       const b = BE.get(B.id);
-      this.text(c, `Se acerca: ${b ? b.name : "un jefe"}${B.cycle ? ` (vuelta ${B.cycle + 1})` : ""}`, W / 2, 182, 18, "#ffffff", "center");
+      this.text(c, `Se acerca: ${b ? b.name : "un jefe"}${levelDef(g.level.level).tier || g.level.level > CONFIG.LEVELS.length ? " (reforzado)" : ""}`, W / 2, 182, 18, "#ffffff", "center");
     } else if (B.phase === "clearing") {
       this.text(c, "Algo se acerca…", W / 2, 110, 18, "#ffb3b3", "center");
     }
@@ -3137,7 +3205,7 @@ class AchievementManager {
         this.max("bossTypes", new Set(g.save.data.bossesDefeated).size);
         if (d.flawless) this.unlock("sin-rasguno");
         if (d.id === "mecharex") this.unlock("apagon");
-        if (normal && g.bosses.defeatedRun.size >= 4) this.unlock("tirano");
+        if (normal && g.bosses.defeatedRun.size >= 6) this.unlock("tirano");
         this.max("bestRunCoins", g.runCoinsInt);
         break;
       }
@@ -3259,7 +3327,7 @@ const MANUAL_SECTIONS = [
     <ul>
       <li><b>Monedas</b>: van a tu monedero permanente al acabar la partida. Sirven para la tienda y la ruleta.</li>
       <li><b>Huevos bonus</b>: en cada nivel hay exactamente ${CONFIG.EGGS_PER_LEVEL}, uno en cada mitad, en sitios difíciles (encima de un doble salto o en el otro carril justo después de un obstáculo). Valen ${CONFIG.EGG_VALUE} monedas (${CONFIG.EGG_VALUE * CONFIG.EASY.COIN_VALUE} en Fácil). El imán no los atrae: si no los coges, se pierden.</li>
-      <li><b>Jefes</b>: al final de la Selva, el Volcán, el Glaciar y la Ciudad te espera un jefe. Hay que vencerlo para pasar de nivel.</li>
+      <li><b>Jefes</b>: hay ${CONFIG.LEVELS.length} niveles (hasta ${CONFIG.LEVELS.length * CONFIG.POINTS_PER_LEVEL} puntos) y al final de cada uno te espera un jefe. Hay que vencerlo para pasar de nivel.</li>
       <li>En Normal un golpe es Game Over; en Fácil tienes ${CONFIG.EASY.LIVES} vidas.</li>
     </ul>` },
   { title: "Controles", html: () => `
@@ -3296,7 +3364,7 @@ const MANUAL_SECTIONS = [
       <tr><td>Estalactitas (Glaciar)</td><td>No</td><td>Deslizarse o cambiar de carril.</td></tr>
       <tr><td>Muro (obstáculo alto + pájaro)</td><td>No</td><td>Cambiar de carril.</td></tr>
     </table>
-    <div class="m-demos">${BIOMES.map((b, i) => demo("obst", `${GROUND_NAMES[b.obstacles.ground]} (${b.name})`, `${i}:ground`)).join("")}
+    <div class="m-demos">${BIOMES.map((b, i) => [b, i]).filter(([b], k, a) => a.findIndex(([x]) => x.obstacles.ground === b.obstacles.ground) === k).map(([b, i]) => demo("obst", `${GROUND_NAMES[b.obstacles.ground]} (${b.name})`, `${i}:ground`)).join("")}
       ${demo("obst", "Roca", "0:rock")}${demo("obst", "Pterodáctilo", "0:flyer")}${demo("obst", "Dron", "5:flyer")}${demo("obst", "Estalactita", "3:stalactite")}</div>
     <p>Desde el nivel ${CONFIG.FAST_BIRD_LEVEL} hay pájaros más rápidos y otros que cambian de altura. Siempre existe al menos una forma de pasar cada patrón.</p>` },
   { title: "Power-ups", html: () => `
@@ -3311,22 +3379,22 @@ const MANUAL_SECTIONS = [
   { title: "Niveles y biomas", html: () => `
     <p>Cada ${CONFIG.POINTS_PER_LEVEL} puntos (y tras vencer al jefe, si el bioma tiene) subes de nivel: +${pct(CONFIG.SPEED_PER_LEVEL)} de velocidad (máx. ${CONFIG.MAX_SPEED} px/s),
     obstáculos más seguidos, ambos carriles ocupados desde el nivel ${CONFIG.BOTH_LANES_LEVEL}, pájaros rápidos desde el ${CONFIG.FAST_BIRD_LEVEL} y algo menos de power-ups.
-    Tras la Ciudad el ciclo vuelve a empezar con la dificultad acumulada.</p>
-    <div class="m-demos">${BIOMES.map((b, i) => { const boss = CONFIG.BOSS_BY_BIOME[b.id]; return demo("biome", `${i + 1}. ${b.name} (${i * CONFIG.POINTS_PER_LEVEL}–${(i + 1) * CONFIG.POINTS_PER_LEVEL - 1})<br>${boss ? "Jefe: " + BE.get(boss).name : "Sin jefe"}`, i); }).join("")}</div>
-    <p>La Noche estrellada no tiene jefe: es un tramo de respiro con más filas de monedas.</p>` },
+    Hay ${CONFIG.LEVELS.length} niveles, cada uno con su bioma y su jefe. Al completar el nivel ${CONFIG.LEVELS.length} (${CONFIG.LEVELS.length * CONFIG.POINTS_PER_LEVEL} puntos) el viaje vuelve a empezar con la dificultad acumulada y jefes aún más fuertes.</p>
+    <div class="m-demos">${BIOMES.map((b, i) => { const L = CONFIG.LEVELS[i]; return demo("biome", `${i + 1}. ${b.name} (${i * CONFIG.POINTS_PER_LEVEL}–${(i + 1) * CONFIG.POINTS_PER_LEVEL - 1})<br>Jefe: ${BE.get(L.boss).name}${L.tier ? " (reforzado)" : ""}`, i); }).join("")}</div>
+    <p>La Noche estrellada tiene más filas de monedas. En la Caverna de cristal también cuelgan estalactitas.</p>` },
   { title: "Jefes", html: () => `
     <p>El jefe llega a los ${CONFIG.BOSS_AT_IN_LEVEL} puntos de su nivel: dejan de salir obstáculos, aparece «¡PELIGRO!» durante ${secs(CONFIG.BOSS_WARNING_TIME)} y empieza el combate. Tienes 3 corazones.
     Cada ataque que esquivas entero le quita 1 de vida al jefe.</p>
     <div class="tip warn"><b>Cómo leer los avisos</b>: antes de cada ataque se ilumina una franja. <b>Roja</b> = ataque bajo, <b>salta</b>. <b>Amarilla</b> = ataque alto, <b>¡no saltes!</b>, quédate en el suelo.</div>
     <div class="m-demos">${demo("warn", "Franja roja: salta", "low")}${demo("warn", "Franja amarilla: no saltes", "high")}</div>
-    ${BOSSES_DATA.bosses.map(b => `<div class="boss-sheet">${demo("boss", "", b.id, true)}<div>
+    ${BOSS_DATA_ALL.bosses.slice().sort((a, b) => CONFIG.LEVELS.findIndex(L => L.boss === a.id) - CONFIG.LEVELS.findIndex(L => L.boss === b.id)).map(b => `<div class="boss-sheet">${demo("boss", "", b.id, true)}<div>
       <h4>${b.name} <span class="stars">${stars(b.stars)}</span></h4>
-      <p><b>Mundo:</b> ${b.level} · <b>Dificultad:</b> ${b.difficulty} · <b>Vida:</b> ${b.stats.hp} · <b>Premio:</b> ${CONFIG.BOSS_REWARDS[b.id]} monedas</p>
+      <p><b>Aparece en:</b> ${CONFIG.LEVELS.map((L, i) => L.boss === b.id ? `nivel ${i + 1} (${BIOMES[i].name}${L.tier ? ", reforzado" : ""})` : "").filter(Boolean).join(" y ")} · <b>Dificultad:</b> ${b.difficulty} · <b>Vida:</b> ${b.stats.hp} · <b>Premio:</b> ${CONFIG.BOSS_REWARDS[b.id]} monedas</p>
       <p>${b.blurb}</p>
       <ul>${b.attacks.map(a => `<li><b>${a.name}</b> — ${a.hint}</li>`).join("")}</ul>
       ${b.stats.phase2 ? `<div class="tip warn"><b>FASE 2</b>: al bajar a ${b.stats.phase2.at} de vida, su neón se vuelve rojo, ataca ×${fmtNum(Math.round(1 / b.stats.phase2.gap * 100) / 100)} más seguido, sus disparos van ×${fmtNum(b.stats.phase2.speed)} más rápidos y avisa menos.</div>${demo("boss", "Fase 2", b.id + ":2", true)}` : ""}
     </div></div>`).join("")}
-    <p>En cada vuelta nueva a los biomas los jefes vuelven con +${pct(CONFIG.BOSS_CYCLE.HP)} de vida, +${pct(CONFIG.BOSS_CYCLE.SPEED)} de velocidad, ${pct(-CONFIG.BOSS_CYCLE.GAP)} menos de pausa y aviso, y dan +${pct(CONFIG.BOSS_CYCLE.COINS)} de monedas.
+    <p>Los jefes reforzados (niveles 7–10 y cada vuelta nueva tras el nivel ${CONFIG.LEVELS.length}) vuelven con +${pct(CONFIG.BOSS_CYCLE.HP)} de vida, +${pct(CONFIG.BOSS_CYCLE.SPEED)} de velocidad, ${pct(-CONFIG.BOSS_CYCLE.GAP)} menos de pausa y aviso, y dan +${pct(CONFIG.BOSS_CYCLE.COINS)} de monedas.
     Vencerlos da +${CONFIG.BOSS_POINTS} puntos. En Normal perder es Game Over; en Fácil pierdes una vida y repites el combate.</p>` },
   { title: "Modos", html: () => { const E = CONFIG.EASY; return `
     <table><tr><th></th><th>Normal</th><th>Fácil</th></tr>
@@ -3442,7 +3510,7 @@ const DEMOS = {
   // Jefe del kit sobre su escenario (DinoBossEngine.SCENES + drawBoss)
   boss(c, t, d, g) {
     const [id, ph] = d.arg.split(":"), b = BE.get(id), S = BE.size, tk = Math.floor(t * 60);
-    BE.SCENES[b.scene](c, 1, tk, tk);
+    sceneOf(b)(c, 1, tk, tk);
     const frame = Math.floor(t * 2.5) % 2 ? "idle1" : "idle0";
     BE.drawBoss(c, id, frame, S.w - S.boss[0] - 4, S.ground - S.boss[1] + 1, 1, tk, { phase2: ph === "2" });
     SE.drawSprite(c, g.skinId, SE.runFrame(g.skinId, Math.floor(t / CONFIG.SKIN_TICK)).frame, 22, S.ground - 19, 1, Math.floor(t / CONFIG.SKIN_TICK));
@@ -3640,8 +3708,8 @@ class Game {
     this.run.biomes.add(biomeOfLevel(level + 1).id);
     return this.eggsInLevel(level);
   }
-  onBossWin(id, flawless, cycle) {
-    const coins = Math.round(CONFIG.BOSS_REWARDS[id] * (1 + CONFIG.BOSS_CYCLE.COINS * cycle) * this.mode.coinValue);
+  onBossWin(id, flawless, tier) {
+    const coins = Math.round(CONFIG.BOSS_REWARDS[id] * (1 + CONFIG.BOSS_CYCLE.COINS * tier) * this.mode.coinValue);
     this.runCoins += coins; this.runBosses++;
     const lvl = this.level.level;
     this.distance = Math.max(this.distance + CONFIG.BOSS_POINTS * CONFIG.PX_PER_POINT, lvl * CONFIG.POINTS_PER_LEVEL * CONFIG.PX_PER_POINT);
@@ -3651,6 +3719,10 @@ class Game {
     this.save.save();
     this.sfx.victory(); this.addShake(0.4, 6);
     this.bossBanner = { t: 2.5, text: "¡JEFE DERROTADO!", sub: `+${coins} monedas · +${CONFIG.BOSS_POINTS} puntos`, color: "#ffd23f" };
+    if (lvl % CONFIG.LEVELS.length === 0) {   // jefe final del nivel 10 (10 000 puntos)
+      this.bossBanner = { t: 4, text: `¡HAS COMPLETADO LOS ${CONFIG.LEVELS.length} NIVELES!`, sub: `+${coins} monedas · el viaje vuelve a empezar, más difícil`, color: "#ffd23f" };
+      this.sfx.jackpot();
+    }
     this.state = "playing"; this.grace = 1;
     this.player.y = 0; this.player.vy = 0; this.player.onGround = true; this.player.jumps = 0; this.player.skinState.trail = null;
     this.spawner.nextAt = this.distance + this.speed * 1.2;   // breve respiro antes de volver a los obstáculos
