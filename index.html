@@ -115,8 +115,8 @@
   <button data-act="pause">❚❚</button>
 </div>
 <p class="help">
-  <kbd>Espacio</kbd>/<kbd>↑</kbd> saltar (doble salto en el aire) · <kbd>↓</kbd> deslizarse / caída rápida ·
-  <kbd>W</kbd>/<kbd>S</kbd> carril · <kbd>X</kbd> rugido · <kbd>P</kbd> pausa · <kbd>M</kbd> sonido
+  <kbd>W</kbd> saltar (doble salto en el aire) · <kbd>S</kbd> deslizarse / caída rápida ·
+  <kbd>A</kbd> cambiar de carril · <kbd>D</kbd> rugido · <kbd>P</kbd> pausa · <kbd>M</kbd> sonido
 </p>
 
 <!-- Menú principal -->
@@ -134,12 +134,12 @@
       <button class="btn gold" id="btnShop">Tienda</button>
     </div>
     <div class="controls">
-      <span><kbd>Espacio</kbd>/<kbd>↑</kbd> saltar ×2</span><span><kbd>↓</kbd> deslizarse</span>
-      <span><kbd>W</kbd>/<kbd>S</kbd> carril</span><span><kbd>X</kbd> rugido</span>
+      <span><kbd>W</kbd> saltar ×2</span><span><kbd>S</kbd> deslizarse</span>
+      <span><kbd>A</kbd> carril</span><span><kbd>D</kbd> rugido</span>
       <span><kbd>P</kbd> pausa</span><span><kbd>M</kbd> sonido</span><span><kbd>T</kbd> tienda</span>
     </div>
     <p class="touch-hint">Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
-    <p class="touch-hint"><b>Bosses</b> (a mitad de cada bioma): cuando brillen, ruge o pisa su punto débil (↓ en el aire).
+    <p class="touch-hint"><b>Bosses</b> (a mitad de cada bioma): cuando brillen, ruge o pisa su punto débil (S en el aire).
       Ruge justo antes de que te alcance un proyectil para devolverlo y activa las trampas del escenario.</p>
     <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–6 = bioma · Mayús + 1–6 = boss</p>
   </div>
@@ -201,7 +201,7 @@ const CONFIG = {
   GRAVITY: 2600,             // px/s²
   JUMP_VELOCITY: 920,        // impulso del salto
   DOUBLE_JUMP_VELOCITY: 820, // impulso del doble salto
-  FAST_FALL_MULT: 3.2,       // gravedad extra con ↓ en el aire
+  FAST_FALL_MULT: 3.2,       // gravedad extra con S en el aire
   SLIDE_DURATION: 0.6,       // s de deslizamiento
   LANE_SWITCH_TIME: 0.2,     // s de la animación de cambio de carril
 
@@ -788,7 +788,7 @@ class Player {
       this.y += this.vy * dt;
       if (this.y <= 0) {
         this.y = 0; this.vy = 0; this.onGround = true; this.jumps = 0;
-        if (this.fastFall && this.downHeld) this.slideTime = CONFIG.SLIDE_DURATION;  // ↓ mantenido: aterriza deslizándose
+        if (this.fastFall && this.downHeld) this.slideTime = CONFIG.SLIDE_DURATION;  // S mantenida: aterriza deslizándose
         this.fastFall = false;
         g.puff(this.x + 30, 0, this.logicalLane, 6, g.level.biome.pal.bandEdge);
       }
@@ -2289,7 +2289,7 @@ class UI {
     c.lineWidth = 6; c.strokeStyle = "rgba(255,255,255,0.18)"; c.beginPath(); c.arc(cx, cy, r - 3, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = ready ? `rgba(255,138,61,${0.75 + 0.25 * Math.sin(g.time * 6)})` : "#ff8a3d";
     c.beginPath(); c.arc(cx, cy, r - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cd / CONFIG.ROAR_COOLDOWN)); c.stroke();
-    this.text(c, ready ? "X" : String(Math.ceil(cd)), cx, cy + 1, ready ? 20 : 18, ready ? "#ffd2b0" : "#ffffff", "center");
+    this.text(c, ready ? "D" : String(Math.ceil(cd)), cx, cy + 1, ready ? 20 : 18, ready ? "#ffd2b0" : "#ffffff", "center");
     this.text(c, "RUGIDO", cx, cy + r + 14, 11, ready ? "#ffb784" : "#bbbbbb", "center");
   }
   drawBanner(c) {
@@ -2710,35 +2710,35 @@ addEventListener("keydown", e => {
   const code = e.code, st = game.state;
   // Si el foco está en un botón, Espacio/Enter lo pulsan (comportamiento normal del navegador)
   if ((code === "Space" || code === "Enter") && e.target.closest && e.target.closest("button")) return;
-  if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(code)) e.preventDefault();
-  if (code === "ArrowDown") game.player.downHeld = true;
+  // Controles solo con WASD: W saltar · S deslizarse/caída rápida · A cambiar de carril · D rugido
+  if (["KeyW", "KeyA", "KeyS", "KeyD"].includes(code)) e.preventDefault();
+  if (code === "KeyS") game.player.downHeld = true;
   if (e.repeat) return;
   if (code === "KeyM") { game.sfx.muted = !game.sfx.muted; return; }
   if (DEBUG && /^Digit[1-6]$/.test(code) && st !== "shop") { game.debugJump(+code[5] - 1, e.shiftKey); return; }
   if (st === "menu") {
-    if (code === "Space" || code === "Enter" || code === "ArrowUp") game.start();
+    if (code === "KeyW") game.start();
     else if (code === "KeyT") game.openShop("menu");
   } else if (st === "shop") {
     if (code === "Escape" || code === "Backspace") game.shop.close();
   } else if (st === "over") {
     if (game.overTime < 0.7) return;
-    if (code === "Space" || code === "Enter" || code === "ArrowUp") game.start();
+    if (code === "KeyW") game.start();
     else if (code === "KeyT") game.openShop("over");
     else if (code === "Escape") game.showMenu();
   } else if (st === "paused") {
-    if (["KeyP", "Escape", "Space", "ArrowUp"].includes(code)) game.togglePause();
+    if (["KeyP", "Escape", "KeyW"].includes(code)) game.togglePause();
   } else if (st === "playing") {
     switch (code) {
-      case "Space": case "ArrowUp": game.player.jump(); break;
-      case "ArrowDown": game.player.slide(); break;
-      case "KeyW": game.player.changeLane(-1); break;
-      case "KeyS": game.player.changeLane(1); break;
-      case "KeyX": game.roar(); break;
+      case "KeyW": game.player.jump(); break;
+      case "KeyS": game.player.slide(); break;
+      case "KeyA": game.player.changeLane(game.player.lane === 0 ? 1 : -1); break;   // alterna entre los 2 carriles
+      case "KeyD": game.roar(); break;
       case "KeyP": case "Escape": game.togglePause(); break;
     }
   }
 });
-addEventListener("keyup", e => { if (e.code === "ArrowDown") game.player.downHeld = false; });
+addEventListener("keyup", e => { if (e.code === "KeyS") game.player.downHeld = false; });
 
 // Gestos: tocar = saltar, deslizar ↓ = deslizarse, deslizar con dos dedos ↕ = cambiar de carril
 let touch = null;
