@@ -35,4 +35,4 @@ Menú: **Jugar** (modo Normal/Fácil y nivel inicial si tienes checkpoints), **T
 
 Todas las constantes de balance están comentadas en `CONFIG`, al principio del último `<script>`: niveles y jefe de cada nivel (`LEVELS`), velocidades, modo Fácil (`EASY`), jefes (`BOSS_*`), huevos (`EGG_*`), checkpoints, editor, ruleta (`ROULETTE_*`, `FREE_SPIN_PRIZES`) y monedas. Los logros están en `ACHIEVEMENTS`. El manual lee estos valores, así que se actualiza solo.
 
-Modo prueba: pon `const DEBUG = true;` para tener 5000 monedas y todos los niveles completados; las teclas 1–6 saltan a cada bioma y B lanza el jefe del bioma actual. Con DEBUG no se consiguen logros.
+Modo prueba: pon `const DEBUG = true;` para tener 5000 monedas y todos los niveles completados; las teclas 1–9 y 0 saltan a los niveles 1–10 y B lanza el jefe del bioma actual. Con DEBUG no se consiguen logros.

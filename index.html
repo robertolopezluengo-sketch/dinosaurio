@@ -275,7 +275,7 @@
     </div>
     <p class="touch-hint">Contra los jefes solo se salta: <kbd>W</kbd> o tocar la pantalla. Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
     <div class="actions" style="margin:10px 0 0"><button class="btn ghost" id="btnMute">Sonido: SÍ</button></div>
-    <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–6 = bioma · B = jefe del bioma actual</p>
+    <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–9 y 0 = nivel 1–10 · B = jefe del bioma actual</p>
   </div>
 </div>
 
@@ -2565,7 +2565,7 @@ class UI {
     drawEggPixels(c, 104, 66, 1.4);
     this.text(c, `Huevos ${g.eggsInLevel(L.level)}/${CONFIG.EGGS_PER_LEVEL}`, 116, 66, 13, "#fff3c4");
     this.text(c, `NIVEL ${L.level} · ${L.biome.name.toUpperCase()}`, W / 2, 20, 14, L.biome.accent, "center");
-    if (DEBUG) this.text(c, "DEBUG · 1–6 bioma · B jefe", W / 2, H - 12, 11, "#ff8a8a", "center");
+    if (DEBUG) this.text(c, "DEBUG · 1–9, 0 nivel · B jefe", W / 2, H - 12, 11, "#ff8a8a", "center");
 
     // Modo Fácil: vidas y aviso
     let y = 94;
@@ -4004,7 +4004,7 @@ addEventListener("keydown", e => {
   }
   if (game.roulette.visible) { if (k === "Escape") game.roulette.close(); return; }
   if (game.ach.visible) { if (k === "Escape") game.ach.close(); return; }
-  if (DEBUG && /^Digit[1-6]$/.test(e.code) && ["menu", "play", "over", "playing", "paused"].includes(st)) { game.debugJump(+e.code[5] - 1); return; }
+  if (DEBUG && /^Digit[0-9]$/.test(e.code) && ["menu", "play", "over", "playing", "paused"].includes(st)) { game.debugJump((+e.code[5] + 9) % 10); return; }   // 1–9 y 0 = nivel 10
   if (DEBUG && k === "b" && st === "playing") { game.bosses.force(); return; }
   if (st === "boss") {                       // en combate solo se salta (y P pausa)
     if (k === "w") game.jump();
