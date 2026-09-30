@@ -116,7 +116,7 @@
 </div>
 <p class="help">
   <kbd>W</kbd> saltar (doble salto en el aire) · <kbd>S</kbd> deslizarse / caída rápida ·
-  <kbd>A</kbd> cambiar de carril · <kbd>D</kbd> rugido · <kbd>P</kbd> pausa · <kbd>M</kbd> sonido
+  <kbd>A</kbd>/<kbd>D</kbd> carril de arriba / abajo · <kbd>E</kbd> rugido · <kbd>P</kbd> pausa · <kbd>M</kbd> sonido
 </p>
 
 <!-- Menú principal -->
@@ -135,7 +135,7 @@
     </div>
     <div class="controls">
       <span><kbd>W</kbd> saltar ×2</span><span><kbd>S</kbd> deslizarse</span>
-      <span><kbd>A</kbd> carril</span><span><kbd>D</kbd> rugido</span>
+      <span><kbd>A</kbd>/<kbd>D</kbd> carril</span><span><kbd>E</kbd> rugido</span>
       <span><kbd>P</kbd> pausa</span><span><kbd>M</kbd> sonido</span><span><kbd>T</kbd> tienda</span>
     </div>
     <p class="touch-hint">Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
@@ -2289,7 +2289,7 @@ class UI {
     c.lineWidth = 6; c.strokeStyle = "rgba(255,255,255,0.18)"; c.beginPath(); c.arc(cx, cy, r - 3, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = ready ? `rgba(255,138,61,${0.75 + 0.25 * Math.sin(g.time * 6)})` : "#ff8a3d";
     c.beginPath(); c.arc(cx, cy, r - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cd / CONFIG.ROAR_COOLDOWN)); c.stroke();
-    this.text(c, ready ? "D" : String(Math.ceil(cd)), cx, cy + 1, ready ? 20 : 18, ready ? "#ffd2b0" : "#ffffff", "center");
+    this.text(c, ready ? "E" : String(Math.ceil(cd)), cx, cy + 1, ready ? 20 : 18, ready ? "#ffd2b0" : "#ffffff", "center");
     this.text(c, "RUGIDO", cx, cy + r + 14, 11, ready ? "#ffb784" : "#bbbbbb", "center");
   }
   drawBanner(c) {
@@ -2710,8 +2710,8 @@ addEventListener("keydown", e => {
   const code = e.code, st = game.state;
   // Si el foco está en un botón, Espacio/Enter lo pulsan (comportamiento normal del navegador)
   if ((code === "Space" || code === "Enter") && e.target.closest && e.target.closest("button")) return;
-  // Controles solo con WASD: W saltar · S deslizarse/caída rápida · A cambiar de carril · D rugido
-  if (["KeyW", "KeyA", "KeyS", "KeyD"].includes(code)) e.preventDefault();
+  // Controles: W saltar · S deslizarse/caída rápida · A carril de arriba · D carril de abajo · E rugido
+  if (["KeyW", "KeyA", "KeyS", "KeyD", "KeyE"].includes(code)) e.preventDefault();
   if (code === "KeyS") game.player.downHeld = true;
   if (e.repeat) return;
   if (code === "KeyM") { game.sfx.muted = !game.sfx.muted; return; }
@@ -2732,8 +2732,9 @@ addEventListener("keydown", e => {
     switch (code) {
       case "KeyW": game.player.jump(); break;
       case "KeyS": game.player.slide(); break;
-      case "KeyA": game.player.changeLane(game.player.lane === 0 ? 1 : -1); break;   // alterna entre los 2 carriles
-      case "KeyD": game.roar(); break;
+      case "KeyA": game.player.changeLane(-1); break;   // carril de arriba
+      case "KeyD": game.player.changeLane(1); break;    // carril de abajo
+      case "KeyE": game.roar(); break;
       case "KeyP": case "Escape": game.togglePause(); break;
     }
   }

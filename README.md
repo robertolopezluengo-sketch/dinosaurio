@@ -10,8 +10,8 @@ Abre `index.html` en cualquier navegador moderno (doble clic) y pulsa **Jugar** 
 |---|---|---|
 | Saltar / doble salto | W (otra vez en el aire) | Tocar |
 | Deslizarse / caída rápida / pisotón | S | Deslizar hacia abajo |
-| Cambiar de carril (alterna) | A | Botones ▲ ▼ (o dos dedos ↕) |
-| Rugido (rompe rocas y pájaros) | D | Botón «Rugido» |
+| Carril de arriba / de abajo | A / D | Botones ▲ ▼ (o dos dedos ↕) |
+| Rugido (rompe rocas y pájaros) | E | Botón «Rugido» |
 | Pausa | P / Esc | Botón ❚❚ |
 | Tienda (menú / game over) | T | Botón «Tienda» |
 | Sonido | M | — |
