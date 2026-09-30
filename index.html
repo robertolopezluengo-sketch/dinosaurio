@@ -247,7 +247,7 @@
   <div class="card">
     <h1>DINO RUNNER</h1>
     <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus bosses</p>
-    <p class="touch-hint" style="margin:-8px 0 10px">Versión 4 · 10 niveles · un boss a los 500 puntos de cada nivel</p>
+    <p class="touch-hint" style="margin:-8px 0 10px">Versión 5 · 10 niveles y 10 bosses · un boss a los 500 puntos de cada nivel</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
@@ -645,19 +645,19 @@ const CONFIG = {
   EGG_WINDOWS: [[0.15, 0.4], [0.55, 0.8]], // tramo del nivel (0–1) en el que aparece cada huevo
 
   // --- Niveles: 10 niveles de 1000 puntos (0–10 000), cada uno con su bioma y su boss ---
-  // boss = índice en BOSS_CLASSES (0 escorpión, 1 serpiente, 2 golem, 3 mamut, 4 pterodáctilo sombra, 5 robot-rex)
+  // boss = índice en BOSS_CLASSES (0 escorpión, 1 serpiente, 2 golem, 3 mamut, 4 pterodáctilo, 5 cangrejo, 6 sapo, 7 kraken, 8 huesos, 9 nave)
   // tier = refuerzo del boss (0 = normal). Tras el nivel 10 se repite todo con +1 de refuerzo.
   LEVELS: [
-    { biome: "desert",  boss: 0, tier: 0 },   //  1 · 0–999
-    { biome: "jungle",  boss: 1, tier: 0 },   //  2 · 1000–1999
-    { biome: "volcano", boss: 2, tier: 0 },   //  3
-    { biome: "glacier", boss: 3, tier: 0 },   //  4
-    { biome: "night",   boss: 4, tier: 0 },   //  5
-    { biome: "city",    boss: 5, tier: 0 },   //  6
-    { biome: "swamp",   boss: 1, tier: 1 },   //  7
-    { biome: "magma",   boss: 2, tier: 1 },   //  8
-    { biome: "crystal", boss: 3, tier: 1 },   //  9
-    { biome: "citadel", boss: 5, tier: 1 },   // 10 · 9000–9999: boss final
+    { biome: "desert",    boss: 0, tier: 0 },   //  1 · 0–999      Escorpión gigante
+    { biome: "jungle",    boss: 1, tier: 0 },   //  2 · 1000–1999  Serpiente de lianas
+    { biome: "volcano",   boss: 2, tier: 0 },   //  3              Golem de lava
+    { biome: "glacier",   boss: 3, tier: 0 },   //  4              Mamut de hielo
+    { biome: "night",     boss: 4, tier: 0 },   //  5              Pterodáctilo sombra
+    { biome: "beach",     boss: 5, tier: 0 },   //  6              Rey cangrejo
+    { biome: "mushroom",  boss: 6, tier: 0 },   //  7              Sapo gigante
+    { biome: "ocean",     boss: 7, tier: 0 },   //  8              Kraken abisal
+    { biome: "graveyard", boss: 8, tier: 0 },   //  9              Rey de los huesos
+    { biome: "moon",      boss: 9, tier: 0 },   // 10 · 9000–9999  Nave nodriza (boss final)
   ],
 
   // --- Bosses (a mitad de cada nivel: 500, 1500, 2500…); se lucha contra ellos sin dejar de correr ---
@@ -683,6 +683,8 @@ const CONFIG = {
   BOSS_COINS_PER_CYCLE: 50,  // monedas extra por punto de refuerzo
   BOSS_POINTS: 250,          // puntos por derrotar a un boss
   BOSS_POWERUP_CHANCE: 0.5,  // prob. de que aparezca un escudo o turbo al empezar la pelea
+  MAMMOTH_CHARGE_SPEED: 1100,// px/s de la embestida del mamut
+  MAMMOTH_FREEZE_TIME: 1.6,  // s que el suelo queda congelado tras la embestida
 
   // --- Modo Fácil (se aplica en lugar de los valores normales) ---
   EASY: {
@@ -750,11 +752,11 @@ const ACHIEVEMENTS = [
   { id: "vuelta-al-mundo", cat: "carrera", name: "Vuelta al mundo", desc: "Completa los 10 niveles y vuelve al Desierto", reward: 500 },
   // Jefes
   { id: "primer-trofeo", cat: "jefes", name: "Primer trofeo", desc: "Derrota a tu primer boss", reward: 50, goal: 1, stat: "bossesTotal" },
-  { id: "cazador-jefes", cat: "jefes", name: "Cazador de jefes", desc: "Derrota a los 6 bosses distintos (en cualquier partida)", reward: 500, goal: 6, stat: "bossTypes" },
+  { id: "cazador-jefes", cat: "jefes", name: "Cazador de jefes", desc: "Derrota a los 10 bosses distintos (en cualquier partida)", reward: 500, goal: 10, stat: "bossTypes" },
   { id: "sin-rasguno", cat: "jefes", name: "Sin un rasguño", desc: "Derrota a un boss sin recibir ningún golpe", reward: 150 },
-  { id: "apagon", cat: "jefes", name: "Apagón", desc: "Derrota al Robot-rex", reward: 400 },
+  { id: "apagon", cat: "jefes", name: "Apagón", desc: "Derrota a la Nave nodriza", reward: 400 },
   { id: "exterminador", cat: "jefes", name: "Exterminador", desc: "Derrota 25 bosses en total", reward: 800, goal: 25, stat: "bossesTotal" },
-  { id: "tirano", cat: "jefes", name: "Tirano", desc: "Derrota a los 6 bosses distintos en una misma partida (solo Normal)", reward: 1500, skin: "rey-jefes", normalOnly: true },
+  { id: "tirano", cat: "jefes", name: "Tirano", desc: "Derrota a los 10 bosses en una misma partida (solo Normal)", reward: 1500, skin: "rey-jefes", normalOnly: true },
   // Habilidad
   { id: "saltarin", cat: "habilidad", name: "Saltarín", desc: "Salta 500 veces en total", reward: 50, goal: 500, stat: "jumps" },
   { id: "rugido-destructor", cat: "habilidad", name: "Rugido destructor", desc: "Destruye 200 obstáculos con el rugido", reward: 150, goal: 200, stat: "roarKills" },
@@ -864,32 +866,29 @@ const BIOMES = [
     pal: { skyTop: "#050820", skyBot: "#262a5c", far: "#1a1f45", near: "#11152e", ground: "#2c2a45", band: "#34325a", bandHi: "#4a4880", bandEdge: "#1b1a30", pebble: "#6a68b0" },
     far: { min: 30, max: 90, rough: 0.2, step: 12 }, near: { min: 10, max: 40, rough: 0.15, step: 10 },
     obstacles: { ground: "crystal", rock: "meteor", flyer: "ptero" } },
-  { id: "city", name: "Ciudad futurista", accent: "#ff2e97", sky: "none", stars: true, deco: ["city"], ridges: false,
-    pal: { skyTop: "#0b0820", skyBot: "#2a0f4a", far: "#1c1238", near: "#120a26", ground: "#0b0820", band: "#1e1436", bandHi: "#ff2e97", bandEdge: "#41e1ff", pebble: "#7a1a5a",
-           neonA: "#ff2e97", neonB: "#41e1ff" },
-    far: { min: 0, max: 0, rough: 0, step: 10 }, near: { min: 0, max: 0, rough: 0, step: 10 },
-    obstacles: { ground: "neon", rock: "crate", flyer: "drone" } },
-  { id: "swamp", name: "Pantano", accent: "#b8f06a", sky: "moon", clouds: "#3a4a3a", ambient: "leaves", deco: ["trees", "lianas"],
-    pal: { skyTop: "#14221c", skyBot: "#4a6a4a", far: "#2a3f2e", near: "#1f3024", ground: "#2a2418", band: "#3a4a2a", bandHi: "#5f7a3a", bandEdge: "#1a2412", pebble: "#6a8a3a",
-           trunk: "#2a1f14", canopy: "#23402a", canopyHi: "#3a6a3a", liana: "#2a4a24" },
-    far: { min: 30, max: 80, rough: 0.25, step: 14 }, near: { min: 10, max: 36, rough: 0.2, step: 10 },
+  { id: "beach", name: "Playa tropical", accent: "#ffe14d", sky: "sun", clouds: "#ffffff", deco: ["trees", "lava"],
+    pal: { skyTop: "#3fb8f0", skyBot: "#c8f0ff", far: "#6ad0a0", near: "#3aa878", ground: "#f3dca0", band: "#ead08a", bandHi: "#fff4d0", bandEdge: "#c8a860", pebble: "#ffffff",
+           trunk: "#8a5a2a", canopy: "#2f9a3a", canopyHi: "#6cd05a", lava: "#1a8fd0", lavaHi: "#e8fbff" },
+    far: { min: 20, max: 60, rough: 0.2, step: 14 }, near: { min: 8, max: 30, rough: 0.2, step: 10 },
+    obstacles: { ground: "log", rock: "rock", flyer: "ptero" } },
+  { id: "mushroom", name: "Bosque de setas", accent: "#ff7ad0", sky: "moon", clouds: "#6a4a8a", ambient: "spores", ambientColors: ["#ff7ad0", "#7df9ff", "#ffe14d"], deco: ["trees"],
+    pal: { skyTop: "#2a1450", skyBot: "#a85ac0", far: "#4a2a6a", near: "#3a1f58", ground: "#3a2a1a", band: "#5a3a7a", bandHi: "#c9a6ff", bandEdge: "#2a1a3a", pebble: "#ff7ad0",
+           trunk: "#f3e2b8", canopy: "#d23a4a", canopyHi: "#ffffff" },
+    far: { min: 30, max: 90, rough: 0.3, step: 14 }, near: { min: 10, max: 40, rough: 0.25, step: 10 },
     obstacles: { ground: "log", rock: "mossrock", flyer: "ptero" } },
-  { id: "magma", name: "Corazón del volcán", accent: "#ffb020", sky: "none", clouds: "#4a1a10", ambient: "ash", deco: ["volcano", "lava"],
-    pal: { skyTop: "#1a0604", skyBot: "#8a2a0a", far: "#2a0a08", near: "#160604", ground: "#2a1410", band: "#3a1a14", bandHi: "#ff7a1a", bandEdge: "#140804", pebble: "#ffb020",
-           lava: "#ff5a1a", lavaHi: "#ffe066" },
-    far: { min: 40, max: 120, rough: 0.55, step: 12 }, near: { min: 12, max: 44, rough: 0.5, step: 8 },
-    obstacles: { ground: "obsidian", rock: "lavarock", flyer: "ptero" } },
-  { id: "crystal", name: "Caverna de cristal", accent: "#c9a6ff", sky: "none", stars: true, ambient: "snow", deco: ["sparkle", "aurora"], patternBiome: "glacier",
-    pal: { skyTop: "#0a0620", skyBot: "#2a1a5a", far: "#3a2a7a", near: "#4a3a9a", ground: "#6a5ab0", band: "#8a7ad0", bandHi: "#e6d6ff", bandEdge: "#3a2a6a", pebble: "#ffffff", cap: "#c9a6ff" },
-    far: { min: 40, max: 130, rough: 0.5, step: 12, cap: true }, near: { min: 12, max: 50, rough: 0.3, step: 10, cap: true },
-    obstacles: { ground: "crystal", rock: "icerock", flyer: "ptero" } },
-  { id: "citadel", name: "Fortaleza de MECHA-REX", accent: "#ff3b3b", sky: "none", stars: true, deco: ["city"], ridges: false,
-    pal: { skyTop: "#1a0408", skyBot: "#4a0a1a", far: "#2a0a14", near: "#16060c", ground: "#12060a", band: "#2a0e18", bandHi: "#ff3b3b", bandEdge: "#ffd23f", pebble: "#7a1a2a",
-           neonA: "#ff3b3b", neonB: "#ffd23f" },
-    far: { min: 0, max: 0, rough: 0, step: 10 }, near: { min: 0, max: 0, rough: 0, step: 10 },
-    obstacles: { ground: "neon", rock: "crate", flyer: "drone" } },
+  { id: "ocean", name: "Fondo marino", accent: "#7df9ff", sky: "none", ambient: "bubbles", deco: ["sparkle"],
+    pal: { skyTop: "#04203a", skyBot: "#1a6a9a", far: "#0e3a5a", near: "#0a2c48", ground: "#c8b88a", band: "#d8c89a", bandHi: "#fff4d0", bandEdge: "#8a7a50", pebble: "#ff9ad0" },
+    far: { min: 40, max: 110, rough: 0.45, step: 12 }, near: { min: 12, max: 44, rough: 0.35, step: 10 },
+    obstacles: { ground: "crystal", rock: "mossrock", flyer: "fish" } },
+  { id: "graveyard", name: "Cementerio encantado", accent: "#6aff8a", sky: "moon", stars: true, ambient: "spores", ambientColors: ["#6aff8a", "#b8ffc8"], deco: ["shooting"],
+    pal: { skyTop: "#0a0a18", skyBot: "#2a3a3a", far: "#1a2020", near: "#121818", ground: "#1e1e24", band: "#2e2e36", bandHi: "#5a6a5a", bandEdge: "#0e0e14", pebble: "#6aff8a" },
+    far: { min: 30, max: 90, rough: 0.3, step: 12 }, near: { min: 10, max: 40, rough: 0.25, step: 8 },
+    obstacles: { ground: "tomb", rock: "rock", flyer: "ptero" } },
+  { id: "moon", name: "Base lunar", accent: "#c9d0dc", sky: "earth", stars: true, deco: ["shooting"],
+    pal: { skyTop: "#000004", skyBot: "#0a0a20", far: "#5a5e6a", near: "#7a7e8a", ground: "#9a9ea8", band: "#b4b8c2", bandHi: "#e8eaf0", bandEdge: "#6a6e7a", pebble: "#5a5e6a", cap: "#e8eaf0" },
+    far: { min: 30, max: 100, rough: 0.4, step: 12, cap: true }, near: { min: 10, max: 40, rough: 0.3, step: 10 },
+    obstacles: { ground: "crystal", rock: "meteor", flyer: "drone" } },
 ];
-
 
 // =====================================================================
 //  Constantes de escena (no afectan al balance)
@@ -1476,6 +1475,7 @@ const STYLE_COLORS = {
   icerock: ROCK_PAL.icerock, meteor: ROCK_PAL.meteor, crate: ["#6a6f7e", "#ffcc00", "#2c2f3a"],
   ptero: ["#9b59b6", "#5e2d73", "#f5b041"], drone: ["#8a93a6", "#2c2f3a", "#ff3b5c"],
   stalactite: ["#bfe8ff", "#ffffff", "#6fb0d8"],
+  fish: ["#ff9a2e", "#ffe14d", "#7a3a10"], tomb: ["#7a7e8a", "#b4b8c2", "#3a3e4a"],
 };
 
 class Obstacle {
@@ -1531,6 +1531,7 @@ class Obstacle {
       case "flyer":
         drawShadow(ctx, 30, 40, this.y + 60);
         if (this.style === "drone") this.drawDrone(ctx);
+        else if (this.style === "fish") this.drawFish(ctx);
         else { const spr = BIRD_SPR[Math.floor(this.t * 7) % 2]; drawSkinSprite(ctx, spr, 0, -this.y - spr.h, 0); }
         break;
       case "ground":
@@ -1567,6 +1568,7 @@ class Obstacle {
         ctx.fillStyle = `rgba(255,255,255,${0.5 + 0.5 * Math.sin(this.t * 4)})`; ctx.fillRect(x + w / 2 - 1, top + 4, 2, 2);
         return;
       case "neon": return drawNeon(ctx, x, top, w, h, this.t);
+      case "tomb": return drawTomb(ctx, x, top, w, h);
     }
   }
   drawRock(ctx) {
@@ -1595,6 +1597,13 @@ class Obstacle {
     ctx.fillStyle = mod(this.t * 3, 1) < 0.5 ? "#ff3b5c" : "#7a1020"; ctx.fillRect(18, top + 19, 8, 5);
     ctx.fillStyle = "#3ff0ff"; ctx.fillRect(28, top + 28, 10, 2);
   }
+  drawFish(ctx) {
+    const top = -this.y - this.h, f = Math.sin(this.t * 12) * 3, R = (col, x, y, w, h) => { ctx.fillStyle = col; ctx.fillRect(x, top + y, w, h); };
+    R("#7a3a10", 4, 6, 50, 26); R("#ff9a2e", 6, 8, 46, 22); R("#ffe14d", 10, 22, 36, 6);
+    R("#7a3a10", 50, 4 + f, 16, 30 - 2 * f); R("#ff9a2e", 52, 6 + f, 12, 26 - 2 * f);
+    R("#ffffff", 12, 12, 8, 8); R("#15161c", 13, 14, 4, 5); R("#7a3a10", 4, 20, 6, 3);
+    R("#ffffff", 24, 10, 3, 18); R("#ffffff", 36, 10, 3, 18);
+  }
   drawStalactite(ctx) {
     const w = this.w, top = -262, tip = -42, steps = 12, len = tip - top, sh = len / steps;
     ctx.fillStyle = "#6fb0d8"; ctx.fillRect(-12, top - 10, w + 24, 12);
@@ -1608,6 +1617,13 @@ class Obstacle {
 }
 
 // Dibujo de piezas de obstáculos (coordenadas locales, suelo en y = 0)
+function drawTomb(ctx, x, top, w, h) {
+  const R = (col, xx, yy, ww, hh) => { ctx.fillStyle = col; ctx.fillRect(Math.round(xx), Math.round(yy), Math.round(ww), Math.round(hh)); };
+  R("#3a3e4a", x - 2, top + 8, w + 4, h - 6); R("#3a3e4a", x + 4, top + 2, w - 8, 8);
+  R("#7a7e8a", x, top + 10, w, h - 10); R("#7a7e8a", x + 6, top + 4, w - 12, 8); R("#b4b8c2", x + 3, top + 12, 4, h - 16);
+  R("#3a3e4a", x + w / 2 - 2, top + 16, 4, 16); R("#3a3e4a", x + w / 2 - 7, top + 21, 14, 4);
+  R("#4f7a3a", x - 3, -4, w + 6, 4);
+}
 function drawCactus(ctx, x, top, w, h) {
   const u = 2, R = v => Math.round(v / u) * u;
   const tw = R(w * 0.42), tx = x + R((w - tw) / 2), armW = R(w * 0.22);
@@ -1887,7 +1903,7 @@ class LevelManager {
 //  que ataca mientras el raptor sigue corriendo (clases Boss de más abajo).
 //  Si no se le vence en CONFIG.BOSS_MAX_TIME s, se retira sin premio.
 // =====================================================================
-const BOSS_IDS = ["escorpion", "serpiente", "golem", "mamut", "ptero", "robot"];
+const BOSS_IDS = ["escorpion", "serpiente", "golem", "mamut", "ptero", "cangrejo", "sapo", "kraken", "huesos", "nave"];
 class BossManager {
   constructor(game) { this.game = game; this.reset(); }
   reset() { this.boss = null; this.phase = null; this.warn = 0; this.pending = null; this.hitTaken = false; this.defeatedRun = new Set(); this.syncTo(1); }
@@ -1939,7 +1955,7 @@ class BossManager {
 //  la ventana de vulnerabilidad: se puede pisar, rugirle o esquivarlo.
 // =====================================================================
 const COL_X = PLAYER_X - 2, COL_W = 60;
-const BOSS_NAMES = ["Escorpión gigante", "Serpiente de lianas", "Golem de lava", "Mamut de hielo", "Pterodáctilo sombra", "Robot-rex"];
+const BOSS_NAMES = ["Escorpión gigante", "Serpiente de lianas", "Golem de lava", "Mamut de hielo", "Pterodáctilo sombra"];
 const LASER = { low: { y: 0, h: 22 }, mid: { y: 40, h: 22 }, high: { y: 84, h: 28 } };
 function toScreen(laneT, x, y) { const p = laneProj(laneT); return { x: VANISH_X + (x - VANISH_X) * p.s, y: p.gy - y * p.s, s: p.s }; }
 // Rectángulo en coordenadas de carril (y = altura sobre el suelo)
@@ -2632,87 +2648,414 @@ class ShadowPteroBoss extends Boss {
   }
 }
 
+const BOSS_CLASSES = [ScorpionBoss, SerpentBoss, GolemBoss, MammothBoss, ShadowPteroBoss];
+
+
+// =====================================================================
+//  Bosses de los niveles 6–10 (mismas reglas que los anteriores: avisos, punto débil,
+//  pisotón, rugido, «¡PERFECTO!», turbo y trampa)
+// =====================================================================
+BOSS_NAMES.push("Rey cangrejo", "Sapo gigante", "Kraken abisal", "Rey de los huesos", "Nave nodriza");
+const BOSS_HP_MULTS = [1, 1, 1.15, 1.1, 1, 1.15, 1.1, 1.2, 1.25, 1.35];   // multiplicador de vida de cada boss (para el manual)
+
+// Proyectiles y peligros nuevos (coordenadas de carril)
+function drawBubbleHaz(c, h) {
+  c.fillStyle = "#1a4a7a"; c.beginPath(); c.arc(h.x + h.w / 2, -(h.y + h.h / 2), h.w / 2 + 2, 0, Math.PI * 2); c.fill();
+  c.fillStyle = "#8fd8ff"; c.beginPath(); c.arc(h.x + h.w / 2, -(h.y + h.h / 2), h.w / 2, 0, Math.PI * 2); c.fill();
+  B(c, "#ffffff", h.x + 5, h.y + h.h - 9, 5, 4);
+}
+function drawTongueHaz(c, h) { B(c, "#7a1030", h.x, h.y + 4, h.w, h.h - 8); B(c, "#ff5c8a", h.x, h.y + 7, h.w, h.h - 14); BO(c, "#7a1030", "#ff5c8a", h.x - 6, h.y, 18, h.h, 2); }
+function drawInkHaz(c, h) { BO(c, "#05040c", "#2a1a4a", h.x, h.y, h.w, h.h); B(c, "#6a4aa0", h.x + 6, h.y + h.h - 10, 8, 4); }
+function drawSweepHaz(c, h) {
+  BO(c, "#2a0a3a", "#8a3aa0", h.x, h.y, h.w, h.h);
+  for (let i = 0; i < 4; i++) B(c, "#e0a0ff", h.x + 8 + i * 18, h.y + 3, 7, 7);
+}
+function drawBoneHaz(c, h) {
+  B(c, "#2a2418", h.x + 4, h.y + 10, h.w - 8, 10); B(c, "#e8dcc0", h.x + 6, h.y + 12, h.w - 12, 6);
+  BO(c, "#2a2418", "#e8dcc0", h.x, h.y + 4, 10, 22, 2); BO(c, "#2a2418", "#e8dcc0", h.x + h.w - 10, h.y + 4, 10, 22, 2);
+}
+function drawWispHaz(c, h) {
+  c.globalAlpha = 0.5; B(c, "#6aff8a", h.x + 8, h.y - 2, h.w, h.h + 4); c.globalAlpha = 1;
+  BO(c, "#0a3a1a", "#6aff8a", h.x, h.y, h.w - 10, h.h, 2); B(c, "#ffffff", h.x + 4, h.y + 4, 5, 5);
+}
+function drawBeamHaz(c, h) {
+  c.fillStyle = "rgba(110,255,140,0.28)"; c.fillRect(h.x - 8, -(h.y + h.h), h.w + 16, h.h);
+  c.fillStyle = "rgba(200,255,210,0.55)"; c.fillRect(h.x + 10, -(h.y + h.h), h.w - 20, h.h);
+  for (let i = 0; i < 6; i++) { c.fillStyle = "#e8ffe8"; c.fillRect(h.x + 6 + (i * 13) % h.w, -(h.y + ((h.t * 400 + i * 50) % h.h)), 4, 4); }
+}
+function drawSaucer(c, cx, cy, s, t) {
+  c.save(); c.translate(cx, cy); c.scale(s, s);
+  const R = (col, x, y, w, h) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+  R("#0b0c14", -62, -8, 124, 26); R("#8792ab", -60, -6, 120, 22); R("#c9d0dc", -56, -6, 112, 6); R("#56607a", -44, 12, 88, 8);
+  R("#0b0c14", -30, -34, 60, 28); R("#7df9ff", -28, -32, 56, 26); R("#e8ffff", -20, -28, 16, 8);
+  for (let i = 0; i < 6; i++) R((Math.floor(t * 6) + i) % 2 ? "#ffe14d" : "#ff3b5c", -50 + i * 20, 4, 8, 6);
+  c.restore();
+}
+function drawSaucerHaz(c, h) { c.save(); c.translate(h.x + h.w / 2, -(h.y + h.h / 2)); drawSaucer(c, 0, 0, 0.28, h.t); c.restore(); }
+
 // ---------------------------------------------------------------------
-// 6. Ciudad — Robot-rex: láseres a distintas alturas, misiles en arco
-//    y garra: combina todos los patrones.
+// 6. Playa tropical — Rey cangrejo: pinzazo desde arriba (cambia de carril)
+//    y burbujas a ras de suelo o a media altura.
 // ---------------------------------------------------------------------
-class RobotRexBoss extends Boss {
+class CrabBoss extends Boss {
   constructor(game, cycle) {
-    super(game, cycle, BOSS_NAMES[5], 1.3);
-    this.colors = ["#8792ab", "#1b1f2a", "#ff4fd8"]; this.trapKind = "lightning"; this.trapColor = "#ffe600";
-    this.rx = 1070; this.claw = { laneT: 0, x: 1050, y: 80 }; this.clawTo = { ...this.claw }; this.idle = true; this.fast = false; this.eye = 0;
+    super(game, cycle, BOSS_NAMES[5], 1.15);
+    this.colors = ["#e0452e", "#7a1a10", "#ffb08a"]; this.trapKind = "log"; this.trapColor = "#c89a5c";
+    this.cx = 1060; this.claw = { laneT: 0, x: 1040, y: 60 }; this.clawTo = { ...this.claw }; this.idle = true; this.fast = false;
   }
-  target() { return { lane: 0, laneT: 0, x: this.rx + 60, y: 110 }; }
+  target() { return { lane: 0, laneT: 0, x: this.cx + 75, y: 60 }; }
   clearAttacks() { super.clearAttacks(); this.idle = true; this.fast = false; }
   updateBody(dt) {
-    this.rx = 650 + this.away * 420 + (this.state === "defeat" ? Math.sin(this.t * 40) * 3 : 0);
-    this.eye = Math.max(0, this.eye - dt);
-    if (this.idle) this.clawTo = { laneT: 0, x: this.rx - 14, y: 80 + Math.sin(this.t * 3) * 5 };
+    this.cx = 640 + this.away * 420 + Math.sin(this.t * 6) * 6 + (this.state === "defeat" ? Math.sin(this.t * 40) * 3 : 0);
+    if (this.idle) this.clawTo = { laneT: 0, x: this.cx - 30, y: 56 + Math.sin(this.t * 3) * 6 };
     const k = Math.min(1, dt * (this.fast ? 30 : 7));
     for (const key of ["laneT", "x", "y"]) this.claw[key] = lerp(this.claw[key], this.clawTo[key], k);
   }
-  attack() { const r = Math.random(); if (r < 0.3) this.laser(false); else if (r < 0.55) this.laser(true); else if (r < 0.8) this.missiles(); else this.slam(this.p.lane); }
-  laser(both) {   // bajo: saltar · medio: deslizarse · alto: no saltar
-    const d = this.tele(0.8), first = both ? choice(["low", "mid"]) : choice(["low", "mid", "high"]);
+  attack() { if (Math.random() < 0.5) this.pinch(this.p.lane); else this.bubbles(); }
+  pinch(lane) {   // golpe de toda la altura: cambiar de carril
+    const d = this.tele(0.85);
+    this.idle = false; this.fast = false; this.clawTo = { laneT: lane, x: 150, y: 170 };
+    this.warn(lane, "shadow", d);
+    this.after(d, () => {
+      this.fast = true; this.clawTo = { laneT: lane, x: 150, y: 0 };
+      this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
+      this.game.addShake(0.2, 5); this.game.sfx.stomp(); this.game.puff(160, 0, lane, 12, "#bfe6ff");
+      this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 34 }, 0, () => { this.idle = true; this.fast = false; });
+    });
+  }
+  bubbles() {   // bajas: saltar · medias: deslizarse · o devolverlas con E
+    const L = this.p.lane, n = 3 + Math.min(1, this.cycle), gap = 0.55 / this.speedMul;
+    for (let i = 0; i < n; i++) this.after(0.2 + i * gap, () => {
+      const lane = i % 2 ? 1 - L : L, hy = Math.random() < 0.5 ? 6 : 40, d = this.tele(0.5);
+      this.warn(lane, "arrow", d, { y: hy });
+      this.after(d, () => { this.game.sfx.hiss(); this.addHazard({ lane, x: 880, y: hy, w: 24, h: 24, vx: -540 * Math.sqrt(this.speedMul),
+        projectile: true, reflectable: true, destructible: true, draw: drawBubbleHaz }); });
+    });
+    this.after(0.2 + n * gap + 1.1, () => this.pinch(1 - this.p.lane));
+  }
+  drawBody(c, lane) {
+    const x = this.cx, walk = Math.sin(this.t * 12) * 3;
+    if (lane === 0) {
+      c.save(); applyLane(c, 0);
+      for (let i = 0; i < 3; i++) {   // patas
+        const lx = x + 20 + i * 40, up = i % 2 ? walk : -walk;
+        BO(c, "#5a1208", "#c23a24", lx, 0, 8, 34 + up, 2); BO(c, "#5a1208", "#c23a24", lx - 12, 26 + up, 20, 8, 2);
+      }
+      BO(c, "#5a1208", "#e0452e", x, 30, 150, 62);
+      B(c, "#ff7a5a", x + 10, 80, 130, 8); B(c, "#ffb08a", x + 30, 86, 60, 4);
+      for (let i = 0; i < 4; i++) B(c, "#a82a18", x + 22 + i * 32, 46 + (i % 2) * 10, 10, 8);
+      B(c, "#5a1208", x + 40, 36, 44, 6);
+      for (const ex of [x + 36, x + 70]) {   // ojos con pedúnculo
+        B(c, "#5a1208", ex, 92, 6, 24); BO(c, "#5a1208", "#ffffff", ex - 4, 114, 14, 14, 2); B(c, "#15161c", ex - 2, 118, 6, 7);
+      }
+      BO(c, "#5a1208", "#e0452e", x + 140, 44, 30, 22); BO(c, "#5a1208", "#ff7a5a", x + 164, 58, 18, 10, 2);   // pinza pequeña
+      c.restore();
+    }
+    if ((this.claw.laneT < 0.5 ? 0 : 1) !== lane) return;
+    const s = toScreen(0, x + 10, 70), f = toScreen(this.claw.laneT, this.claw.x + 16, this.claw.y + 20);
+    drawChain(c, s, f, { x: (s.x + f.x) / 2, y: Math.min(s.y, f.y) - 30 }, 7, 18 * f.s, 16 * f.s, "#5a1208", ["#e0452e", "#c23a24"]);
+    c.save(); applyLane(c, this.claw.laneT);
+    const cx = this.claw.x, cy = this.claw.y, open = this.fast ? 2 : 8 + Math.sin(this.t * 5) * 3;
+    BO(c, "#5a1208", "#e0452e", cx - 18, cy + 14 + open, 62, 20);
+    BO(c, "#5a1208", "#ff7a5a", cx - 20, cy, 40, 12);
+    B(c, "#ffb08a", cx - 12, cy + 30 + open, 44, 4);
+    c.restore();
+  }
+}
+
+// ---------------------------------------------------------------------
+// 7. Bosque de setas — Sapo gigante: salta hasta tu carril (diana: cámbiate)
+//    y dispara la lengua a media altura (deslízate). Tras aterrizar se queda quieto.
+// ---------------------------------------------------------------------
+class FrogBoss extends Boss {
+  constructor(game, cycle) {
+    super(game, cycle, BOSS_NAMES[6], 1.1);
+    this.colors = ["#4caf50", "#1f3a14", "#d8f0a0"]; this.trapKind = "log"; this.trapColor = "#ff5c8a";
+    this.frogX = 1100; this.frogY = 0; this.laneT = 1; this.laneTo = 1; this.mode = "idle"; this.k = 0; this.tongue = 0;
+  }
+  target() { return { lane: this.laneT < 0.5 ? 0 : 1, laneT: this.laneT, x: this.frogX + 50, y: this.frogY + 30 }; }
+  clearAttacks() { super.clearAttacks(); if (this.mode !== "back") this.mode = this.frogX < 500 ? "back" : "idle"; }
+  updateBody(dt) {
+    this.laneT = lerp(this.laneT, this.laneTo, Math.min(1, dt * 8));
+    this.tongue = Math.max(0, this.tongue - dt);
+    if (this.mode === "idle") { this.frogX = lerp(this.frogX, 680 + this.away * 450, Math.min(1, dt * 5)); this.frogY = Math.abs(Math.sin(this.t * 3)) * 10; }
+    else if (this.mode === "leap") {
+      this.k = Math.min(1, this.k + dt / this.leapT);
+      this.frogX = lerp(this.x0, COL_X - 20, this.k); this.frogY = 4 * 230 * this.k * (1 - this.k);
+      if (this.k >= 1) this.land();
+    } else if (this.mode === "back") {
+      this.frogX += 650 * dt; this.frogY = Math.abs(Math.sin(this.frogX / 60)) * 50;
+      if (this.frogX >= 680) { this.frogX = 680; this.frogY = 0; this.mode = "idle"; }
+    } else if (this.mode === "rest") this.frogY = 0;
+  }
+  attack() { if (Math.random() < 0.55) this.leap(this.p.lane); else this.lick(); }
+  leap(lane) {
+    const d = this.tele(0.8);
+    this.warn(lane, "target", d + 0.5); this.game.sfx.toss();
+    this.after(d, () => { this.mode = "leap"; this.k = 0; this.x0 = this.frogX; this.leapT = 0.55 / Math.sqrt(this.speedMul); this.laneTo = lane; this.leapLane = lane; });
+  }
+  land() {
+    const lane = this.leapLane;
+    this.mode = "rest"; this.frogY = 0;
+    this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
+    this.game.addShake(0.3, 7); this.game.sfx.stomp(); this.game.puff(170, 0, lane, 14, "#6cc25a");
+    this.rest(lane, { x: COL_X - 20, y: 0, w: 110, h: 56 }, 0, () => { this.mode = "back"; });
+  }
+  lick() {   // lengua a media altura en tu carril: deslízate
+    const L = this.p.lane, d = this.tele(0.8), b = LASER.mid;
+    this.laneTo = L;
+    this.warn(L, "line", d, { y: b.y, h: b.h, x2: this.frogX });
+    this.after(d, () => {
+      this.tongue = 0.45; this.game.sfx.hiss();
+      this.addHazard({ lane: L, x: COL_X - 40, w: this.frogX - (COL_X - 40), y: b.y, h: b.h, life: 0.42, draw: drawTongueHaz });
+    });
+    this.after(d + 0.9, () => this.leap(this.p.lane));
+  }
+  drawBody(c, lane) {
+    if ((this.laneT < 0.5 ? 0 : 1) !== lane) return;
+    const x = this.frogX, y = this.frogY, air = y > 4, O = "#1f3a14";
+    c.save(); applyLane(c, this.laneT);
+    if (!air) drawShadow(c, x + 55, 120, 0);
+    BO(c, O, "#3f8f3a", x + 70, y, 36, air ? 14 : 22, 2);                // pata trasera
+    BO(c, O, "#4caf50", x, y + 8, 110, 56);                                 // cuerpo
+    B(c, "#d8f0a0", x + 8, y + 10, 70, 16);                                 // barriga
+    for (const [sx, sy] of [[60, 48], [82, 36], [92, 54]]) B(c, "#2f7a33", x + sx, y + sy, 10, 7);
+    BO(c, O, "#3f8f3a", x + 6, y, 18, air ? 10 : 16, 2);                    // pata delantera
+    for (const ex of [x + 8, x + 40]) { BO(c, O, "#4caf50", ex, y + 56, 24, 20); B(c, "#ffe14d", ex + 4, y + 62, 16, 10); B(c, "#15161c", ex + 6, y + 64, 6, 8); }
+    B(c, O, x, y + 28, 60, 4);                                              // boca
+    if (this.tongue > 0) B(c, "#ff5c8a", x - 6, y + 22, 16, 8);
+    c.restore();
+  }
+}
+
+// ---------------------------------------------------------------------
+// 8. Fondo marino — Kraken abisal: la cabeza asoma arriba; los tentáculos golpean
+//    desde arriba (cámbiate), barren el suelo (salta) y escupe tinta en arco.
+// ---------------------------------------------------------------------
+class KrakenBoss extends Boss {
+  constructor(game, cycle) {
+    super(game, cycle, BOSS_NAMES[7], 1.2);
+    this.colors = ["#8a3aa0", "#2a0a3a", "#e0a0ff"]; this.trapKind = "stalactite"; this.trapColor = "#7df9ff";
+    this.tip = { laneT: 0.5, x: 600, y: 420 }; this.tipTo = { ...this.tip }; this.idle = true; this.fast = false;
+  }
+  headPos() { return { x: 690 + Math.sin(this.t * 0.9) * 30, y: 70 + Math.sin(this.t * 1.7) * 8 - this.away * 220 + (this.state === "defeat" ? this.stateT * 140 : 0) }; }
+  target() {
+    if (!this.idle) return { lane: this.tip.laneT < 0.5 ? 0 : 1, laneT: this.tip.laneT, x: this.tip.x, y: this.tip.y + 20 };
+    const s = this.headPos(); return { lane: 0, laneT: 0, x: VANISH_X + (s.x - VANISH_X) / LANES[0].s, y: (LANES[0].y - s.y) / LANES[0].s };
+  }
+  clearAttacks() { super.clearAttacks(); this.idle = true; this.fast = false; }
+  updateBody(dt) {
+    if (this.idle) this.tipTo = { laneT: 0.5, x: 560 + Math.sin(this.t * 1.3) * 40, y: 170 + Math.sin(this.t * 2) * 20 + this.away * 300 };
+    const k = Math.min(1, dt * (this.fast ? 28 : 6));
+    for (const key of ["laneT", "x", "y"]) this.tip[key] = lerp(this.tip[key], this.tipTo[key], k);
+  }
+  attack() { const r = Math.random(); if (r < 0.4) this.slam(this.p.lane); else if (r < 0.7) this.ink(); else this.sweep(); }
+  slam(lane) {
+    const d = this.tele(0.85);
+    this.idle = false; this.fast = false; this.tipTo = { laneT: lane, x: 160, y: 220 };
+    this.warn(lane, "shadow", d);
+    this.after(d, () => {
+      this.fast = true; this.tipTo = { laneT: lane, x: 160, y: 0 };
+      this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
+      this.game.addShake(0.2, 5); this.game.sfx.stomp(); this.game.puff(160, 0, lane, 12, "#8fd8ff");
+      this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 30 }, 0, () => { this.idle = true; this.fast = false; });
+    });
+  }
+  ink() {   // tinta en arco: cambia de carril o rómpela con E
+    const n = 2 + Math.min(2, this.cycle), gap = 0.6 / this.speedMul, T = 1.15 / Math.sqrt(this.speedMul);
+    for (let i = 0; i < n; i++) this.after(i * gap, () => {
+      const L = i === 0 ? this.p.lane : randInt(0, 1);
+      this.warn(L, "target", T); this.game.sfx.toss();
+      this.lob(L, 760, 260, T, drawInkHaz);
+    });
+    this.after((n - 1) * gap + T + 0.4, () => this.slam(1 - this.p.lane));
+  }
+  sweep() {   // tentáculo a ras de suelo por tu carril: salta
+    const L = this.p.lane, d = this.tele(0.7);
+    this.warn(L, "arrow", d, { y: 0 });
+    this.after(d, () => this.addHazard({ lane: L, x: 900, y: 0, w: 90, h: 26, vx: -620 * Math.sqrt(this.speedMul), draw: drawSweepHaz }));
+    this.after(d + 1.4, () => this.slam(1 - this.p.lane));
+  }
+  drawSky(c) {
+    const h = this.headPos(), t = this.t;
+    c.save();
+    if (this.flash > 0 && Math.floor(this.flash * 30) % 2 === 0) c.filter = "brightness(3)";
+    if (this.state === "defeat") c.globalAlpha = clamp(1 - this.stateT / 1.8, 0, 1);
+    const R = (col, x, y, w, hh) => { c.fillStyle = col; c.fillRect(Math.round(h.x + x), Math.round(h.y + y), w, hh); };
+    for (let i = 0; i < 5; i++) { const sw = Math.sin(t * 2 + i) * 6; R("#2a0a3a", -58 + i * 26 + sw, 40, 16, 50); R("#8a3aa0", -56 + i * 26 + sw, 40, 12, 46); }
+    R("#2a0a3a", -72, -54, 144, 100); R("#8a3aa0", -68, -50, 136, 92); R("#a85ac0", -60, -44, 60, 20);
+    for (const ex of [-44, 16]) { R("#2a0a3a", ex, 0, 30, 24); R("#ffe14d", ex + 2, 2, 26, 20); R("#15161c", ex + 10, 4 + Math.sin(t * 3) * 3, 8, 14); }
+    for (let i = 0; i < 4; i++) R("#e0a0ff", -50 + i * 30, -30 + (i % 2) * 10, 8, 8);
+    c.restore();
+  }
+  drawBody(c, lane) {
+    if ((this.tip.laneT < 0.5 ? 0 : 1) !== lane) return;
+    const h = this.headPos(), a = { x: h.x - 40, y: h.y + 80 }, tp = toScreen(this.tip.laneT, this.tip.x, this.tip.y + 20);
+    drawChain(c, a, tp, { x: (a.x + tp.x) / 2 + 60, y: Math.min(a.y, tp.y) - 20 }, 14, 22 * tp.s, 14 * tp.s, "#2a0a3a", ["#8a3aa0", "#a85ac0"], "#e0a0ff");
+    c.save(); applyLane(c, this.tip.laneT);
+    BO(c, "#2a0a3a", "#8a3aa0", this.tip.x - 20, this.tip.y, 44, 24); B(c, "#e0a0ff", this.tip.x - 14, this.tip.y + 4, 8, 6); B(c, "#e0a0ff", this.tip.x + 6, this.tip.y + 4, 8, 6);
+    c.restore();
+  }
+}
+
+// ---------------------------------------------------------------------
+// 9. Cementerio — Rey de los huesos: T-rex esqueleto. Muerde desde arriba (cámbiate),
+//    lanza huesos en arco y fuegos fantasma a ras de suelo o a media altura.
+// ---------------------------------------------------------------------
+class BoneRexBoss extends Boss {
+  constructor(game, cycle) {
+    super(game, cycle, BOSS_NAMES[8], 1.25);
+    this.colors = ["#e8dcc0", "#2a2418", "#6aff8a"]; this.trapKind = "lightning"; this.trapColor = "#6aff8a";
+    this.bx = 1070; this.skull = { laneT: 0, x: 1050, y: 120 }; this.skullTo = { ...this.skull }; this.idle = true; this.fast = false; this.jaw = 0;
+  }
+  target() { return { lane: 0, laneT: 0, x: this.bx + 60, y: 90 }; }
+  clearAttacks() { super.clearAttacks(); this.idle = true; this.fast = false; }
+  updateBody(dt) {
+    this.bx = 650 + this.away * 420 + (this.state === "defeat" ? Math.sin(this.t * 40) * 3 : 0);
+    this.jaw = Math.max(0, this.jaw - dt);
+    if (this.idle) this.skullTo = { laneT: 0, x: this.bx - 40, y: 118 + Math.sin(this.t * 2.5) * 6 };
+    const k = Math.min(1, dt * (this.fast ? 30 : 7));
+    for (const key of ["laneT", "x", "y"]) this.skull[key] = lerp(this.skull[key], this.skullTo[key], k);
+  }
+  attack() { const r = Math.random(); if (r < 0.35) this.bite(this.p.lane); else if (r < 0.7) this.bones(); else this.wisps(); }
+  bite(lane) {
+    const d = this.tele(0.85);
+    this.idle = false; this.fast = false; this.skullTo = { laneT: lane, x: 150, y: 180 }; this.jaw = d;
+    this.warn(lane, "shadow", d);
+    this.after(d, () => {
+      this.fast = true; this.skullTo = { laneT: lane, x: 150, y: 0 };
+      this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
+      this.game.addShake(0.2, 6); this.game.sfx.stomp(); this.game.puff(160, 0, lane, 12, "#e8dcc0");
+      this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 38 }, 0, () => { this.idle = true; this.fast = false; });
+    });
+  }
+  bones() {
+    const n = 2 + Math.min(2, this.cycle), gap = 0.55 / this.speedMul, T = 1.1 / Math.sqrt(this.speedMul);
+    for (let i = 0; i < n; i++) this.after(i * gap, () => {
+      const L = i === 0 ? this.p.lane : randInt(0, 1);
+      this.warn(L, "target", T); this.game.sfx.toss();
+      this.lob(L, this.bx + 30, 170, T, drawBoneHaz);
+    });
+    this.after((n - 1) * gap + T + 0.4, () => this.bite(1 - this.p.lane));
+  }
+  wisps() {
+    const n = 3 + Math.min(1, this.cycle), gap = 0.55 / this.speedMul, d = this.tele(0.55);
+    this.game.sfx.screech();
+    for (let i = 0; i < n; i++) this.after(i * gap, () => {
+      const lane = i % 2 ? 1 - this.p.lane : this.p.lane, hy = Math.random() < 0.5 ? 6 : 40;
+      this.warn(lane, "arrow", d, { y: hy });
+      this.after(d, () => this.addHazard({ lane, x: 880, y: hy, w: 34, h: 16, vx: -640 * Math.sqrt(this.speedMul),
+        projectile: true, reflectable: true, destructible: true, draw: drawWispHaz }));
+    });
+    this.after(n * gap + d + 1.1, () => this.bite(1 - this.p.lane));
+  }
+  drawBody(c, lane) {
+    const x = this.bx, O = "#2a2418", Bn = "#e8dcc0", Sh = "#9a8c70", glow = Math.floor(this.t * 5) % 2 ? "#6aff8a" : "#b8ffc8";
+    if (lane === 0) {
+      c.save(); applyLane(c, 0);
+      for (const lx of [x + 40, x + 100]) { BO(c, O, Bn, lx, 0, 12, 60, 2); BO(c, O, Bn, lx - 10, 0, 26, 6, 2); B(c, Sh, lx + 2, 28, 8, 4); }
+      for (let i = 0; i < 8; i++) BO(c, O, Bn, x + 130 + i * 16, 80 - i * 4, 14, 10, 2);   // cola
+      BO(c, O, Bn, x + 20, 104, 130, 12, 2);                                                     // columna
+      for (let i = 0; i < 6; i++) BO(c, O, Bn, x + 30 + i * 18, 60 + (i % 2) * 4, 8, 44, 2);    // costillas
+      BO(c, O, Bn, x + 10, 58, 110, 6, 2);
+      BO(c, O, Bn, x - 6, 80, 22, 8, 2); BO(c, O, Bn, x - 10, 70, 8, 12, 2);                     // bracito
+      c.globalAlpha = 0.35 + 0.2 * Math.sin(this.t * 4); B(c, "#6aff8a", x + 40, 70, 70, 30); c.globalAlpha = 1;
+      c.restore();
+    }
+    if ((this.skull.laneT < 0.5 ? 0 : 1) !== lane) return;
+    const s = toScreen(0, x + 20, 110), f = toScreen(this.skull.laneT, this.skull.x + 40, this.skull.y + 30);
+    drawChain(c, s, f, { x: (s.x + f.x) / 2, y: Math.min(s.y, f.y) - 30 }, 7, 14 * f.s, 12 * f.s, O, [Bn, Sh]);
+    c.save(); applyLane(c, this.skull.laneT);
+    const sx = this.skull.x, sy = this.skull.y, open = this.jaw > 0 ? 10 : 3;
+    BO(c, O, Bn, sx - 20, sy + 14 + open, 80, 34);                   // cráneo
+    BO(c, O, Bn, sx - 20, sy, 70, 12);                               // mandíbula
+    for (let i = 0; i < 5; i++) { B(c, "#ffffff", sx - 16 + i * 12, sy + 12, 5, 6 + open); }
+    B(c, O, sx + 20, sy + 30 + open, 16, 12); B(c, glow, sx + 24, sy + 33 + open, 8, 6);
+    B(c, Sh, sx - 10, sy + 20 + open, 40, 4);
+    c.restore();
+  }
+}
+
+// ---------------------------------------------------------------------
+// 10. Luna — Nave nodriza (boss final): rayo abductor (cámbiate), láseres a
+//     distintas alturas y mininaves en arco. Aterriza en el otro carril para recargar.
+// ---------------------------------------------------------------------
+class UfoBoss extends Boss {
+  constructor(game, cycle) {
+    super(game, cycle, BOSS_NAMES[9], 1.35);
+    this.colors = ["#8792ab", "#7df9ff", "#ffe14d"]; this.trapKind = "meteor"; this.trapColor = "#ff8a2a";
+    this.a = 0; this.mode = "sky"; this.k = 0; this.wp = { laneT: 1, x: 0, y: 0 };
+  }
+  skyPos() { return { x: 560 + Math.cos(this.a) * 160, y: 112 + Math.sin(this.a * 2) * 14 - this.away * 260 + (this.state === "defeat" ? this.stateT * 160 : 0) }; }
+  target() {
+    if (this.mode === "sky") { const s = this.skyPos(); return { lane: 0, laneT: 0, x: VANISH_X + (s.x - VANISH_X) / LANES[0].s, y: (LANES[0].y - s.y) / LANES[0].s }; }
+    return { lane: this.wp.laneT < 0.5 ? 0 : 1, laneT: this.wp.laneT, x: this.wp.x + 55, y: this.wp.y + 25 };
+  }
+  clearAttacks() { super.clearAttacks(); this.mode = "sky"; }
+  updateBody(dt) {
+    this.a += dt * 1.1 * this.speedMul;
+    const wp = this.wp;
+    if (this.mode === "land") { this.k = Math.min(1, this.k + dt / 0.45); wp.x = lerp(420, 110, this.k); wp.y = lerp(220, 0, this.k); }
+    else if (this.mode === "takeoff") { this.k += dt / 0.6; wp.x += 300 * dt; wp.y += 420 * dt; if (this.k >= 1) this.mode = "sky"; }
+  }
+  attack() {
+    const r = Math.random(), land = () => this.land(1 - this.p.lane);
+    if (r < 0.35) this.beam(this.p.lane, land);
+    else if (r < 0.65) this.laser(land);
+    else this.drones(land);
+  }
+  beam(lane, then) {   // rayo abductor de toda la altura: cambiar de carril
+    const d = this.tele(0.9);
+    this.warn(lane, "shadow", d); this.game.sfx.laser();
+    this.after(d, () => this.addHazard({ lane, x: COL_X - 10, y: 0, w: COL_W + 20, h: 320, life: 0.55, draw: drawBeamHaz }));
+    this.after(d + 0.8, then);
+  }
+  laser(then) {   // bajo: saltar · medio: deslizarse · alto: no saltar
+    const d = this.tele(0.8), both = Math.random() < 0.5, first = both ? choice(["low", "mid"]) : choice(["low", "mid", "high"]);
     const plan = both ? [[0, first], [1, first === "low" ? "mid" : "low"]] : [[this.p.lane, first]];
-    this.eye = d;
     for (const [L, hk] of plan) {
       const b = LASER[hk];
-      this.warn(L, "line", d, { y: b.y, h: b.h, x2: this.rx - 10 });
-      this.after(d, () => this.addHazard({ lane: L, x: 0, w: this.rx - 10, y: b.y, h: b.h, life: 0.42, draw: drawLaserHaz }));
+      this.warn(L, "line", d, { y: b.y, h: b.h, x2: 900 });
+      this.after(d, () => this.addHazard({ lane: L, x: 0, w: 900, y: b.y, h: b.h, life: 0.42, draw: drawLaserHaz }));
     }
     this.after(d, () => { this.game.sfx.laser(); this.game.addShake(0.15, 3); });
-    this.after(d + 0.8, () => this.slam(1 - this.p.lane));
+    this.after(d + 0.8, then);
   }
-  missiles() {
+  drones(then) {
     const n = 2 + Math.min(2, this.cycle), gap = 0.5 / this.speedMul, T = 1.1 / Math.sqrt(this.speedMul);
     for (let i = 0; i < n; i++) this.after(i * gap, () => {
       const L = i === 0 ? this.p.lane : randInt(0, 1);
       this.warn(L, "target", T); this.game.sfx.toss();
-      this.lob(L, this.rx + 20, 160, T, drawMissileHaz);
+      this.lob(L, 700, 260, T, drawSaucerHaz);
     });
-    this.after((n - 1) * gap + T + 0.4, () => this.slam(1 - this.p.lane));
+    this.after((n - 1) * gap + T + 0.4, then);
   }
-  slam(lane) {
+  land(lane) {   // aterriza en el otro carril: momento de pisarla
     const d = this.tele(0.8);
-    this.idle = false; this.fast = false; this.clawTo = { laneT: lane, x: 152, y: 170 };
     this.warn(lane, "shadow", d);
-    this.after(d, () => {
-      this.fast = true; this.clawTo = { laneT: lane, x: 152, y: 0 };
-      this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
-      this.game.addShake(0.2, 5); this.game.sfx.stomp(); this.game.puff(160, 0, lane, 10, "#3ff0ff");
-      this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 32 }, 0, () => { this.idle = true; this.fast = false; });
+    this.after(d, () => { this.mode = "land"; this.k = 0; this.wp = { laneT: lane, x: 420, y: 220 }; });
+    this.after(d + 0.45, () => {
+      this.addHazard({ lane, x: 110, y: 0, w: 110, h: 44, life: 0.15, isBody: true });
+      this.game.addShake(0.2, 5); this.game.sfx.stomp();
+      this.rest(lane, { x: 110, y: 0, w: 110, h: 44 }, 0, () => { this.mode = "takeoff"; this.k = 0; });
     });
+  }
+  drawSky(c) {
+    if (this.mode !== "sky") return;
+    c.save();
+    if (this.flash > 0 && Math.floor(this.flash * 30) % 2 === 0) c.filter = "brightness(3)";
+    if (this.state === "defeat") c.globalAlpha = clamp(1 - this.stateT / 1.8, 0, 1);
+    const s = this.skyPos(); drawSaucer(c, s.x, s.y, 1.2, this.t);
+    c.restore();
   }
   drawBody(c, lane) {
-    const x = this.rx, neon = Math.floor(this.t * 4) % 2 ? "#ff4fd8" : "#ff7fe4";
-    if (lane === 0) {
-      c.save(); applyLane(c, 0);
-      BO(c, "#1b1f2a", "#56607a", x + 40, 0, 22, 62); BO(c, "#1b1f2a", "#56607a", x + 95, 0, 22, 62);
-      B(c, "#1b1f2a", x + 30, 0, 42, 8); B(c, "#1b1f2a", x + 85, 0, 42, 8);
-      BO(c, "#1b1f2a", "#6c7890", x + 130, 70, 62, 20); BO(c, "#1b1f2a", "#6c7890", x + 190, 76, 34, 10);
-      BO(c, "#1b1f2a", "#8792ab", x + 20, 55, 120, 70);
-      B(c, neon, x + 25, 86, 110, 4); B(c, "#c9d0dc", x + 26, 118, 108, 4);
-      for (let i = 0; i < 4; i++) B(c, neon, x + 40 + i * 22, 125, 8, 10 + (i % 2) * 6);
-      BO(c, "#1b1f2a", "#8792ab", x - 12, 112, 82, 52);
-      B(c, "#56607a", x - 16, 100, 62, 14);
-      for (let i = 0; i < 5; i++) B(c, "#ffffff", x - 12 + i * 11, 112, 5, 5);
-      B(c, this.eye > 0 ? (Math.floor(this.t * 20) % 2 ? "#ff3b5c" : "#ffffff") : "#3ff0ff", x + 2, 144, 30, 9);
-      c.restore();
-    }
-    if ((this.claw.laneT < 0.5 ? 0 : 1) !== lane) return;
-    const s = toScreen(0, x + 30, 92), f = toScreen(this.claw.laneT, this.claw.x + 10, this.claw.y + 24);
-    drawChain(c, s, f, { x: (s.x + f.x) / 2, y: Math.min(s.y, f.y) - 30 }, 8, 18 * f.s, 16 * f.s, "#1b1f2a", ["#8792ab", "#56607a"]);
-    c.save(); applyLane(c, this.claw.laneT);
-    const cx = this.claw.x, cy = this.claw.y;
-    BO(c, "#1b1f2a", "#8792ab", cx - 16, cy + 6, 56, 26);
-    for (let i = 0; i < 3; i++) B(c, "#c9d0dc", cx - 14 + i * 20, cy, 8, 8);
-    B(c, "#3ff0ff", cx - 10, cy + 22, 44, 3);
+    if (this.mode === "sky" || (this.wp.laneT < 0.5 ? 0 : 1) !== lane) return;
+    c.save(); applyLane(c, this.wp.laneT);
+    drawSaucer(c, this.wp.x + 55, -(this.wp.y + 26), 0.95, this.t);
     c.restore();
   }
 }
-const BOSS_CLASSES = [ScorpionBoss, SerpentBoss, GolemBoss, MammothBoss, ShadowPteroBoss, RobotRexBoss];
-
+BOSS_CLASSES.push(CrabBoss, FrogBoss, KrakenBoss, BoneRexBoss, UfoBoss);
 
 // =====================================================================
 //  Biome: dibuja cielo, parallax, suelo y decoración de un bioma
@@ -2774,6 +3117,11 @@ class Biome {
       c.fillStyle = pale ? "rgba(255,255,255,0.4)" : "rgba(255,240,170,0.35)";
       c.beginPath(); c.arc(760, 64, 40, 0, Math.PI * 2); c.fill();
       c.fillStyle = pale ? "#ffffff" : "#fff0a0"; c.beginPath(); c.arc(760, 64, 26, 0, Math.PI * 2); c.fill();
+    } else if (this.sky === "earth") {
+      c.fillStyle = "rgba(90,160,255,0.18)"; c.beginPath(); c.arc(760, 70, 44, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#2a6ad0"; c.beginPath(); c.arc(760, 70, 32, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#3aa35a"; c.fillRect(742, 56, 16, 10); c.fillRect(750, 66, 10, 12); c.fillRect(768, 60, 12, 8); c.fillRect(770, 80, 8, 6);
+      c.fillStyle = "#ffffff"; c.fillRect(746, 48, 20, 3); c.fillRect(766, 90, 14, 3);
     } else if (this.sky === "moon") {
       c.fillStyle = "rgba(241,239,216,0.15)"; c.beginPath(); c.arc(760, 64, 34, 0, Math.PI * 2); c.fill();
       c.fillStyle = "#f1efd8"; c.beginPath(); c.arc(760, 64, 22, 0, Math.PI * 2); c.fill();
@@ -2796,7 +3144,7 @@ class Biome {
     }
     // Suelo y carriles
     c.fillStyle = P.ground; c.fillRect(-10, 212, W + 20, H - 202);
-    const glow = this.has("sparkle") || this.id === "volcano" || this.id === "magma";
+    const glow = this.has("sparkle") || this.id === "volcano" || this.id === "graveyard";
     for (let i = 0; i < 2; i++) {
       const { y: gy, s } = LANES[i];
       c.fillStyle = P.band; c.fillRect(-10, gy - 14 * s, W + 20, 26 * s);
@@ -3661,10 +4009,10 @@ class AchievementManager {
       }
       case "bossDefeated": {
         this.add("bossesTotal");
-        this.max("bossTypes", new Set(g.save.data.bossesDefeated).size);
+        this.max("bossTypes", new Set(g.save.data.bossesDefeated.filter(x => BOSS_IDS.includes(x))).size);
         if (d.flawless) this.unlock("sin-rasguno");
-        if (d.id === "robot") this.unlock("apagon");
-        if (normal && g.bosses.defeatedRun.size >= 6) this.unlock("tirano");
+        if (d.id === "nave") this.unlock("apagon");
+        if (normal && g.bosses.defeatedRun.size >= BOSS_IDS.length) this.unlock("tirano");
         this.max("bestRunCoins", g.runCoinsInt);
         break;
       }
@@ -3773,9 +4121,9 @@ const pct = v => `${Math.round(v * 100)} %`;
 const secs = v => `${fmtNum(Math.round(v * 10) / 10)} s`;
 const demo = (name, label, arg = "", wide = false) =>
   `<div class="m-demo${wide ? " wide" : ""}"><canvas data-demo="${name}" data-arg="${arg}" data-w="${wide ? 260 : 160}" data-h="${wide ? 104 : 100}"></canvas>${label}</div>`;
-const GROUND_NAMES = { cactus: "Cactus", log: "Tronco", obsidian: "Pincho de obsidiana", iceblock: "Bloque de hielo", crystal: "Cristal", neon: "Barrera de neón" };
+const GROUND_NAMES = { cactus: "Cactus", log: "Tronco", obsidian: "Pincho de obsidiana", iceblock: "Bloque de hielo", crystal: "Cristal", neon: "Barrera de neón", tomb: "Lápida" };
 const ROCK_NAMES = { rock: "Roca", mossrock: "Roca musgosa", lavarock: "Roca volcánica", icerock: "Roca helada", meteor: "Meteorito", crate: "Caja metálica" };
-const FLYER_NAMES = { ptero: "Pterodáctilo", drone: "Dron" };
+const FLYER_NAMES = { ptero: "Pterodáctilo", drone: "Dron", fish: "Pez" };
 const stars = n => "★".repeat(n) + "☆".repeat(Math.max(0, 4 - n));
 const kbd = k => `<kbd>${k}</kbd>`;
 const BOSS_GUIDE = [
@@ -3800,11 +4148,29 @@ const BOSS_GUIDE = [
               "<b>Plumas</b>: flecha roja a la altura indicada → salta o deslízate, o devuélvelas con E."],
     weak: "El lomo, cuando se posa en el otro carril para descansar.", trap: "Un meteorito que golpea al pterodáctilo.",
     tip: "Las plumas vienen en fila: devuelve una con el rugido y esquiva el resto." },
-  { attacks: ["<b>Láser</b>: línea roja parpadeante → abajo: salta · en medio: deslízate · arriba: NO saltes. A veces dispara en los dos carriles a alturas distintas.",
-              "<b>Misiles en arco</b>: diana roja → cambia de carril o rómpelos con E.",
-              "<b>Garra</b>: sombra con «!» → cambia de carril."],
-    weak: "La garra, apoyada en el suelo tras golpear.", trap: "Un poste eléctrico que electrocuta al robot.",
-    tip: "Es el más duro: aprende a leer la altura del láser antes de moverte y usa la trampa en cuanto aparezca." },
+  { attacks: ["<b>Pinzazo</b>: sombra con «!» → cambia de carril.",
+              "<b>Burbujas</b>: flecha roja → bajas: salta · medias: deslízate · o devuélvelas con E."],
+    weak: "La pinza grande, apoyada en el suelo tras el pinzazo.", trap: "Un tronco a la deriva que golpea al cangrejo.",
+    tip: "Las burbujas son lentas: perfectas para el «¡PERFECTO!». Después del pinzazo, vuelve a su carril en el aire y písale la pinza." },
+  { attacks: ["<b>Salto aplastante</b>: diana roja en tu carril → cambia de carril antes de que aterrice.",
+              "<b>Lengua</b>: línea roja a media altura → deslízate con S."],
+    weak: "La cabeza, mientras se queda quieto tras aterrizar junto a ti.", trap: "Un tronco que cae sobre el sapo.",
+    tip: "Cuando aterriza se queda quieto a tu lado: salta, pasa a su carril y cae con S sobre su cabeza." },
+  { attacks: ["<b>Tentáculo desde arriba</b>: sombra con «!» → cambia de carril.",
+              "<b>Barrido</b>: flecha roja a ras de suelo → salta.",
+              "<b>Tinta en arco</b>: diana roja → cambia de carril o rómpela con E."],
+    weak: "La punta del tentáculo, apoyada en el suelo tras golpear.", trap: "Una estalactita de coral que cae sobre el kraken.",
+    tip: "El barrido llega muy rápido: salta en cuanto veas la flecha. Devuelve la última tinta con el rugido para dañarle la cabeza." },
+  { attacks: ["<b>Mordisco</b>: sombra con «!» → cambia de carril.",
+              "<b>Huesos en arco</b>: diana roja → cambia de carril o rómpelos con E.",
+              "<b>Fuegos fantasma</b>: flecha roja → bajos: salta · medios: deslízate · o devuélvelos con E."],
+    weak: "El cráneo, apoyado en el suelo tras el mordisco.", trap: "Un rayo que cae sobre el esqueleto.",
+    tip: "Tiene mucha vida: aprovecha cada mordisco para pisarle el cráneo y usa la trampa en cuanto aparezca." },
+  { attacks: ["<b>Rayo abductor</b>: sombra con «!» → cambia de carril (dura un momento).",
+              "<b>Láser</b>: línea roja → abajo: salta · en medio: deslízate · arriba: NO saltes. A veces en los dos carriles.",
+              "<b>Mininaves</b>: diana roja → cambia de carril o rómpelas con E."],
+    weak: "La cúpula, cuando aterriza en el otro carril para recargar.", trap: "Un meteorito que golpea a la nave.",
+    tip: "Es el boss final: después de cada ataque aterriza en el otro carril. Cámbiate en el aire y cae con S sobre la cúpula." },
 ];
 const MANUAL_SECTIONS = [
   { title: "Cómo se juega", html: () => `
@@ -3852,7 +4218,7 @@ const MANUAL_SECTIONS = [
       <tr><td>Muro (obstáculo alto + pájaro)</td><td>No</td><td>Cambiar de carril.</td></tr>
     </table>
     <div class="m-demos">${BIOMES.map((b, i) => [b, i]).filter(([b], k, a) => a.findIndex(([x]) => x.obstacles.ground === b.obstacles.ground) === k).map(([b, i]) => demo("obst", `${GROUND_NAMES[b.obstacles.ground]} (${b.name})`, `${i}:ground`)).join("")}
-      ${demo("obst", "Roca", "0:rock")}${demo("obst", "Pterodáctilo", "0:flyer")}${demo("obst", "Dron", "5:flyer")}${demo("obst", "Estalactita", "3:stalactite")}</div>
+      ${demo("obst", "Roca", "0:rock")}${demo("obst", "Pterodáctilo", "0:flyer")}${demo("obst", "Pez", "7:flyer")}${demo("obst", "Dron", "9:flyer")}${demo("obst", "Estalactita", "3:stalactite")}</div>
     <p>Desde el nivel ${CONFIG.FAST_BIRD_LEVEL} hay pájaros más rápidos y otros que cambian de altura. Siempre existe al menos una forma de pasar cada patrón.</p>` },
   { title: "Power-ups", html: () => `
     <p>Aparecen al azar entre obstáculos. No puede haber dos del mismo tipo activos. Al empezar la pelea contra un boss a veces aparece un escudo o un turbo de ayuda.</p>
@@ -3868,7 +4234,7 @@ const MANUAL_SECTIONS = [
     obstáculos más seguidos, ambos carriles ocupados desde el nivel ${CONFIG.BOTH_LANES_LEVEL}, pájaros rápidos desde el ${CONFIG.FAST_BIRD_LEVEL} y algo menos de power-ups.
     Hay ${CONFIG.LEVELS.length} niveles, cada uno con su bioma y su boss. Al completar el nivel ${CONFIG.LEVELS.length} (${CONFIG.LEVELS.length * CONFIG.POINTS_PER_LEVEL} puntos) el viaje vuelve a empezar con la dificultad acumulada y bosses aún más fuertes.</p>
     <div class="m-demos">${BIOMES.map((b, i) => { const L = CONFIG.LEVELS[i]; return demo("biome", `${i + 1}. ${b.name} (${i * CONFIG.POINTS_PER_LEVEL}–${(i + 1) * CONFIG.POINTS_PER_LEVEL - 1})<br>Boss: ${BOSS_NAMES[L.boss]}${L.tier ? " (reforzado)" : ""}`, i); }).join("")}</div>
-    <p>La Noche estrellada tiene más filas de monedas. En la Caverna de cristal también cuelgan estalactitas.</p>` },
+    <p>La Noche estrellada tiene más filas de monedas.</p>` },
   { title: "Bosses", html: () => `
     <p>A mitad de cada nivel (${CONFIG.BOSS_AT_IN_LEVEL}, ${CONFIG.BOSS_AT_IN_LEVEL + CONFIG.POINTS_PER_LEVEL}, ${CONFIG.BOSS_AT_IN_LEVEL + 2 * CONFIG.POINTS_PER_LEVEL}…) sale «¡PELIGRO!» y llega un boss. Te ataca mientras sigues corriendo (no salen obstáculos normales).
     Tienes ${CONFIG.BOSS_MAX_TIME} s: si lo vences ganas +${CONFIG.BOSS_COINS} monedas y +${CONFIG.BOSS_POINTS} puntos; si no, se retira sin premio.</p>
@@ -3883,10 +4249,10 @@ const MANUAL_SECTIONS = [
     ${BOSS_NAMES.map((n, i) => { const lv = CONFIG.LEVELS.map((L, k) => L.boss === i ? `nivel ${k + 1} (${BIOMES[k].name}${L.tier ? ", reforzado" : ""})` : "").filter(Boolean).join(" y ");
       return `<h4>${i + 1}. ${n}</h4>
       <div class="m-demos">${demo("boss", n, i, true)}</div>
-      <p><b>Aparece en:</b> ${lv}. Vida base: ${Math.round(CONFIG.BOSS_HP * [1, 1, 1.15, 1.1, 1, 1.3][i])} (Fácil: la mitad).</p>
+      <p><b>Aparece en:</b> ${lv}. Vida base: ${Math.round(CONFIG.BOSS_HP * BOSS_HP_MULTS[i])} (Fácil: la mitad).</p>
       <ul>${BOSS_GUIDE[i].attacks.map(a => `<li>${a}</li>`).join("")}</ul>
       <p><b>Punto débil:</b> ${BOSS_GUIDE[i].weak}<br><b>Trampa:</b> ${BOSS_GUIDE[i].trap}<br><b>Estrategia:</b> ${BOSS_GUIDE[i].tip}</p>`; }).join("")}
-    <p>Los bosses reforzados (niveles 7–10 y cada vuelta nueva tras el nivel ${CONFIG.LEVELS.length}) tienen +${pct(CONFIG.BOSS_HP_PER_CYCLE)} de vida, atacan un ${pct(CONFIG.BOSS_SPEED_PER_CYCLE)} más rápido y dan +${CONFIG.BOSS_COINS_PER_CYCLE} monedas por cada refuerzo.</p>` },
+    <p>Después del nivel ${CONFIG.LEVELS.length} los bosses vuelven reforzados: en cada vuelta tienen +${pct(CONFIG.BOSS_HP_PER_CYCLE)} de vida, atacan un ${pct(CONFIG.BOSS_SPEED_PER_CYCLE)} más rápido y dan +${CONFIG.BOSS_COINS_PER_CYCLE} monedas por cada refuerzo.</p>` },
   { title: "Modos", html: () => { const E = CONFIG.EASY; return `
     <table><tr><th></th><th>Normal</th><th>Fácil</th></tr>
       <tr><td>Velocidad inicial</td><td>100 %</td><td>${pct(E.START_SPEED_MULT)}</td></tr>
@@ -4346,7 +4712,7 @@ class Game {
     if (this.particles.length > 500) this.particles.splice(0, this.particles.length - 500);
   }
   updateAmbient(dt) {
-    const kind = this.level.biome.ambient, rate = { ash: 40, snow: 30, leaves: 3 }[kind] || 0;
+    const biome = this.level.biome, kind = biome.ambient, rate = { ash: 40, snow: 30, leaves: 3, bubbles: 12, spores: 10 }[kind] || 0;
     this.ambientAcc += dt * rate;
     while (this.ambientAcc >= 1) {
       this.ambientAcc -= 1;
@@ -4354,10 +4720,12 @@ class Game {
       if (kind === "ash")    Object.assign(a, { vx: rand(-60, -20), vy: rand(30, 70), size: rand(1.5, 3), color: Math.random() < 0.25 ? "#ff8a3d" : "#8a7f7a" });
       if (kind === "snow")   Object.assign(a, { vx: rand(-40, -10), vy: rand(25, 60), size: rand(2, 3.5), color: "#ffffff" });
       if (kind === "leaves") Object.assign(a, { vx: rand(-80, -40), vy: rand(20, 45), size: 4, color: choice(["#4fa650", "#2f7a3c", "#8bc34a"]) });
+      if (kind === "bubbles") Object.assign(a, { y: H + 6, vx: rand(-40, -15), vy: rand(-70, -35), size: rand(3, 6), color: "#bff8ff" });   // suben
+      if (kind === "spores")  Object.assign(a, { y: rand(-6, H * 0.6), vx: rand(-50, -20), vy: rand(-10, 15), size: rand(2, 4), color: choice(biome.ambientColors || ["#ffffff"]) });
       this.ambient.push(a);
     }
     for (const a of this.ambient) { a.x += (a.vx + Math.sin(this.time * 2 + a.ph) * (a.kind === "leaves" ? 30 : 8)) * dt; a.y += a.vy * dt; }
-    this.ambient = this.ambient.filter(a => a.y < H + 10 && a.x > -20);
+    this.ambient = this.ambient.filter(a => a.y < H + 10 && a.y > -20 && a.x > -20);
   }
   checkCollisions() {
     const pl = this.player, lane = pl.logicalLane, boxes = pl.hitboxes();

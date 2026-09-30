@@ -16,9 +16,9 @@ Menú: **Jugar** (modo Normal/Fácil y nivel inicial si tienes checkpoints), **T
 | Rugido | E | Botón «Rugido» |
 | Pausa (con acceso al manual) | P | Botón ❚❚ |
 
-- **Niveles:** 10 niveles de 1000 puntos (hasta 10 000), cada uno con su bioma: Desierto, Selva, Volcán, Glaciar, Noche estrellada, Ciudad futurista, Pantano, Corazón del volcán, Caverna de cristal y Fortaleza de MECHA-REX. Después el viaje vuelve a empezar, más difícil.
+- **Niveles:** 10 niveles de 1000 puntos (hasta 10 000), cada uno con su bioma: Desierto, Selva, Volcán, Glaciar, Noche estrellada, Playa tropical, Bosque de setas, Fondo marino, Cementerio encantado y Base lunar. Después el viaje vuelve a empezar, más difícil.
 - **Huevos bonus:** 2 por nivel, 50 monedas cada uno (25 en Fácil). El imán no los atrae.
-- **Bosses:** a mitad de cada nivel (500, 1500… 9500 puntos) llega un boss que te ataca mientras sigues corriendo. Se le hace daño con el pisotón (S al caer sobre su punto débil), el rugido, devolviendo proyectiles («¡PERFECTO!»), el turbo o la trampa del escenario. Si no lo vences en 30 s, se retira sin premio. Escorpión gigante, Serpiente de lianas, Golem de lava, Mamut de hielo, Pterodáctilo sombra y Robot-rex; en los niveles 7–10 vuelven reforzados.
+- **Bosses:** a mitad de cada nivel (500, 1500… 9500 puntos) llega un boss que te ataca mientras sigues corriendo. Se le hace daño con el pisotón (S al caer sobre su punto débil), el rugido, devolviendo proyectiles («¡PERFECTO!»), el turbo o la trampa del escenario. Si no lo vences en 30 s, se retira sin premio. Un boss distinto en cada nivel: Escorpión gigante, Serpiente de lianas, Golem de lava, Mamut de hielo, Pterodáctilo sombra, Rey cangrejo, Sapo gigante, Kraken abisal, Rey de los huesos y Nave nodriza (boss final). Tras el nivel 10 vuelven reforzados.
 - **Tienda:** 16 skins del kit, 3 exclusivas de logros, checkpoints y editor de skins propias (3 ranuras).
 - **Ruleta:** apuestas de 10 a 500 monedas del juego y un giro gratis diario.
 - **Logros:** 42 logros con recompensas en monedas y skins exclusivas.
