@@ -254,6 +254,7 @@
   <div class="card">
     <h1>DINO RUNNER</h1>
     <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus 10 jefes</p>
+    <p class="touch-hint" style="margin:-8px 0 10px">Versión 3 · 10 niveles · un jefe a los 900 puntos de cada nivel</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
@@ -2565,6 +2566,10 @@ class UI {
     drawEggPixels(c, 104, 66, 1.4);
     this.text(c, `Huevos ${g.eggsInLevel(L.level)}/${CONFIG.EGGS_PER_LEVEL}`, 116, 66, 13, "#fff3c4");
     this.text(c, `NIVEL ${L.level} · ${L.biome.name.toUpperCase()}`, W / 2, 20, 14, L.biome.accent, "center");
+    // Cuenta atrás hasta el jefe del nivel
+    const bossId = g.bosses.bossOfLevel(L.level), left = (L.level - 1) * CONFIG.POINTS_PER_LEVEL + CONFIG.BOSS_AT_IN_LEVEL - g.distScore;
+    if (bossId && !g.bosses.active && !g.bosses.cleared.has(L.level) && g.state !== "boss")
+      this.text(c, `JEFE: ${BE.get(bossId).name.toUpperCase()} EN ${Math.max(0, left)} PTS`, W / 2, 40, 12, "#ff9a9a", "center");
     if (DEBUG) this.text(c, "DEBUG · 1–9, 0 nivel · B jefe", W / 2, H - 12, 11, "#ff8a8a", "center");
 
     // Modo Fácil: vidas y aviso
