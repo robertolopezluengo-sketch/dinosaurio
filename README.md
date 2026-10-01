@@ -1,6 +1,6 @@
 # Dino Runner
 
-Endless runner protagonizado por un velociraptor, en un único `index.html` (HTML + CSS + JavaScript puro con `<canvas>`, sin librerías ni conexión a internet). Se abre con doble clic.
+Endless runner protagonizado por un velociraptor, en un único `index.html` (HTML + CSS + JavaScript puro con `<canvas>`, sin librerías ni conexión a internet). Se abre con doble clic. El canvas se dibuja a la resolución real de la pantalla.
 
 El raptor viene del kit **Dino Runner**: `skins-engine.js` (`DinoSkinsEngine`, 16 skins de velociraptor) y sus datos (`const SKINS_DATA = {…}`) van incrustados en `index.html`. Todo lo demás (bosses, obstáculos, fondos, power-ups, huevos e interfaz) es pixel art propio.
 
@@ -18,8 +18,8 @@ Menú: **Jugar** (modo Normal/Fácil y nivel inicial si tienes checkpoints), **T
 
 - **Niveles:** 10 niveles de 1000 puntos (hasta 10 000), cada uno con su bioma: Desierto, Selva, Volcán, Glaciar, Noche estrellada, Playa tropical, Bosque de setas, Fondo marino, Cementerio encantado y Base lunar. Después el viaje vuelve a empezar, más difícil.
 - **Huevos bonus:** 2 por nivel, 50 monedas cada uno (25 en Fácil). El imán no los atrae.
-- **Bosses:** a mitad de cada nivel (500, 1500… 9500 puntos) llega un boss que te ataca mientras sigues corriendo. Se le hace daño con el pisotón (S al caer sobre su punto débil), el rugido, devolviendo proyectiles («¡PERFECTO!»), el turbo o la trampa del escenario. Si no lo vences en 30 s, se retira sin premio. Un boss distinto en cada nivel: Escorpión gigante, Serpiente de lianas, Golem de lava, Mamut de hielo, Pterodáctilo sombra, Rey cangrejo, Sapo gigante, Kraken abisal, Rey de los huesos y Nave nodriza (boss final). Tras el nivel 10 vuelven reforzados.
-- **Tienda:** 16 skins del kit, 3 exclusivas de logros, checkpoints y editor de skins propias (3 ranuras).
+- **Bosses:** a mitad de cada nivel (500, 1500… 9500 puntos) llega un boss que te ataca mientras sigues corriendo (40 s para vencerlo). **Cada uno se vence de una forma distinta**: Escorpión gigante (pisotón), Serpiente de lianas (rugido), Golem de lava (devolverle las rocas), Mamut de hielo (saltar por encima), Pterodáctilo sombra (cabezazo desde abajo), Rey cangrejo (rugido para voltear + pisotón), Sapo gigante (setas explosivas), Kraken abisal (deslizarse contra el tentáculo), Rey de los huesos (romper su escudo y pisarle) y Nave nodriza (boss final con 3 fases). La forma de dañar al boss aparece abajo en la pantalla.
+- **Tienda:** 16 skins del kit, 3 exclusivas de logros, checkpoints y editor de skins propias (3 ranuras). Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un rugido especial con pose animada.
 - **Ruleta:** apuestas de 10 a 500 monedas del juego y un giro gratis diario.
 - **Logros:** 42 logros con recompensas en monedas y skins exclusivas.
 - Todo se guarda en `localStorage` (clave `dinoRunner.save.v2`; las monedas de versiones anteriores se conservan).

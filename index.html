@@ -226,6 +226,7 @@
   .boss-sheet > div:last-child { flex: 1 1 280px; }
   .boss-sheet h4 { margin-top: 0; }
   .stars { color: #ffd23f; letter-spacing: 2px; }
+  .roar-label { color: #ffd23f; }
 </style>
 </head>
 <body>
@@ -247,7 +248,7 @@
   <div class="card">
     <h1>DINO RUNNER</h1>
     <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus bosses</p>
-    <p class="touch-hint" style="margin:-8px 0 10px">Versión 5 · 10 niveles y 10 bosses · un boss a los 500 puntos de cada nivel</p>
+    <p class="touch-hint" style="margin:-8px 0 10px">Versión 6 · 10 bosses, cada uno con su propia forma de vencerlo</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
@@ -267,7 +268,7 @@
       <span><kbd>A</kbd> carril de arriba</span><span><kbd>D</kbd> carril de abajo</span>
       <span><kbd>E</kbd> rugido</span><span><kbd>P</kbd> pausa</span>
     </div>
-    <p class="touch-hint">Bosses: cae con <kbd>S</kbd> sobre su punto débil (pisotón) o rúgeles con <kbd>E</kbd>. Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
+    <p class="touch-hint">Bosses: cada uno se vence de una forma distinta (la verás abajo en la pantalla). Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
     <div class="actions" style="margin:10px 0 0"><button class="btn ghost" id="btnMute">Sonido: SÍ</button></div>
     <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–9 y 0 = nivel 1–10 · B = boss del nivel actual</p>
   </div>
@@ -664,7 +665,7 @@ const CONFIG = {
   BOSS_AT_IN_LEVEL: 500,     // puntos dentro del nivel en los que llega el boss
   BOSS_WARNING_TIME: 2,      // s de aviso "¡PELIGRO!"
   BOSS_ENTER_TIME: 1.5,      // s de animación de entrada (sin ataques)
-  BOSS_MAX_TIME: 30,         // s máximos de pelea; después el boss se retira sin premio
+  BOSS_MAX_TIME: 40,         // s máximos de pelea; después el boss se retira sin premio
   BOSS_HP: 12,               // vida base (cada boss tiene un multiplicador propio)
   BOSS_HP_PER_CYCLE: 0.5,    // +50 % de vida por cada punto de refuerzo
   BOSS_SPEED_PER_CYCLE: 0.2, // +20 % de rapidez de ataque por cada punto de refuerzo
@@ -990,6 +991,16 @@ const BIRD_SPR = [
   ], BIRD_PAL),
 ];
 
+// Utilidades de color (sombreado de bosses y fondos)
+const _shadeCache = {};
+function hexRgb(hex) { const n = parseInt(hex.slice(1, 7), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function shadeHex(hex, f) {   // f > 0 aclara hacia blanco, f < 0 oscurece hacia negro
+  const k = hex + f; if (_shadeCache[k]) return _shadeCache[k];
+  const [r, g, b] = hexRgb(hex), t = f > 0 ? 255 : 0, a = Math.abs(f);
+  return (_shadeCache[k] = "#" + [r, g, b].map(v => Math.round(v + (t - v) * a).toString(16).padStart(2, "0")).join(""));
+}
+const rgbaHex = (hex, a) => { const [r, g, b] = hexRgb(hex); return `rgba(${r},${g},${b},${a})`; };
+
 // =====================================================================
 //  SkinCatalog: skins del kit + exclusivos de logros + diseños propios, todo en el motor DinoSkinsEngine
 // =====================================================================
@@ -1026,16 +1037,87 @@ function drawRaptor(ctx, id, st, jumpY, dead, advance, sc = CONFIG.RAPTOR_SCALE,
   tr.drawEchoes(ctx, ox, sc, st.tick); tr.draw(ctx, sc, st.tick);
   SE.drawSprite(ctx, id, frame, ox, oy, sc, st.tick);
 }
+// =====================================================================
+//  Rugidos especiales: los skins Épicos, Legendarios, Supremos y exclusivos rugen con su propio efecto
+//  y hacen una pose animada (se alzan con un aura). Los diseños heredan el rugido del efecto elegido.
+// =====================================================================
+const ROAR_STYLES = {
+  "amatista":         { name: "Rugido de cristal",   type: "shards",  colors: ["#b07cf0", "#e4d0ff", "#ffffff", "#7e45c9"] },
+  "voltio":           { name: "Rugido eléctrico",    type: "bolt",    colors: ["#41e1ff", "#ffffff", "#1a8fff"] },
+  "fantasma":         { name: "Rugido espectral",    type: "ghost",   colors: ["#e8ecff", "#a9b8ff", "#ffffff"] },
+  "lava-raptor":      { name: "Rugido de magma",     type: "fire",    colors: ["#ffd23f", "#ff7a1a", "#ff3d00"] },
+  "glaciar-eterno":   { name: "Rugido helado",       type: "ice",     colors: ["#ffffff", "#c7f0ff", "#8fd3ff"] },
+  "fenix":            { name: "Rugido del fénix",    type: "fire",    colors: ["#fff3b0", "#ffd23f", "#ff9f1c", "#ff5a1f"], wings: true },
+  "diamante":         { name: "Rugido de diamante",  type: "shards",  colors: ["#ffffff", "#a8f0ff", "#ffd6f5", "#fff6b0"] },
+  "galaxia":          { name: "Rugido cósmico",      type: "stars",   colors: ["#ffffff", "#5ce1ff", "#ff8fd8", "#8a5cff"] },
+  "arcoiris":         { name: "Rugido arcoíris",     type: "rainbow", colors: ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"] },
+  "emperador-solar":  { name: "Rugido solar",        type: "sun",     colors: ["#ffffff", "#ffe680", "#ffc629", "#ff3df2"], flash: true, wings: true },
+  "corona-campeon":   { name: "Rugido del campeón",  type: "sun",     colors: ["#fff3c4", "#ffc629", "#ff3b3b"], flash: true },
+  "rey-jefes":        { name: "Rugido del tirano",   type: "bolt",    colors: ["#e6b8ff", "#c04bff", "#ff5cf0"] },
+  "fosil-legendario": { name: "Rugido de ámbar",     type: "shards",  colors: ["#ffe8a0", "#ffb627", "#ff8c00"] },
+};
+function roarStyle(id) {
+  const s = SE.get(id); if (!s) return null;
+  return ROAR_STYLES[id] || (s.custom && ROAR_STYLES[s.fxFrom]) || null;
+}
+// Onda del rugido con el estilo del skin. (ox, oy) = boca del raptor; r = radio actual; coordenadas locales (y hacia abajo)
+function drawRoarFx(c, style, ox, oy, r, alpha, t) {
+  const C = style ? style.colors : ["#ffd2a0", "#ffe0c0", "#fff0e0"];
+  for (let k = 0; k < (style && style.type === "rainbow" ? 6 : 3); k++) {
+    const rr = r - k * (style && style.type === "rainbow" ? 8 : 26); if (rr <= 4) continue;
+    c.strokeStyle = style ? rgbaHex(C[k % C.length], alpha * (0.95 - k * 0.12)) : `rgba(255,${200 + k * 20},${140 + k * 40},${alpha * (0.9 - k * 0.25)})`;
+    c.lineWidth = style ? (style.type === "sun" ? 9 - k : 6 - k * 0.6) : 5 - k;
+    c.beginPath(); c.arc(ox, oy, rr, -0.9, 0.9); c.stroke();
+  }
+  if (!style) return;
+  const n = 9, R = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), w, h); };
+  c.globalAlpha = alpha;
+  for (let i = 0; i < n; i++) {
+    const a = -0.85 + 1.7 * i / (n - 1), px = ox + Math.cos(a) * r, py = oy + Math.sin(a) * r, col = C[(i + Math.floor(t * 10)) % C.length];
+    switch (style.type) {
+      case "fire": R(px - 4, py - 6 - (t * 60 + i * 7) % 14, 8, 8, col); R(px - 2, py - 14 - (t * 80 + i * 5) % 16, 4, 4, C[0]); break;
+      case "ice": R(px - 2, py - 8, 4, 16, col); R(px - 8, py - 2, 16, 4, col); break;
+      case "shards": c.save(); c.translate(px, py); c.rotate(a + t * 6); R(-3, -8, 6, 16, col); c.restore(); break;
+      case "stars": R(px - 1, py - 6, 3, 13, col); R(px - 6, py - 1, 13, 3, col); break;
+      case "bolt": if (i % 2 === 0) { c.strokeStyle = col; c.lineWidth = 3; c.beginPath(); c.moveTo(px, py - 14); c.lineTo(px + 6, py - 4); c.lineTo(px - 4, py + 2); c.lineTo(px + 4, py + 14); c.stroke(); } break;
+      case "ghost": c.globalAlpha = alpha * 0.5; R(px - 6, py - 6, 12, 12, col); c.globalAlpha = alpha; break;
+      case "sun": R(px - 4, py - 4, 8, 8, col); c.strokeStyle = rgbaHex(C[1], alpha * 0.6); c.lineWidth = 2; c.beginPath(); c.moveTo(ox, oy); c.lineTo(px, py); c.stroke(); break;
+      case "rainbow": R(px - 3, py - 3, 6, 6, col); break;
+    }
+  }
+  c.globalAlpha = 1;
+}
+// Pose del rugido: el raptor se alza y aparece un aura con los colores del skin (k = 0…1 del tiempo de pose)
+function roarPose(c, style, k, cx, cy, sc = 1) {
+  const s = Math.sin(Math.min(1, k) * Math.PI);
+  if (style) {
+    const g = c.createRadialGradient(cx, cy, 4 * sc, cx, cy, 70 * sc);
+    g.addColorStop(0, rgbaHex(style.colors[1] || style.colors[0], 0.55 * s)); g.addColorStop(1, rgbaHex(style.colors[0], 0));
+    c.fillStyle = g; c.fillRect(cx - 80 * sc, cy - 80 * sc, 160 * sc, 160 * sc);
+    if (style.wings) {   // alas de luz (Fénix, Emperador Solar)
+      c.fillStyle = rgbaHex(style.colors[2] || style.colors[1], 0.7 * s);
+      for (let i = 0; i < 4; i++) { c.fillRect(cx - (14 + i * 12) * sc, cy - (26 + i * 9) * s * sc, 10 * sc, 8 * sc); c.fillRect(cx - (8 + i * 12) * sc, cy - (14 + i * 7) * s * sc, 10 * sc, 6 * sc); }
+    }
+  }
+  return s;   // el que llama inclina y escala al raptor con este valor
+}
 // Vista previa animada (tienda, editor, manual): fondo del skin + suelo + raptor corriendo
+// Los skins con rugido especial rugen cada pocos segundos en la vista previa.
 function drawSkinPreview(c, id, st, w, h, sc, jumpY = 0) {
   const s = SE.get(id); if (!s) return;
   c.fillStyle = s.bg || "#2f3658"; c.fillRect(0, 0, w, h);
-  const gy = h - 10;
+  const gy = h - 10, style = roarStyle(id), rk = (st.tick % 46) / 8;   // ~0,7 s de rugido cada ~4 s
   c.fillStyle = s.ground || "#3a4166"; c.fillRect(0, gy, w, 3);
   c.globalAlpha = 0.35; for (let i = 0; i < 5; i++) c.fillRect(mod(i * 31 - st.tick * 6, w + 10) - 10, gy + 5, 6, 2); c.globalAlpha = 1;
-  c.save(); c.translate(Math.round((w - SE.W * sc) / 2) - sc * 2, gy);
+  const x0 = Math.round((w - SE.W * sc) / 2) - sc * 2, roaring = style && rk < 1 && !jumpY;
+  c.save();
+  if (roaring) {
+    const k = roarPose(c, style, rk, x0 + 12 * sc, gy - 10 * sc, sc / 3);
+    c.translate(x0 + 12 * sc, gy); c.rotate(-0.16 * k); c.scale(1 + 0.1 * k, 1 + 0.1 * k); c.translate(-12 * sc, 0);
+  } else c.translate(x0, gy);
   drawRaptor(c, id, st, jumpY, false, st.advance, sc, 0, -1);
   c.restore();
+  if (roaring) drawRoarFx(c, style, x0 + 22 * sc, gy - 14 * sc, rk * w * 0.55, 1 - rk * 0.6, st.tick * 0.09);
   st.advance = false;
 }
 // Reloj de ticks compartido por las vistas previas
@@ -1145,6 +1227,14 @@ class Sfx {
   egg()         { [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, null, 0.09, "triangle", 0.07, i * 0.05)); this.noise(0.12, 0.1, 5000, "highpass", 0.18); }
   victory()     { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => this.tone(f, null, 0.15, "square", 0.05, i * 0.1)); this.tone(1568, null, 0.5, "triangle", 0.07, 0.72); }
   defeat()      { [392, 330, 262, 196].forEach((f, i) => this.tone(f, f * 0.97, 0.22, "square", 0.05, 0.15 + i * 0.18)); }
+  roarSpecial(type) {   // capa extra de sonido para los rugidos especiales
+    if (type === "fire") this.noise(0.6, 0.18, 400);
+    else if (type === "ice" || type === "shards") [1568, 2093, 2637].forEach((f, i) => this.tone(f, null, 0.12, "triangle", 0.04, 0.05 + i * 0.06));
+    else if (type === "bolt") { this.noise(0.3, 0.2, 5000, "highpass"); this.tone(1200, 200, 0.3, "sawtooth", 0.04); }
+    else if (type === "stars" || type === "rainbow") [1047, 1319, 1568, 2093].forEach((f, i) => this.tone(f, null, 0.1, "square", 0.03, 0.05 + i * 0.05));
+    else if (type === "ghost") this.tone(600, 200, 0.7, "sine", 0.06);
+    else if (type === "sun") { [523, 784, 1047, 1568].forEach((f, i) => this.tone(f, null, 0.25, "triangle", 0.05, i * 0.04)); this.noise(0.5, 0.12, 6000, "highpass"); }
+  }
 
   // ---- Música en bucle (tranquila en carrera, intensa con los bosses) ----
   setMusic(mode) {
@@ -1263,7 +1353,7 @@ class SaveManager {
 // Un diseño del editor convertido al formato de SKINS_DATA
 function designSkin(d, slot) {
   const s = { id: "design-" + slot, name: d.name || `Diseño ${slot + 1}`, rarity: "Diseño", price: 0, sprite: d.sprite,
-    pal: Object.assign({}, d.pal), bg: d.bg, ground: d.ground, fx: d.fx ? JSON.parse(JSON.stringify(d.fx)) : undefined, custom: true };
+    pal: Object.assign({}, d.pal), bg: d.bg, ground: d.ground, fx: d.fx ? JSON.parse(JSON.stringify(d.fx)) : undefined, fxFrom: d.fxFrom || "", custom: true };
   const src = SKINS_DATA.skins.find(k => k.sprite === d.sprite && k.run);   // el sprite Supremo tiene un ciclo de carrera propio
   if (src) s.run = src.run.slice();
   return s;
@@ -1399,6 +1489,11 @@ class Player {
       SE.drawSprite(ctx, id, frame, -10, oy, S, this.skinState.tick, { alpha: 0.12 });
     }
     if (this.sliding && !dead) { ctx.translate(-6, 0); ctx.scale(1.25, 0.5); }   // agachado: el raptor se aplasta
+    else if (g.roarAnim > 0 && !dead) {   // pose de rugido (con aura en los skins de rugido especial)
+      const k = roarPose(ctx, g.roarWave && g.roarWave.style, 1 - g.roarAnim / 0.6, 40, -(this.y + 34), 1);
+      const tilt = g.roarWave && g.roarWave.style ? 0.2 : 0.08;
+      ctx.translate(30, -this.y); ctx.rotate(-tilt * k); ctx.scale(1 + 0.08 * k, 1 + 0.08 * k); ctx.translate(-30, this.y);
+    }
     drawRaptor(ctx, id, this.skinState, jumpY, dead, adv);
     ctx.restore();
     const cy = -(this.y + (this.sliding ? 14 : 30));
@@ -1960,7 +2055,15 @@ const LASER = { low: { y: 0, h: 22 }, mid: { y: 40, h: 22 }, high: { y: 84, h: 2
 function toScreen(laneT, x, y) { const p = laneProj(laneT); return { x: VANISH_X + (x - VANISH_X) * p.s, y: p.gy - y * p.s, s: p.s }; }
 // Rectángulo en coordenadas de carril (y = altura sobre el suelo)
 function B(c, col, x, y, w, h) { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(-y - h), Math.round(w), Math.round(h)); }
-function BO(c, out, col, x, y, w, h, o = 3) { B(c, out, x - o, y - o, w + 2 * o, h + 2 * o); B(c, col, x, y, w, h); }
+// Bloque con contorno y volumen: luz arriba, sombra abajo y en el lado derecho
+function BO(c, out, col, x, y, w, h, o = 3) {
+  B(c, out, x - o, y - o, w + 2 * o, h + 2 * o); B(c, col, x, y, w, h);
+  if (w < 8 || h < 8 || col[0] !== "#") return;
+  const hh = Math.max(2, Math.round(h * 0.16)), ww = Math.max(2, Math.round(w * 0.1));
+  B(c, shadeHex(col, -0.22), x + w - ww, y, ww, h);
+  B(c, shadeHex(col, -0.3), x, y, w, hh);
+  B(c, shadeHex(col, 0.28), x, y + h - hh, w - ww, hh);
+}
 function bezier(a, b, ctl, u) {
   return { x: (1 - u) * (1 - u) * a.x + 2 * (1 - u) * u * ctl.x + u * u * b.x, y: (1 - u) * (1 - u) * a.y + 2 * (1 - u) * u * ctl.y + u * u * b.y };
 }
@@ -2028,7 +2131,7 @@ class Hazard {
     if (this.reflected) {   // vuela de vuelta hacia el boss
       const tg = boss.target(), dx = tg.x - this.x, dy = tg.y - this.y, d = Math.hypot(dx, dy) || 1, step = 1100 * dt;
       this.laneT = lerp(this.laneT, tg.laneT, Math.min(1, dt * 6));
-      if (d <= step + 12) { this.dead = true; boss.damage(CONFIG.BOSS_DMG_REFLECT, "reflect"); return; }
+      if (d <= step + 12) { this.dead = true; boss.onReflectHit(); return; }
       this.x += dx / d * step; this.y += dy / d * step;
       return;
     }
@@ -2056,7 +2159,24 @@ class Boss {
     this.vuln = 0; this.flash = 0; this.limb = null; this.stomped = false; this.turboCd = 0;
     this.trapTimes = CONFIG.BOSS_TRAP_TIMES.slice();
     this.colors = ["#ffffff"]; this.trapKind = "quicksand"; this.trapColor = "#ffffff";
+    // Reglas de daño: cada boss solo se puede dañar de ciertas formas (ver setRules en cada clase)
+    this.rules = { stomp: true, roar: true, reflect: true, trap: true, turbo: true };
+    this.dmg = { stomp: CONFIG.BOSS_DMG_STOMP, roar: CONFIG.BOSS_DMG_ROAR, reflect: CONFIG.BOSS_DMG_REFLECT, trap: CONFIG.BOSS_DMG_TRAP, turbo: CONFIG.BOSS_DMG_TURBO };
+    this.limbHurts = false;                      // pisar el punto débil hace daño al jugador (pinchos, lava…)
+    this.reflectDist = CONFIG.REFLECT_DISTANCE;  // distancia para devolver un proyectil con el rugido
+    this.roarCdMult = 1;                         // recarga del rugido durante esta pelea
+    this.vulnMult = 1;                           // duración de la ventana de vulnerabilidad
+    this.maxTime = CONFIG.BOSS_MAX_TIME;
+    this.hint = "";
   }
+  setRules(r, hint) { Object.assign(this.rules, r); if (!this.rules.trap) this.trapTimes = []; if (hint) this.hint = hint; }
+  hintText() { return this.hint; }
+  canStomp() { return this.rules.stomp; }
+  onReflectHit() { if (this.rules.reflect) this.damage(this.dmg.reflect, "reflect"); else this.game.floatText(0, this.target().x, this.target().y + 40, "¡NO LE AFECTA!", "#cccccc", 18); }
+  roarHitLimb(L) { if (this.rules.roar) this.damage(this.dmg.roar, "roar", { laneT: L.lane, x: L.x + L.w / 2, y: L.y + L.h }); }
+  extraCollide() { return false; }   // colisiones propias de cada boss (devuelve true si el jugador muere)
+  onLimbTouch() { return false; }    // contacto propio con el punto débil (true = ya gestionado)
+  say(text, color = "#ffd23f", size = 22, laneT = this.p.logicalLane, x = this.p.x + 40, y = this.p.y + 100) { this.game.floatText(laneT, x, y, text, color, size); }
   get p() { return this.game.player; }
   after(d, fn) { this.timers.push({ t: d, fn }); }
   tele(d) { const m = this.game.mode.bossTeleMult; return Math.max(CONFIG.BOSS_TELEGRAPH_MIN * m, d * CONFIG.BOSS_TELEGRAPH * m / this.speedMul); }
@@ -2067,7 +2187,7 @@ class Boss {
   // Deja el punto débil apoyado en la columna del dino y abre la ventana de vulnerabilidad
   rest(lane, box, extra = 0, onEnd) {
     if (this.state !== "fight") return;
-    const vt = this.game.mode.bossVulnTime;
+    const vt = this.game.mode.bossVulnTime * this.vulnMult;
     this.limb = { lane, ...box }; this.vuln = vt; this.stomped = false;
     this.after(vt, () => { this.limb = null; this.vuln = 0; if (onEnd) onEnd(); });
     this.after(vt + extra + CONFIG.BOSS_ATTACK_GAP / this.speedMul, () => { if (this.state === "fight") this.attack(); });
@@ -2101,7 +2221,7 @@ class Boss {
     const sp = this.game.effectiveSpeed;
     for (const tr of this.traps) { tr.t += dt; tr.x -= sp * dt; }
     this.traps = this.traps.filter(tr => !tr.used && tr.x > -120);
-    for (const f of this.fx) { f.t += dt; if (!f.hit && f.t >= 0.45) { f.hit = true; this.game.addShake(0.3, 8); this.damage(CONFIG.BOSS_DMG_TRAP, "trap"); } }
+    for (const f of this.fx) { f.t += dt; if (!f.hit && f.t >= 0.45) { f.hit = true; this.game.addShake(0.3, 8); this.damage(this.dmg.trap, "trap"); } }
     this.fx = this.fx.filter(f => f.t < 0.9);
 
     if (this.state === "enter") {
@@ -2112,7 +2232,7 @@ class Boss {
       if (this.trapTimes.length && this.fightT >= this.trapTimes[0]) {
         this.trapTimes.shift(); this.traps.push({ lane: randInt(0, 1), x: 1000, w: 54, t: 0, used: false });
       }
-      if (this.fightT >= CONFIG.BOSS_MAX_TIME) this.retreat();
+      if (this.fightT >= this.maxTime) this.retreat();
     } else if (this.state === "leave") {
       this.away = easeInOut(clamp(this.stateT / 1.5, 0, 1));
       if (this.stateT >= 1.6) this.done = true;
@@ -2135,7 +2255,7 @@ class Boss {
     if (this.hp <= 0) this.defeat();
     return true;
   }
-  turboHit(at) { if (this.turboCd > 0) return; this.turboCd = 1; this.damage(CONFIG.BOSS_DMG_TURBO, "turbo", at); }
+  turboHit(at) { if (this.turboCd > 0 || !this.rules.turbo) return; this.turboCd = 1; this.damage(this.dmg.turbo, "turbo", at); }
   breakHazard(h) { h.dead = true; this.game.burst(h.lane, h.x + h.w / 2, h.y + h.h / 2, this.colors, 8); this.game.sfx.smash(); }
   triggerTrap(tr) {
     if (tr.used || this.state !== "fight") return;
@@ -2147,6 +2267,7 @@ class Boss {
   collide(pl) {
     const g = this.game, lane = pl.logicalLane, boxes = pl.hitboxes(), turbo = g.effects.turbo > 0;
     const hits = b => boxes.some(a => overlap(a, b));
+    if (this.extraCollide(pl, lane, boxes, hits)) return true;
     for (const h of this.hazards) {
       if (h.dead || h.reflected || !h.harmful || h.lane !== lane || !hits(h.box())) continue;
       if (turbo) { if (h.isBody) this.turboHit({ laneT: lane, x: h.x + h.w / 2, y: h.y + h.h / 2 }); else if (h.projectile || h.destructible) this.breakHazard(h); continue; }
@@ -2157,13 +2278,17 @@ class Boss {
     if (L && L.lane === lane && hits(L)) {
       const at = { laneT: lane, x: L.x + L.w / 2, y: L.y + L.h };
       if (turbo) this.turboHit(at);
+      else if (this.onLimbTouch(pl, at, L)) { /* regla propia del boss */ }
       else if (pl.vy < 0 && pl.prevY >= L.y + L.h - 10) {       // cae desde arriba sobre el punto débil
-        if (pl.fastFall && !this.stomped) {
-          this.stomped = true; g.sfx.stomp();
-          g.floatText(lane, pl.x + 30, pl.y + 90, "¡PISOTÓN!", "#ffd23f", 22);
-          this.damage(CONFIG.BOSS_DMG_STOMP, "stomp", at);
+        if (this.limbHurts) { pl.y = L.y + L.h; pl.bounce(); g.floatText(lane, pl.x + 30, pl.y + 90, "¡AY!", "#ff6b6b", 22); if (g.hitPlayer()) return true; }
+        else {
+          if (pl.fastFall && !this.stomped) {
+            this.stomped = true;
+            if (this.canStomp()) { g.sfx.stomp(); g.floatText(lane, pl.x + 30, pl.y + 90, "¡PISOTÓN!", "#ffd23f", 22); this.damage(this.dmg.stomp, "stomp", at); }
+            else { g.sfx.denied(); g.floatText(lane, pl.x + 30, pl.y + 90, "¡CLANG!", "#cccccc", 20); }
+          }
+          pl.y = L.y + L.h; pl.bounce();
         }
-        pl.y = L.y + L.h; pl.bounce();
       } else if (g.hitPlayer()) return true;                   // tocar otra parte del boss
     }
     for (const tr of this.traps) if (!tr.used && tr.lane === lane && pl.x + 50 > tr.x && pl.x + 10 < tr.x + tr.w) this.triggerTrap(tr);
@@ -2171,11 +2296,12 @@ class Boss {
   }
   // Al empezar un rugido: devuelve los proyectiles que están a punto de alcanzar al dino
   onRoar(lane) {
+    if (!this.rules.reflect) return;
     const pl = this.p, front = pl.x + 56;
     for (const h of this.hazards) {
       if (!h.reflectable || h.reflected || h.dead || h.lane !== lane) continue;
       const dx = h.x - front;
-      if (dx > -h.w - 30 && dx < CONFIG.REFLECT_DISTANCE && h.y < pl.y + 100) {
+      if (dx > -h.w - 30 && dx < this.reflectDist && h.y < pl.y + 130) {
         h.reflected = true; h.harmful = false; this.game.sfx.perfect();
         this.game.floatText(lane, pl.x + 70, pl.y + 100, "¡PERFECTO!", "#7df9ff", 24);
       }
@@ -2187,8 +2313,9 @@ class Boss {
       if (!h.dead && !h.reflected && h.destructible && h.lane === w.lane && h.x < x1 && h.x + h.w > x0) this.breakHazard(h);
     const L = this.limb;
     if (!w.bossHit && this.vuln > 0 && L && L.lane === w.lane && L.x < x1 && L.x + L.w > x0) {
-      w.bossHit = true; this.damage(CONFIG.BOSS_DMG_ROAR, "roar", { laneT: L.lane, x: L.x + L.w / 2, y: L.y + L.h });
+      w.bossHit = true; this.roarHitLimb(L);
     }
+    if (!this.rules.trap) return;
     for (const tr of this.traps) if (!tr.used && tr.lane === w.lane && tr.x < x1 && tr.x + tr.w > x0) this.triggerTrap(tr);
   }
 
@@ -2281,6 +2408,15 @@ class Boss {
           c.fillStyle = "#e8f7ff"; c.beginPath(); c.moveTo(T.x - 12, y - 76); c.lineTo(T.x + 4, y - 76); c.lineTo(T.x - 2, y); c.closePath(); c.fill();
           break;
         }
+        case "spore": {   // seta explosiva
+          for (let i = 0; i < 10; i++) {
+            const a = i / 10 * Math.PI * 2, r = 20 + k * 120;
+            c.fillStyle = i % 2 ? "#ff7ad0" : "#7df9ff"; c.globalAlpha = 1 - k;
+            c.fillRect(T.x + Math.cos(a) * r - 6, T.y + Math.sin(a) * r * 0.6 - 6, 12, 12);
+          }
+          c.globalAlpha = 1; c.fillStyle = "#d23a4a"; c.beginPath(); c.ellipse(G.x, G.y - 30 * Math.min(1, k * 3), 50, 26, 0, Math.PI, 0); c.fill();
+          break;
+        }
         case "meteor": {
           const u = Math.min(1, k / 0.5), x = lerp(T.x + 320, T.x, u), y = lerp(-60, T.y, u);
           for (let i = 1; i < 6; i++) { c.globalAlpha = 0.5 - i * 0.08; c.fillStyle = "#ffb000"; c.fillRect(x + i * 18 - 8, y - i * 11 - 8, 16, 16); }
@@ -2315,6 +2451,7 @@ class ScorpionBoss extends Boss {
     super(game, cycle, BOSS_NAMES[0], 1);
     this.colors = ["#b5542a", "#5a2210", "#e07a3f"]; this.trapKind = "quicksand"; this.trapColor = "#d9a35e";
     this.bx = -380; this.tip = { laneT: 0.5, x: 170, y: 200 }; this.tipTo = { ...this.tip }; this.idleTip = true; this.fast = false;
+    this.setRules({ roar: false, reflect: false, trap: false }, "PISOTÓN: cuando clave el aguijón, salta y cae encima con S");
   }
   target() { return { lane: 1, laneT: 0.5, x: this.bx + 100, y: 40 }; }
   updateBody(dt) {
@@ -2375,6 +2512,8 @@ class SerpentBoss extends Boss {
     super(game, cycle, BOSS_NAMES[1], 1);
     this.colors = ["#3f8f3a", "#1f4a1c", "#8bdc3a"]; this.trapKind = "log"; this.trapColor = "#c89a5c";
     this.head = { laneT: 0.5, x: 420, y: 480 }; this.headTo = { ...this.head }; this.idle = true; this.fast = false;
+    this.setRules({ stomp: false, reflect: false, trap: false }, "RUGIDO: ponte en su carril cuando apoye la cabeza y ruge (E). ¡Pisarla pincha!");
+    this.limbHurts = true; this.dmg.roar = 2; this.roarCdMult = 0.45;
   }
   target() { return { lane: this.head.laneT < 0.5 ? 0 : 1, laneT: this.head.laneT, x: this.head.x, y: this.head.y + 20 }; }
   updateBody(dt) {
@@ -2397,8 +2536,8 @@ class SerpentBoss extends Boss {
       if (!rest) { this.fast = false; this.headTo = { laneT: lane, x: 240, y: 200 }; return; }
       // Descansa en el carril donde NO está el dino (si se deslizó debajo, no le cae encima)
       const L = 1 - this.p.lane;
-      this.headTo = { laneT: L, x: 160, y: 2 };
-      this.rest(L, { x: COL_X, y: 0, w: COL_W, h: 32 }, 0, () => { this.idle = true; this.fast = false; });
+      this.headTo = { laneT: L, x: 330, y: 2 };   // un poco por delante: ponte en su carril y ruge
+      this.rest(L, { x: 300, y: 0, w: 62, h: 32 }, 0, () => { this.idle = true; this.fast = false; });
     });
   }
   double() {
@@ -2428,6 +2567,7 @@ class SerpentBoss extends Boss {
     B(c, "#5aa845", x - 26, y + 22, 54, 5); B(c, "#8bdc3a", x - 10, y + 4, 30, 3);
     B(c, "#ffe14d", x - 18, y + 14, 8, 7); B(c, "#15161c", x - 15, y + 14, 2, 7);
     B(c, "#ffffff", x - 28, y - 4, 4, 6); B(c, "#ffffff", x - 16, y - 4, 4, 6);
+    for (let i = 0; i < 6; i++) { B(c, "#1f4a1c", x - 24 + i * 10, y + 30, 6, 6); B(c, "#e8ffb0", x - 23 + i * 10, y + 34, 4, 6); }   // pinchos
     if (Math.floor(this.t * 6) % 2) { B(c, "#e53935", x - 46, y + 8, 16, 3); B(c, "#e53935", x - 50, y + 5, 4, 9); }
     c.restore();
   }
@@ -2442,6 +2582,8 @@ class GolemBoss extends Boss {
     super(game, cycle, BOSS_NAMES[2], 1.15);
     this.colors = ["#4a3430", "#ff6a1a", "#1a1010"]; this.trapKind = "geyser"; this.trapColor = "#ff6a1a";
     this.gx = 1060; this.fist = { laneT: 0, x: 1040, y: 60 }; this.fistTo = { ...this.fist }; this.idle = true; this.fast = false;
+    this.setRules({ stomp: false, roar: false, trap: false }, "DEVUÉLVELE LAS ROCAS: ruge (E) justo antes de que caigan. ¡Su puño quema!");
+    this.limbHurts = true; this.dmg.reflect = 3; this.reflectDist = 110; this.roarCdMult = 0.4;
   }
   target() { return { lane: 0, laneT: 0, x: this.gx + 65, y: 100 }; }
   updateBody(dt) {
@@ -2451,7 +2593,7 @@ class GolemBoss extends Boss {
     for (const key of ["laneT", "x", "y"]) this.fist[key] = lerp(this.fist[key], this.fistTo[key], k);
   }
   clearAttacks() { super.clearAttacks(); this.idle = true; this.fast = false; }
-  attack() { if (Math.random() < 0.5) this.toss(); else this.slam(this.p.lane); }
+  attack() { if (Math.random() < 0.72) this.toss(); else this.slam(this.p.lane); }
   toss() {
     const n = 2 + Math.min(2, this.cycle), gap = 0.6 / this.speedMul, T = 1.15 / Math.sqrt(this.speedMul);
     for (let i = 0; i < n; i++) this.after(i * gap, () => {
@@ -2504,7 +2646,19 @@ class MammothBoss extends Boss {
   constructor(game, cycle) {
     super(game, cycle, BOSS_NAMES[3], 1.1);
     this.colors = ["#a9cde6", "#2c4a63", "#e8f7ff"]; this.trapKind = "stalactite"; this.trapColor = "#bfe8ff";
-    this.mx = 1150; this.laneT = 1; this.laneTo = 1; this.mode = "idle"; this.hz = null;
+    this.mx = 1150; this.laneT = 1; this.laneTo = 1; this.mode = "idle"; this.hz = null; this.jumped = false;
+    this.setRules({ stomp: false, roar: false, reflect: false, trap: false }, "SALTA POR ENCIMA: quédate en su carril y sáltale cuando embista");
+  }
+  // Daño al pasar por encima de su lomo mientras embiste por tu carril
+  extraCollide(pl, lane) {
+    if (this.mode !== "charge" || this.jumped || lane !== this.chargeLane) return false;
+    const bx = this.mx, px = pl.x + 24;
+    if (px + 27 > bx && px < bx + 150 && pl.y >= 70) {
+      this.jumped = true; this.game.sfx.stomp();
+      this.say("¡SALTO!", "#7df9ff");
+      this.damage(3, "jump", { laneT: lane, x: bx + 75, y: 84 });
+    }
+    return false;
   }
   target() { return { lane: this.laneT < 0.5 ? 0 : 1, laneT: this.laneT, x: this.mx + 75, y: 50 }; }
   clearAttacks() { super.clearAttacks(); this.mode = "idle"; }
@@ -2524,10 +2678,10 @@ class MammothBoss extends Boss {
       if (this.mx >= 700) { this.mx = 700; this.mode = "idle"; }
     }
   }
-  attack() { if (Math.random() < 0.6) this.charge(this.p.lane); else this.shards(); }
+  attack() { if (Math.random() < 0.8) this.charge(this.p.lane); else this.shards(); }
   charge(lane) {   // cambiar de carril o saltar por encima; al acabar queda aturdido
     const d = this.tele(0.95);
-    this.laneTo = lane; this.chargeLane = lane; this.mode = "prep";
+    this.laneTo = lane; this.chargeLane = lane; this.mode = "prep"; this.jumped = false;
     this.warn(lane, "arrow", d, { y: 40 }); this.game.sfx.stomp();
     this.after(d, () => {
       this.mode = "charge";
@@ -2571,7 +2725,18 @@ class ShadowPteroBoss extends Boss {
   constructor(game, cycle) {
     super(game, cycle, BOSS_NAMES[4], 1);
     this.colors = ["#140a24", "#6a3aa0", "#ff3355"]; this.trapKind = "meteor"; this.trapColor = "#ff8a2a";
-    this.a = 0; this.mode = "sky"; this.k = 0; this.wp = { laneT: 1, x: 0, y: 0 };
+    this.a = 0; this.mode = "sky"; this.k = 0; this.wp = { laneT: 1, x: 0, y: 0 }; this.glideHit = false;
+    this.setRules({ stomp: false, roar: false, reflect: false, trap: false }, "CABEZAZO: cuando pase rasante brillando, salta y golpéale desde abajo");
+  }
+  // Vuelo rasante: si el raptor le alcanza desde abajo, recibe daño
+  extraCollide(pl, lane, boxes) {
+    if (this.mode !== "glide" || this.glideHit || lane !== Math.round(this.wp.laneT)) return false;
+    const a = boxes[0], b = { x: this.wp.x + 5, y: this.wp.y, w: 92, h: 34 };
+    if (overlap(a, b) && a.y < b.y) {
+      this.glideHit = true; this.game.sfx.stomp(); this.say("¡CABEZAZO!", "#ffd23f");
+      this.damage(3, "headbutt", { laneT: lane, x: b.x + 45, y: b.y });
+    }
+    return false;
   }
   skyPos() { return { x: 560 + Math.cos(this.a) * 170, y: 95 + Math.sin(this.a) * 35 - this.away * 280 + (this.state === "defeat" ? this.stateT * 160 : 0) }; }
   target() {
@@ -2588,6 +2753,9 @@ class ShadowPteroBoss extends Boss {
       if (k < 0.6) { const u = k / 0.6; wp.x = 700 - 580 * u; wp.y = 260 - (260 - h) * (1 - (1 - u) * (1 - u)); }
       else { const u = (k - 0.6) / 0.4; wp.x = 120 - 420 * u; wp.y = h + 120 * u * u; }
       if (k >= 1) this.mode = "sky";
+    } else if (this.mode === "glide") {
+      wp.x -= 520 * this.speedMul * dt; wp.y = this.glideHit ? wp.y + 260 * dt : 100 + Math.sin(this.t * 6) * 4;
+      if (wp.x < -260) this.mode = "sky";
     } else if (this.mode === "land") {
       this.k = Math.min(1, this.k + dt / 0.35);
       wp.x = lerp(400, 104, this.k); wp.y = lerp(200, 0, this.k);
@@ -2597,10 +2765,16 @@ class ShadowPteroBoss extends Boss {
     }
   }
   attack() {
-    const r = Math.random(), perch = () => this.perch(1 - this.p.lane);
-    if (r < 0.5) this.dive(this.p.lane, choice(["low", "mid"]), perch);
-    else if (r < 0.75) this.feathers();
-    else this.dive(this.p.lane, "low", () => this.dive(this.p.lane, "mid", perch));
+    const r = Math.random(), glide = () => this.glide();
+    if (r < 0.4) this.dive(this.p.lane, choice(["low", "mid"]), glide);
+    else if (r < 0.7) this.feathers();
+    else this.dive(this.p.lane, "low", () => this.dive(this.p.lane, "mid", glide));
+  }
+  glide() {   // pasa rasante (no hace daño): es el momento de golpearle desde abajo
+    const lane = this.p.lane, d = this.tele(0.9), dur = 1300 / (520 * this.speedMul);
+    this.warn(lane, "arrow", d, { y: 100 }); this.game.sfx.screech();
+    this.after(d, () => { this.mode = "glide"; this.glideHit = false; this.wp = { laneT: lane, x: 950, y: 100 }; });
+    this.after(d + dur + CONFIG.BOSS_ATTACK_GAP / this.speedMul, () => { if (this.mode === "glide") this.mode = "sky"; if (this.state === "fight") this.attack(); });
   }
   dive(lane, h, then) {   // bajo: saltar · medio: deslizarse · o cambiar de carril
     const d = this.tele(0.9), dur = 0.8 / this.speedMul;
@@ -2630,7 +2804,7 @@ class ShadowPteroBoss extends Boss {
       this.after(d, () => this.addHazard({ lane, x: 900, y: hy, w: 34, h: 12, vx: -700 * Math.sqrt(this.speedMul),
         projectile: true, reflectable: true, destructible: true, draw: drawFeatherHaz }));
     });
-    this.after(n * gap + d + 1.2, () => this.perch(1 - this.p.lane));
+    this.after(n * gap + d + 1.2, () => this.glide());
   }
   drawSky(c) {
     if (this.mode !== "sky") return;
@@ -2643,12 +2817,17 @@ class ShadowPteroBoss extends Boss {
   drawBody(c, lane) {
     if (this.mode === "sky" || (this.wp.laneT < 0.5 ? 0 : 1) !== lane) return;
     c.save(); applyLane(c, this.wp.laneT);
+    if (this.mode === "glide" && !this.glideHit) {   // brillo: está a tiro
+      c.fillStyle = `rgba(255,225,77,${0.25 + 0.15 * Math.sin(this.t * 12)})`;
+      c.beginPath(); c.ellipse(this.wp.x + 50, -(this.wp.y + 18), 80, 30, 0, 0, Math.PI * 2); c.fill();
+    }
     drawPteroShadow(c, this.wp.x + 50, -(this.wp.y + 20), 1.15, Math.sin(this.t * 10), this.mode === "land" && this.k >= 1);
     c.restore();
   }
 }
 
 const BOSS_CLASSES = [ScorpionBoss, SerpentBoss, GolemBoss, MammothBoss, ShadowPteroBoss];
+
 
 
 // =====================================================================
@@ -2701,8 +2880,18 @@ class CrabBoss extends Boss {
   constructor(game, cycle) {
     super(game, cycle, BOSS_NAMES[5], 1.15);
     this.colors = ["#e0452e", "#7a1a10", "#ffb08a"]; this.trapKind = "log"; this.trapColor = "#c89a5c";
-    this.cx = 1060; this.claw = { laneT: 0, x: 1040, y: 60 }; this.clawTo = { ...this.claw }; this.idle = true; this.fast = false;
+    this.cx = 1060; this.claw = { laneT: 0, x: 1040, y: 60 }; this.clawTo = { ...this.claw }; this.idle = true; this.fast = false; this.flipped = false;
+    this.setRules({ reflect: false, trap: false }, "VOLTEA Y PISA: ruge (E) cuando apoye la pinza para voltearla y luego cae sobre ella con S");
+    this.vulnMult = 2; this.roarCdMult = 0.6;
   }
+  canStomp() { return this.flipped; }
+  // La pinza es enorme: el rugido la voltea desde cualquier carril
+  roarWave(w, x0, x1) {
+    super.roarWave(w, x0, x1);
+    const L = this.limb;
+    if (!w.bossHit && this.vuln > 0 && L && L.x < x1 && L.x + L.w > x0) { w.bossHit = true; this.roarHitLimb(L); }
+  }
+  roarHitLimb() { if (!this.flipped) { this.flipped = true; this.game.sfx.perfect(); this.say("¡VOLTEADA!", "#ff9ad0"); } }
   target() { return { lane: 0, laneT: 0, x: this.cx + 75, y: 60 }; }
   clearAttacks() { super.clearAttacks(); this.idle = true; this.fast = false; }
   updateBody(dt) {
@@ -2720,7 +2909,8 @@ class CrabBoss extends Boss {
       this.fast = true; this.clawTo = { laneT: lane, x: 150, y: 0 };
       this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
       this.game.addShake(0.2, 5); this.game.sfx.stomp(); this.game.puff(160, 0, lane, 12, "#bfe6ff");
-      this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 34 }, 0, () => { this.idle = true; this.fast = false; });
+      this.flipped = false;
+      this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 34 }, 0, () => { this.idle = true; this.fast = false; this.flipped = false; });
     });
   }
   bubbles() {   // bajas: saltar · medias: deslizarse · o devolverlas con E
@@ -2756,9 +2946,15 @@ class CrabBoss extends Boss {
     drawChain(c, s, f, { x: (s.x + f.x) / 2, y: Math.min(s.y, f.y) - 30 }, 7, 18 * f.s, 16 * f.s, "#5a1208", ["#e0452e", "#c23a24"]);
     c.save(); applyLane(c, this.claw.laneT);
     const cx = this.claw.x, cy = this.claw.y, open = this.fast ? 2 : 8 + Math.sin(this.t * 5) * 3;
-    BO(c, "#5a1208", "#e0452e", cx - 18, cy + 14 + open, 62, 20);
-    BO(c, "#5a1208", "#ff7a5a", cx - 20, cy, 40, 12);
-    B(c, "#ffb08a", cx - 12, cy + 30 + open, 44, 4);
+    if (this.flipped) {   // pinza volteada: barriga blanda al aire
+      BO(c, "#5a1208", "#ffb08a", cx - 18, cy, 62, 22); B(c, "#ffe0d0", cx - 10, cy + 14, 46, 5);
+      for (let i = 0; i < 3; i++) { const a = this.t * 7 + i * 2.1; B(c, "#ffe14d", cx + 12 + Math.cos(a) * 24, cy + 36 + Math.sin(a) * 6, 6, 6); }
+    } else {
+      BO(c, "#5a1208", "#e0452e", cx - 18, cy + 14 + open, 62, 20);
+      BO(c, "#5a1208", "#ff7a5a", cx - 20, cy, 40, 12);
+      B(c, "#ffb08a", cx - 12, cy + 30 + open, 44, 4);
+      B(c, "#ffffff", cx - 4, cy + 24 + open, 10, 3);
+    }
     c.restore();
   }
 }
@@ -2772,6 +2968,8 @@ class FrogBoss extends Boss {
     super(game, cycle, BOSS_NAMES[6], 1.1);
     this.colors = ["#4caf50", "#1f3a14", "#d8f0a0"]; this.trapKind = "log"; this.trapColor = "#ff5c8a";
     this.frogX = 1100; this.frogY = 0; this.laneT = 1; this.laneTo = 1; this.mode = "idle"; this.k = 0; this.tongue = 0;
+    this.setRules({ stomp: false, roar: false, reflect: false, trap: true }, "SETAS EXPLOSIVAS: pasa por encima de cada rombo «!» para que le estalle");
+    this.trapKind = "spore"; this.limbHurts = true; this.trapTimes = [2.5, 6.5, 10.5, 14.5, 18.5, 22.5, 26.5];
   }
   target() { return { lane: this.laneT < 0.5 ? 0 : 1, laneT: this.laneT, x: this.frogX + 50, y: this.frogY + 30 }; }
   clearAttacks() { super.clearAttacks(); if (this.mode !== "back") this.mode = this.frogX < 500 ? "back" : "idle"; }
@@ -2836,7 +3034,13 @@ class KrakenBoss extends Boss {
   constructor(game, cycle) {
     super(game, cycle, BOSS_NAMES[7], 1.2);
     this.colors = ["#8a3aa0", "#2a0a3a", "#e0a0ff"]; this.trapKind = "stalactite"; this.trapColor = "#7df9ff";
-    this.tip = { laneT: 0.5, x: 600, y: 420 }; this.tipTo = { ...this.tip }; this.idle = true; this.fast = false;
+    this.tip = { laneT: 0.5, x: 600, y: 420 }; this.tipTo = { ...this.tip }; this.idle = true; this.fast = false; this.cut = false;
+    this.setRules({ stomp: false, roar: false, reflect: false, trap: false }, "CORTE: deslízate (S) y cámbiate al carril del tentáculo apoyado");
+  }
+  onLimbTouch(pl, at) {
+    if (!pl.sliding) return false;
+    if (!this.cut) { this.cut = true; this.game.sfx.smash(); this.say("¡CORTE!", "#7df9ff"); this.damage(3, "slide", at); }
+    return true;
   }
   headPos() { return { x: 690 + Math.sin(this.t * 0.9) * 30, y: 70 + Math.sin(this.t * 1.7) * 8 - this.away * 220 + (this.state === "defeat" ? this.stateT * 140 : 0) }; }
   target() {
@@ -2849,7 +3053,7 @@ class KrakenBoss extends Boss {
     const k = Math.min(1, dt * (this.fast ? 28 : 6));
     for (const key of ["laneT", "x", "y"]) this.tip[key] = lerp(this.tip[key], this.tipTo[key], k);
   }
-  attack() { const r = Math.random(); if (r < 0.4) this.slam(this.p.lane); else if (r < 0.7) this.ink(); else this.sweep(); }
+  attack() { const r = Math.random(); if (r < 0.5) this.slam(this.p.lane); else if (r < 0.75) this.ink(); else this.sweep(); }
   slam(lane) {
     const d = this.tele(0.85);
     this.idle = false; this.fast = false; this.tipTo = { laneT: lane, x: 160, y: 220 };
@@ -2858,6 +3062,7 @@ class KrakenBoss extends Boss {
       this.fast = true; this.tipTo = { laneT: lane, x: 160, y: 0 };
       this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
       this.game.addShake(0.2, 5); this.game.sfx.stomp(); this.game.puff(160, 0, lane, 12, "#8fd8ff");
+      this.cut = false;
       this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 30 }, 0, () => { this.idle = true; this.fast = false; });
     });
   }
@@ -2907,17 +3112,30 @@ class BoneRexBoss extends Boss {
     super(game, cycle, BOSS_NAMES[8], 1.25);
     this.colors = ["#e8dcc0", "#2a2418", "#6aff8a"]; this.trapKind = "lightning"; this.trapColor = "#6aff8a";
     this.bx = 1070; this.skull = { laneT: 0, x: 1050, y: 120 }; this.skullTo = { ...this.skull }; this.idle = true; this.fast = false; this.jaw = 0;
+    this.shield = 3; this.shieldDown = 0;
+    this.setRules({ roar: false, reflect: true, trap: false });
+    this.dmg.stomp = 4; this.reflectDist = 90; this.roarCdMult = 0.4;
+  }
+  hintText() { return this.shield > 0 ? `ESCUDO (${this.shield}): devuélvele fuegos o huesos con E para romperlo` : "¡ESCUDO ROTO! Pisa su cráneo cuando muerda (S)"; }
+  canStomp() { return this.shield === 0; }
+  onReflectHit() {
+    if (this.shield > 0) {
+      this.shield--; this.flash = 0.2; this.game.sfx.shieldBreak();
+      const tg = this.target(); this.game.floatText(0, tg.x, tg.y + 40, this.shield ? `ESCUDO ${this.shield}` : "¡ESCUDO ROTO!", "#6aff8a", 22);
+      if (!this.shield) this.shieldDown = 9;
+    } else this.damage(2, "reflect");
   }
   target() { return { lane: 0, laneT: 0, x: this.bx + 60, y: 90 }; }
   clearAttacks() { super.clearAttacks(); this.idle = true; this.fast = false; }
   updateBody(dt) {
     this.bx = 650 + this.away * 420 + (this.state === "defeat" ? Math.sin(this.t * 40) * 3 : 0);
     this.jaw = Math.max(0, this.jaw - dt);
+    if (this.shieldDown > 0 && (this.shieldDown -= dt) <= 0 && this.state === "fight") { this.shield = 3; this.say("¡ESCUDO REGENERADO!", "#6aff8a", 18, 0, this.bx, 140); }
     if (this.idle) this.skullTo = { laneT: 0, x: this.bx - 40, y: 118 + Math.sin(this.t * 2.5) * 6 };
     const k = Math.min(1, dt * (this.fast ? 30 : 7));
     for (const key of ["laneT", "x", "y"]) this.skull[key] = lerp(this.skull[key], this.skullTo[key], k);
   }
-  attack() { const r = Math.random(); if (r < 0.35) this.bite(this.p.lane); else if (r < 0.7) this.bones(); else this.wisps(); }
+  attack() { const r = Math.random(); if (this.shield > 0) { if (r < 0.55) this.wisps(); else this.bones(); } else if (r < 0.6) this.bite(this.p.lane); else this.wisps(); }
   bite(lane) {
     const d = this.tele(0.85);
     this.idle = false; this.fast = false; this.skullTo = { laneT: lane, x: 150, y: 180 }; this.jaw = d;
@@ -2960,6 +3178,11 @@ class BoneRexBoss extends Boss {
       BO(c, O, Bn, x + 10, 58, 110, 6, 2);
       BO(c, O, Bn, x - 6, 80, 22, 8, 2); BO(c, O, Bn, x - 10, 70, 8, 12, 2);                     // bracito
       c.globalAlpha = 0.35 + 0.2 * Math.sin(this.t * 4); B(c, "#6aff8a", x + 40, 70, 70, 30); c.globalAlpha = 1;
+      if (this.shield > 0) {   // escudo de almas
+        c.strokeStyle = `rgba(106,255,138,${0.5 + 0.3 * Math.sin(this.t * 6)})`; c.lineWidth = 4;
+        c.beginPath(); c.ellipse(x + 80, -100, 130, 110, 0, 0, Math.PI * 2); c.stroke();
+        for (let i = 0; i < this.shield; i++) B(c, "#6aff8a", x + 50 + i * 24, 210, 14, 14);
+      }
       c.restore();
     }
     if ((this.skull.laneT < 0.5 ? 0 : 1) !== lane) return;
@@ -2984,7 +3207,27 @@ class UfoBoss extends Boss {
   constructor(game, cycle) {
     super(game, cycle, BOSS_NAMES[9], 1.35);
     this.colors = ["#8792ab", "#7df9ff", "#ffe14d"]; this.trapKind = "meteor"; this.trapColor = "#ff8a2a";
-    this.a = 0; this.mode = "sky"; this.k = 0; this.wp = { laneT: 1, x: 0, y: 0 };
+    this.a = 0; this.mode = "sky"; this.k = 0; this.wp = { laneT: 1, x: 0, y: 0 }; this.glideHit = false; this.lastPhase = 1;
+    this.setRules({ roar: false, trap: false });
+    this.reflectDist = 90; this.roarCdMult = 0.5; this.maxTime = CONFIG.BOSS_MAX_TIME + 15;
+  }
+  get phase() { return this.hp > this.maxHp * 2 / 3 ? 1 : this.hp > this.maxHp / 3 ? 2 : 3; }
+  hintText() {
+    return ["", "FASE 1: devuélvele las mininaves con el rugido (E)", "FASE 2: cuando aterrice, písale la cúpula (S)", "FASE 3: cuando pase rasante, golpéala desde abajo de un salto"][this.phase];
+  }
+  canStomp() { return this.phase === 2; }
+  onRoar(lane) { if (this.phase === 1) super.onRoar(lane); }
+  onReflectHit() { if (this.phase === 1) this.damage(2, "reflect"); }
+  damage(n, kind, at) {
+    const r = super.damage(n, kind, at);
+    if (r && this.hp > 0 && this.phase !== this.lastPhase) { this.lastPhase = this.phase; this.say(`¡FASE ${this.phase}!`, "#ff3b5c", 30, 0, 450, 150); this.game.addShake(0.4, 8); }
+    return r;
+  }
+  extraCollide(pl, lane, boxes) {
+    if (this.mode !== "glide" || this.glideHit || this.phase !== 3 || lane !== Math.round(this.wp.laneT)) return false;
+    const a = boxes[0], b = { x: this.wp.x + 5, y: this.wp.y, w: 110, h: 40 };
+    if (overlap(a, b) && a.y < b.y) { this.glideHit = true; this.game.sfx.stomp(); this.say("¡CABEZAZO!"); this.damage(3, "headbutt", { laneT: lane, x: b.x + 55, y: b.y }); }
+    return false;
   }
   skyPos() { return { x: 560 + Math.cos(this.a) * 160, y: 112 + Math.sin(this.a * 2) * 14 - this.away * 260 + (this.state === "defeat" ? this.stateT * 160 : 0) }; }
   target() {
@@ -2996,13 +3239,20 @@ class UfoBoss extends Boss {
     this.a += dt * 1.1 * this.speedMul;
     const wp = this.wp;
     if (this.mode === "land") { this.k = Math.min(1, this.k + dt / 0.45); wp.x = lerp(420, 110, this.k); wp.y = lerp(220, 0, this.k); }
+    else if (this.mode === "glide") { wp.x -= 500 * this.speedMul * dt; wp.y = this.glideHit ? wp.y + 260 * dt : 104; if (wp.x < -260) this.mode = "sky"; }
     else if (this.mode === "takeoff") { this.k += dt / 0.6; wp.x += 300 * dt; wp.y += 420 * dt; if (this.k >= 1) this.mode = "sky"; }
   }
   attack() {
-    const r = Math.random(), land = () => this.land(1 - this.p.lane);
-    if (r < 0.35) this.beam(this.p.lane, land);
-    else if (r < 0.65) this.laser(land);
-    else this.drones(land);
+    const r = Math.random(), ph = this.phase, next = () => this.attack();
+    if (ph === 1) { if (r < 0.65) this.drones(next); else this.laser(next); }
+    else if (ph === 2) { const land = () => this.land(1 - this.p.lane); if (r < 0.5) this.beam(this.p.lane, land); else this.laser(land); }
+    else { const glide = () => this.glide(); if (r < 0.5) this.beam(this.p.lane, glide); else this.laser(glide); }
+  }
+  glide() {   // fase 3: pasa rasante; golpéala desde abajo
+    const lane = this.p.lane, d = this.tele(0.9), dur = 1300 / (500 * this.speedMul);
+    this.warn(lane, "arrow", d, { y: 104 }); this.game.sfx.laser();
+    this.after(d, () => { this.mode = "glide"; this.glideHit = false; this.wp = { laneT: lane, x: 950, y: 104 }; });
+    this.after(d + dur + CONFIG.BOSS_ATTACK_GAP / this.speedMul, () => { if (this.mode === "glide") this.mode = "sky"; if (this.state === "fight") this.attack(); });
   }
   beam(lane, then) {   // rayo abductor de toda la altura: cambiar de carril
     const d = this.tele(0.9);
@@ -3028,7 +3278,7 @@ class UfoBoss extends Boss {
       this.warn(L, "target", T); this.game.sfx.toss();
       this.lob(L, 700, 260, T, drawSaucerHaz);
     });
-    this.after((n - 1) * gap + T + 0.4, then);
+    this.after((n - 1) * gap + T + 0.6, then);
   }
   land(lane) {   // aterriza en el otro carril: momento de pisarla
     const d = this.tele(0.8);
@@ -3051,6 +3301,10 @@ class UfoBoss extends Boss {
   drawBody(c, lane) {
     if (this.mode === "sky" || (this.wp.laneT < 0.5 ? 0 : 1) !== lane) return;
     c.save(); applyLane(c, this.wp.laneT);
+    if (this.mode === "glide" && !this.glideHit) {
+      c.fillStyle = `rgba(255,225,77,${0.25 + 0.15 * Math.sin(this.t * 12)})`;
+      c.beginPath(); c.ellipse(this.wp.x + 55, -(this.wp.y + 26), 90, 34, 0, 0, Math.PI * 2); c.fill();
+    }
     drawSaucer(c, this.wp.x + 55, -(this.wp.y + 26), 0.95, this.t);
     c.restore();
   }
@@ -3133,6 +3387,7 @@ class Biome {
     // Capas de parallax
     if (this.has("volcano")) this.drawVolcano(c, sc, t, alpha);
     if (this.ridges !== false) drawRidge(c, this.farRidge, 214, sc * 0.05, P.far, this.far.cap && P.cap);
+    { const hz = c.createLinearGradient(0, 110, 0, 216); hz.addColorStop(0, rgbaHex(P.skyBot, 0)); hz.addColorStop(1, rgbaHex(P.skyBot, 0.45)); c.fillStyle = hz; c.fillRect(-10, 110, W + 20, 106); }
     if (this.farTile) this.drawTile(c, this.farTile, sc * 0.08, 214);
     if (this.trees) this.drawTrees(c, sc * 0.18);
     if (this.ridges !== false) drawRidge(c, this.nearRidge, 222, sc * 0.15, P.near, this.near.cap && P.cap);
@@ -3160,6 +3415,8 @@ class Biome {
       }
       c.globalAlpha = alpha;
     }
+    { const gg = c.createLinearGradient(0, 212, 0, H); gg.addColorStop(0, "rgba(255,255,255,0.05)"); gg.addColorStop(0.5, "rgba(0,0,0,0)"); gg.addColorStop(1, "rgba(0,0,0,0.3)"); c.fillStyle = gg; c.fillRect(-10, 212, W + 20, H - 202); }
+    for (let i = 0; i < 2; i++) { const { y: gy, s } = LANES[i]; c.fillStyle = "rgba(0,0,0,0.18)"; c.fillRect(-10, gy + 15 * s, W + 20, 4 * s); }
     if (this.lianas) this.drawLianas(c, sc * 0.6, t);
     c.restore();
   }
@@ -3231,6 +3488,8 @@ function drawCloud(c, x, y, w, color) {
   c.fillRect(x, y + 8, w, 10);
   c.fillRect(x + Math.round(w * 0.12), y + 2, Math.round(w * 0.42), 8);
   c.fillRect(x + Math.round(w * 0.45), y - 4, Math.round(w * 0.32), 12);
+  c.fillStyle = "rgba(0,0,0,0.1)"; c.fillRect(x, y + 15, w, 3);
+  c.fillStyle = "rgba(255,255,255,0.35)"; c.fillRect(x + Math.round(w * 0.5), y - 4, Math.round(w * 0.2), 2);
 }
 
 
@@ -3353,6 +3612,12 @@ class UI {
     this.text(c, `${b.hp}/${b.maxHp}`, x - 36, y + 5, 12, "#ffffff", "center");
     if (b.state === "fight") this.text(c, `${Math.ceil(Math.max(0, CONFIG.BOSS_MAX_TIME - b.fightT))}s`, x + w + 28, y + 5, 12, "#dddddd", "center");
     if (b.vuln > 0 && Math.floor(this.game.time * 8) % 2 === 0) this.text(c, "¡VULNERABLE!", W / 2, y + 26, 13, "#ffe14d", "center");
+    const hint = b.hintText();
+    if (hint && b.state === "fight") {
+      c.font = 'bold 12px "Courier New", monospace'; const tw = c.measureText(hint).width + 20;
+      c.fillStyle = "rgba(0,0,0,0.55)"; c.fillRect(W / 2 - tw / 2, H - 26, tw, 20);   // abajo, para no tapar los power-ups
+      this.text(c, hint, W / 2, H - 16, 12, "#ffe9a8", "center");
+    }
   }
   drawHud(c) {
     const g = this.game, L = g.level;
@@ -3398,7 +3663,7 @@ class UI {
     c.fillStyle = "rgba(0,0,0,0.45)"; c.beginPath(); c.arc(cx, cy, r + 4, 0, Math.PI * 2); c.fill();
     c.lineWidth = 6; c.strokeStyle = "rgba(255,255,255,0.18)"; c.beginPath(); c.arc(cx, cy, r - 3, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = ready ? `rgba(255,138,61,${0.75 + 0.25 * Math.sin(g.time * 6)})` : "#ff8a3d";
-    c.beginPath(); c.arc(cx, cy, r - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cd / g.mode.roarCooldown)); c.stroke();
+    c.beginPath(); c.arc(cx, cy, r - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cd / (g.roarCdMax || g.mode.roarCooldown))); c.stroke();
     this.text(c, ready ? "E" : String(Math.ceil(cd)), cx, cy + 1, ready ? 20 : 18, ready ? "#ffd2b0" : "#ffffff", "center");
     this.text(c, "RUGIDO", cx, cy + r + 14, 11, ready ? "#ffb784" : "#bbbbbb", "center");
   }
@@ -3456,6 +3721,7 @@ class Shop {
       <div class="skin-name">${skin.name}</div>
       <div class="skin-tags">${rarityTag(skin.rarity)}</div>
       ${skin.fx && skin.fx.label ? `<div class="fx-label">✦ ${skin.fx.label}</div>` : ""}
+      ${roarStyle(id) ? `<div class="fx-label roar-label">🔊 ${roarStyle(id).name}</div>` : ""}
       ${kind === "shop" ? `<div class="skin-price">${skin.price ? `<span class="coin"></span> ${skin.price}` : "Gratis"}</div>` : ""}
       ${ach ? `<div class="skin-lock">🔒 Consíguela con el logro «${ach.name}»</div>` : ""}
       <button class="btn small"></button><div class="toast">¡Comprada!</div>`;
@@ -4126,51 +4392,38 @@ const ROCK_NAMES = { rock: "Roca", mossrock: "Roca musgosa", lavarock: "Roca vol
 const FLYER_NAMES = { ptero: "Pterodáctilo", drone: "Dron", fish: "Pez" };
 const stars = n => "★".repeat(n) + "☆".repeat(Math.max(0, 4 - n));
 const kbd = k => `<kbd>${k}</kbd>`;
+// Cada boss se vence de una forma distinta (ver setRules en sus clases)
 const BOSS_GUIDE = [
-  { attacks: ["<b>Cola</b>: sombra roja con «!» en tu carril → cambia de carril (saltar no sirve).",
-              "<b>Pinchos</b>: flecha roja a la derecha → caen delante y avanzan por el suelo: salta, cambia de carril o devuélvelos con E."],
-    weak: "El aguijón, cuando se queda clavado en el suelo tras golpear.", trap: "Arenas movedizas que atrapan al escorpión.",
-    tip: "Esquiva la cola cambiando de carril, salta, vuelve a su carril en el aire y cae con S sobre el aguijón. Los pinchos son perfectos para practicar el «¡PERFECTO!»." },
-  { attacks: ["<b>Mordisco desde arriba</b>: sombra con «!» → deslízate con S o cambia de carril. A veces muerde los dos carriles seguidos.",
-              "<b>Veneno</b>: flecha roja → bajo: salta · a media altura: deslízate · o devuélvelo con E."],
-    weak: "La cabeza, cuando descansa en el suelo del otro carril.", trap: "Un tronco que cae sobre la serpiente.",
-    tip: "Después de deslizarte, mira dónde apoya la cabeza: salta, cambia de carril y písala." },
-  { attacks: ["<b>Rocas en arco</b>: diana roja en el suelo → cambia de carril o rómpelas con E (si están muy cerca, las devuelves).",
-              "<b>Puñetazo</b>: sombra con «!» → cambia de carril."],
-    weak: "El puño, apoyado en el suelo tras el puñetazo.", trap: "Un géiser de lava bajo el golem.",
-    tip: "Guarda el rugido para devolver la última roca justo antes de que caiga: 2 de daño sin riesgo." },
-  { attacks: ["<b>Embestida</b>: flecha roja en tu carril → cambia de carril o sáltalo.",
-              "<b>Suelo congelado</b>: después de embestir, ese carril se llena de pinchos de hielo un momento.",
-              "<b>Fragmentos de hielo</b>: como los pinchos del escorpión."],
-    weak: "El lomo, mientras está aturdido (con estrellitas) junto a ti.", trap: "Una estalactita que cae sobre el mamut.",
-    tip: "Tras la embestida salta, pasa a su carril en el aire y cae sobre el lomo con S. Luego quédate en el carril sin hielo." },
-  { attacks: ["<b>Picado</b>: sombra en tu carril → bajo: salta · medio: deslízate · o cambia de carril.",
-              "<b>Plumas</b>: flecha roja a la altura indicada → salta o deslízate, o devuélvelas con E."],
-    weak: "El lomo, cuando se posa en el otro carril para descansar.", trap: "Un meteorito que golpea al pterodáctilo.",
-    tip: "Las plumas vienen en fila: devuelve una con el rugido y esquiva el resto." },
-  { attacks: ["<b>Pinzazo</b>: sombra con «!» → cambia de carril.",
-              "<b>Burbujas</b>: flecha roja → bajas: salta · medias: deslízate · o devuélvelas con E."],
-    weak: "La pinza grande, apoyada en el suelo tras el pinzazo.", trap: "Un tronco a la deriva que golpea al cangrejo.",
-    tip: "Las burbujas son lentas: perfectas para el «¡PERFECTO!». Después del pinzazo, vuelve a su carril en el aire y písale la pinza." },
-  { attacks: ["<b>Salto aplastante</b>: diana roja en tu carril → cambia de carril antes de que aterrice.",
-              "<b>Lengua</b>: línea roja a media altura → deslízate con S."],
-    weak: "La cabeza, mientras se queda quieto tras aterrizar junto a ti.", trap: "Un tronco que cae sobre el sapo.",
-    tip: "Cuando aterriza se queda quieto a tu lado: salta, pasa a su carril y cae con S sobre su cabeza." },
-  { attacks: ["<b>Tentáculo desde arriba</b>: sombra con «!» → cambia de carril.",
-              "<b>Barrido</b>: flecha roja a ras de suelo → salta.",
-              "<b>Tinta en arco</b>: diana roja → cambia de carril o rómpela con E."],
-    weak: "La punta del tentáculo, apoyada en el suelo tras golpear.", trap: "Una estalactita de coral que cae sobre el kraken.",
-    tip: "El barrido llega muy rápido: salta en cuanto veas la flecha. Devuelve la última tinta con el rugido para dañarle la cabeza." },
-  { attacks: ["<b>Mordisco</b>: sombra con «!» → cambia de carril.",
-              "<b>Huesos en arco</b>: diana roja → cambia de carril o rómpelos con E.",
-              "<b>Fuegos fantasma</b>: flecha roja → bajos: salta · medios: deslízate · o devuélvelos con E."],
-    weak: "El cráneo, apoyado en el suelo tras el mordisco.", trap: "Un rayo que cae sobre el esqueleto.",
-    tip: "Tiene mucha vida: aprovecha cada mordisco para pisarle el cráneo y usa la trampa en cuanto aparezca." },
-  { attacks: ["<b>Rayo abductor</b>: sombra con «!» → cambia de carril (dura un momento).",
-              "<b>Láser</b>: línea roja → abajo: salta · en medio: deslízate · arriba: NO saltes. A veces en los dos carriles.",
-              "<b>Mininaves</b>: diana roja → cambia de carril o rómpelas con E."],
-    weak: "La cúpula, cuando aterriza en el otro carril para recargar.", trap: "Un meteorito que golpea a la nave.",
-    tip: "Es el boss final: después de cada ataque aterriza en el otro carril. Cámbiate en el aire y cae con S sobre la cúpula." },
+  { how: "<b>Pisotón</b>: cuando clave el aguijón en tu carril, salta, cámbiate en el aire y cae encima con S (3 de daño). El rugido no le hace nada.",
+    attacks: ["<b>Cola</b>: sombra roja con «!» en tu carril → cambia de carril.", "<b>Pinchos</b>: flecha roja → salta o cambia de carril."],
+    tip: "Es el boss para aprender el pisotón: esquiva la cola y cae sobre el aguijón antes de que lo saque." },
+  { how: "<b>Rugido</b>: cuando apoye la cabeza en el otro carril, ponte en ese carril y ruge (E) — 2 de daño. Durante esta pelea el rugido recarga mucho más rápido. ¡Su cabeza tiene pinchos: no la pises!",
+    attacks: ["<b>Mordisco desde arriba</b>: sombra con «!» → deslízate o cambia de carril.", "<b>Veneno</b>: flecha roja → bajo: salta · medio: deslízate."],
+    tip: "Ten el rugido listo: en cuanto veas la cabeza apoyada, cámbiate y ruge." },
+  { how: "<b>Devolverle las rocas</b>: ruge (E) cuando una roca esté a punto de caer sobre ti en tu carril — la devuelves y le hace 3 de daño. Su puño quema: no lo pises.",
+    attacks: ["<b>Rocas en arco</b>: diana roja → devuélvelas o cambia de carril.", "<b>Puñetazo</b>: sombra con «!» → cambia de carril."],
+    tip: "No te apartes de las rocas: espera en su diana y ruge en el último momento." },
+  { how: "<b>Saltar por encima</b>: cuando embista por tu carril, NO te cambies: sáltalo en el momento justo y le haces 3 de daño al pasar sobre su lomo.",
+    attacks: ["<b>Embestida</b>: flecha roja en tu carril → sáltala.", "<b>Suelo congelado</b> tras la embestida.", "<b>Fragmentos de hielo</b>: flecha roja → salta o cambia de carril."],
+    tip: "Salta cuando esté a un cuerpo de distancia: estarás en lo alto justo cuando pase." },
+  { how: "<b>Cabezazo</b>: a veces pasa rasante brillando (flecha a media altura). Salta y golpéale desde abajo (3 de daño). Pisarle o rugirle no sirve.",
+    attacks: ["<b>Picado</b>: sombra en tu carril → bajo: salta · medio: deslízate.", "<b>Plumas</b>: flecha roja → salta o deslízate."],
+    tip: "Cuando brille, quédate en su carril y salta un instante antes de que llegue." },
+  { how: "<b>Voltear y pisar</b>: cuando apoye la pinza, ruge (E) desde cualquier carril para darle la vuelta; luego salta a su carril y cae encima con S (3 de daño). Sin voltearla, su caparazón aguanta el pisotón.",
+    attacks: ["<b>Pinzazo</b>: sombra con «!» → cambia de carril.", "<b>Burbujas</b>: flecha roja → bajas: salta · medias: deslízate."],
+    tip: "Rugido primero, pisotón después: la pinza volteada se queda quieta un buen rato." },
+  { how: "<b>Setas explosivas</b>: aparecen rombos con «!» en el suelo cada pocos segundos. Pasa por encima de ellos (4 de daño cada uno). Su piel es venenosa: no lo toques.",
+    attacks: ["<b>Salto aplastante</b>: diana roja en tu carril → cámbiate.", "<b>Lengua</b>: línea roja a media altura → deslízate."],
+    tip: "Mira dónde sale cada seta y cámbiate a ese carril sin dejar de esquivar sus saltos." },
+  { how: "<b>Corte</b>: cuando apoye un tentáculo en el otro carril, deslízate (S) y cámbiate a ese carril deslizándote: le cortas 3 de vida. Si entras corriendo, el tentáculo te golpea.",
+    attacks: ["<b>Tentáculo</b>: sombra con «!» → cambia de carril.", "<b>Barrido</b>: flecha a ras de suelo → salta.", "<b>Tinta</b>: diana roja → cambia de carril."],
+    tip: "S primero y luego A/D: el deslizamiento dura lo justo para entrar en su carril." },
+  { how: "<b>Escudo y pisotón</b>: tiene un escudo de almas de 3 cargas. Devuélvele fuegos o huesos con el rugido (E) para romperlo; con el escudo roto (9 s), pisa su cráneo cuando muerda (4 de daño).",
+    attacks: ["<b>Fuegos fantasma</b>: flecha roja → devuélvelos con E.", "<b>Huesos en arco</b>: diana → devuélvelos o cámbiate.", "<b>Mordisco</b>: sombra con «!» → cambia de carril."],
+    tip: "Primero sé paciente con los reflejos; en cuanto el escudo caiga, ve a por el cráneo antes de que se regenere." },
+  { how: "<b>Tres fases</b> (boss final): fase 1, devuelve las mininaves con el rugido · fase 2, cuando aterrice en el otro carril, písale la cúpula · fase 3, cuando pase rasante brillando, golpéala desde abajo de un salto. Tienes más tiempo que con los demás.",
+    attacks: ["<b>Rayo abductor</b>: sombra con «!» → cambia de carril.", "<b>Láser</b>: línea roja → abajo: salta · en medio: deslízate · arriba: NO saltes.", "<b>Mininaves</b>: diana roja."],
+    tip: "Es el examen final: usa lo que aprendiste con el Golem, el Escorpión y el Pterodáctilo." },
 ];
 const MANUAL_SECTIONS = [
   { title: "Cómo se juega", html: () => `
@@ -4237,21 +4490,16 @@ const MANUAL_SECTIONS = [
     <p>La Noche estrellada tiene más filas de monedas.</p>` },
   { title: "Bosses", html: () => `
     <p>A mitad de cada nivel (${CONFIG.BOSS_AT_IN_LEVEL}, ${CONFIG.BOSS_AT_IN_LEVEL + CONFIG.POINTS_PER_LEVEL}, ${CONFIG.BOSS_AT_IN_LEVEL + 2 * CONFIG.POINTS_PER_LEVEL}…) sale «¡PELIGRO!» y llega un boss. Te ataca mientras sigues corriendo (no salen obstáculos normales).
-    Tienes ${CONFIG.BOSS_MAX_TIME} s: si lo vences ganas +${CONFIG.BOSS_COINS} monedas y +${CONFIG.BOSS_POINTS} puntos; si no, se retira sin premio.</p>
-    <h4>Cómo hacerles daño</h4>
-    <table><tr><th>Forma</th><th>Daño</th><th>Cómo</th></tr>
-    <tr><td>Pisotón</td><td>${CONFIG.BOSS_DMG_STOMP}</td><td>Tras cada ataque el boss apoya su punto débil junto a ti (brilla y tiene una flecha amarilla) durante ${secs(CONFIG.BOSS_VULN_TIME)} (Fácil: ${secs(CONFIG.EASY.BOSS_VULN_TIME)}). Salta, cambia de carril en el aire y cae encima con S. Si lo tocas de lado, te golpea.</td></tr>
-    <tr><td>Rugido</td><td>${CONFIG.BOSS_DMG_ROAR}</td><td>E mientras está vulnerable, en su carril.</td></tr>
-    <tr><td>Reflejo «¡PERFECTO!»</td><td>${CONFIG.BOSS_DMG_REFLECT}</td><td>E cuando un proyectil está a menos de ${CONFIG.REFLECT_DISTANCE} px. Funciona aunque no esté vulnerable.</td></tr>
-    <tr><td>Turbo</td><td>${CONFIG.BOSS_DMG_TURBO}</td><td>Chócate con él con el turbo activo.</td></tr>
-    <tr><td>Trampa</td><td>${CONFIG.BOSS_DMG_TRAP}</td><td>A los ${CONFIG.BOSS_TRAP_TIMES.join(" y ")} s aparece un rombo con «!» en el suelo: pasa por encima o ruge hacia él.</td></tr></table>
+    Tienes ${CONFIG.BOSS_MAX_TIME} s (el boss final, más): si lo vences ganas +${CONFIG.BOSS_COINS} monedas y +${CONFIG.BOSS_POINTS} puntos; si no, se retira sin premio.</p>
+    <div class="tip warn"><b>Cada boss se vence de una forma distinta</b>: pisotón, rugido, devolver proyectiles, saltar por encima, cabezazo, voltear y pisar, trampas, deslizarse, romper un escudo… La forma de dañar al boss actual aparece abajo en la pantalla durante la pelea. El turbo le hace ${CONFIG.BOSS_DMG_TURBO} de daño a cualquiera.</div>
     <div class="tip">Señales: sombra roja con «!» = golpe desde arriba · flecha roja = algo viene por ese carril · línea parpadeante = láser · diana = proyectil en arco.</div>
     ${BOSS_NAMES.map((n, i) => { const lv = CONFIG.LEVELS.map((L, k) => L.boss === i ? `nivel ${k + 1} (${BIOMES[k].name}${L.tier ? ", reforzado" : ""})` : "").filter(Boolean).join(" y ");
       return `<h4>${i + 1}. ${n}</h4>
       <div class="m-demos">${demo("boss", n, i, true)}</div>
       <p><b>Aparece en:</b> ${lv}. Vida base: ${Math.round(CONFIG.BOSS_HP * BOSS_HP_MULTS[i])} (Fácil: la mitad).</p>
+      <div class="tip"><b>Cómo dañarle:</b> ${BOSS_GUIDE[i].how}</div>
       <ul>${BOSS_GUIDE[i].attacks.map(a => `<li>${a}</li>`).join("")}</ul>
-      <p><b>Punto débil:</b> ${BOSS_GUIDE[i].weak}<br><b>Trampa:</b> ${BOSS_GUIDE[i].trap}<br><b>Estrategia:</b> ${BOSS_GUIDE[i].tip}</p>`; }).join("")}
+      <p><b>Estrategia:</b> ${BOSS_GUIDE[i].tip}</p>`; }).join("")}
     <p>Después del nivel ${CONFIG.LEVELS.length} los bosses vuelven reforzados: en cada vuelta tienen +${pct(CONFIG.BOSS_HP_PER_CYCLE)} de vida, atacan un ${pct(CONFIG.BOSS_SPEED_PER_CYCLE)} más rápido y dan +${CONFIG.BOSS_COINS_PER_CYCLE} monedas por cada refuerzo.</p>` },
   { title: "Modos", html: () => { const E = CONFIG.EASY; return `
     <table><tr><th></th><th>Normal</th><th>Fácil</th></tr>
@@ -4273,6 +4521,7 @@ const MANUAL_SECTIONS = [
       return `<tr><td>${rarityTag(r)}</td><td>${Math.min(...p)}–${Math.max(...p)}</td><td>${{ "Común": "Colores nuevos", "Raro": "Patrones nuevos", "Épico": "Animación propia", "Legendario": "Animación + estela", "Supremo": "Todo a la vez" }[r]} (${l.length})</td></tr>`; }).join("")}</table>
     <div class="m-demos">${R.map(r => { const k = SkinCatalog.shop.find(s => s.rarity === r); return demo("skin", k.name, k.id); }).join("")}</div>
     <p>Hay además ${EXCLUSIVE_SKINS.length} skins exclusivos que solo se consiguen con logros.</p>
+    <h4>Rugidos especiales</h4><p>Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un <b>rugido propio</b> y una pose animada al rugir: ${Object.entries(ROAR_STYLES).filter(([id]) => SkinCatalog.get(id)).map(([id, r]) => `${SkinCatalog.get(id).name}: ${r.name.toLowerCase()}`).join(" · ")}. Los diseños del editor heredan el rugido del efecto que elijas. Es solo estético: el alcance y el daño no cambian.</p>
     <h4>Checkpoints</h4><p>Empieza al inicio de un nivel. Precio: ${CONFIG.CHECKPOINT_PRICE_STEP} × (nivel − 1). Se desbloquean al completar el nivel anterior y sirven en ambos modos.</p>
     <h4>Editor de skins</h4><p>Cuesta ${CONFIG.EDITOR_PRICE} monedas una sola vez. Elige patrón, colores, fondo y efecto y guárdalo en una de sus ${CONFIG.EDITOR_SLOTS} ranuras. Los patrones y efectos de skins Épicos o superiores solo están disponibles si tienes esos skins.</p>`; } },
   { title: "Ruleta", html: () => { const O = CONFIG.ROULETTE_ODDS; return `
@@ -4300,8 +4549,8 @@ const MANUAL_SECTIONS = [
       <li><b>Usa la caída rápida</b> (S en el aire) para volver antes al suelo y reaccionar al siguiente obstáculo.</li>
       <li><b>Cambia de carril antes de saltar</b>: así ves con tiempo lo que viene en el otro carril.</li>
       <li><b>Aprende las señales de los bosses</b>: sombra = golpe desde arriba, flecha = viene por el carril, línea = láser, diana = arco.</li>
-      <li><b>Practica el «¡PERFECTO!»</b>: devolver un proyectil a menos de ${CONFIG.REFLECT_DISTANCE} px hace ${CONFIG.BOSS_DMG_REFLECT} de daño aunque el boss no esté vulnerable.</li>
-      <li><b>Nunca dejes pasar la trampa</b>: ${CONFIG.BOSS_DMG_TRAP} de daño gratis al boss.</li>
+      <li><b>Cambia de estrategia en cada boss</b>: lee el mensaje de abajo al empezar la pelea; lo que funciona con uno no le hace nada al siguiente.</li>
+      <li><b>Practica el «¡PERFECTO!»</b> (rugir justo cuando un proyectil te va a dar): es la clave contra el Golem, el Rey de los huesos y la Nave nodriza.</li>
       <li><b>Ve a por los huevos solo si el camino es seguro</b>: ${CONFIG.EGG_VALUE} monedas no valen una partida.</li>
       <li><b>Checkpoint o legendario</b>: un checkpoint ahorra tiempo pero no da monedas. Cómpralo si un nivel se te atasca; si lo que quieres es un Legendario (${Math.min(...SkinCatalog.shop.filter(k => k.rarity === "Legendario").map(k => k.price))}+), ahorra y juega desde el nivel 1.</li>
       <li><b>Farmear monedas</b>: modo Normal (monedas ×1), coge el imán, derrota bosses (+${CONFIG.BOSS_COINS} cada uno) y recoge huevos.</li>
@@ -4445,9 +4694,12 @@ class Game {
     this.reset();
     this.ach.wallet();
   }
+  // El canvas se dibuja a la resolución real de la pantalla (no se estira una imagen de 900 × 360)
   resize() {
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.canvas.width = W * this.dpr; this.canvas.height = H * this.dpr;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3), cssW = this.canvas.clientWidth || W;
+    const px = Math.round(clamp(cssW * dpr, W, 3600));
+    if (this.canvas.width !== px) { this.canvas.width = px; this.canvas.height = Math.round(px * H / W); }
+    this.dpr = this.canvas.width / W; this.cssW = cssW;
   }
   newRun() { return { biomes: new Set(), eggs: {}, powerupTypes: new Set(), lastPowerup: 0, lastRoar: 0, lastLane: 0 }; }
   reset() {
@@ -4455,7 +4707,7 @@ class Game {
     this.effectMax = { shield: 1, magnet: 1, slowmo: 1, turbo: 1 };
     this.obstacles = []; this.coinsArr = []; this.powerups = []; this.particles = []; this.eggs = []; this.hatches = [];
     this.effects = { shield: 0, magnet: 0, slowmo: 0, turbo: 0 };
-    this.grace = 0; this.roarCd = 0; this.roarWave = null; this.shake = 0; this.shakeMag = 0; this.shakeDur = 1;
+    this.grace = 0; this.roarCd = 0; this.roarWave = null; this.roarAnim = 0; this.flashT = 0; this.shake = 0; this.shakeMag = 0; this.shakeDur = 1;
     this.overTime = 0; this.overShown = false; this.newRecord = false; this.banked = false;
     this.bossBanner = null; this.runBosses = 0; this.floaters = [];
     this.run = this.newRun();
@@ -4523,9 +4775,17 @@ class Game {
   }
   roar() {
     if (this.state !== "playing" || this.roarCd > 0) return;
-    this.roarCd = this.mode.roarCooldown;
-    this.roarWave = { t: 0, lane: this.player.logicalLane };
-    this.addShake(0.35, 7); this.sfx.roar();
+    const boss = this.bosses.boss;
+    this.roarCd = this.roarCdMax = this.mode.roarCooldown * (boss && boss.state === "fight" ? boss.roarCdMult : 1);   // algunos bosses se vencen a rugidos
+    this.roarWave = { t: 0, lane: this.player.logicalLane, style: roarStyle(this.skinId) };
+    this.roarAnim = 0.6; this.addShake(0.35, 7); this.sfx.roar();
+    const st = this.roarWave.style, pl = this.player;
+    if (st) {   // rugido especial: chispas con los colores del skin
+      const grav = { fire: -500, stars: 0, ghost: -120, sun: 150, bolt: 0 }[st.type] ?? 1200;
+      for (let i = 0; i < 34; i++) this.particles.push(new Particle(pl.logicalLane, pl.x + 66, pl.y + rand(20, 60), rand(150, 650), rand(-150, 350), rand(0.4, 0.9), choice(st.colors), rand(3, 7), grav));
+      if (st.flash) this.flashT = 0.3;
+      this.sfx.roarSpecial(st.type);
+    }
     this.run.lastRoar = this.distScore; this.ach.event("roar");
     if (this.bosses.boss) this.bosses.boss.onRoar(this.player.logicalLane);
   }
@@ -4664,6 +4924,7 @@ class Game {
     }
     this.grace = Math.max(0, this.grace - dt);
     this.roarCd = Math.max(0, this.roarCd - dt);
+    this.roarAnim = Math.max(0, this.roarAnim - dt); this.flashT = Math.max(0, this.flashT - dt);
 
     const gdt = dt * (this.effects.slowmo > 0 ? CONFIG.SLOWMO_FACTOR : 1);   // tiempo de juego
     this.speed += (this.level.targetSpeed() - this.speed) * Math.min(1, gdt * CONFIG.SPEED_SMOOTHING);
@@ -4767,6 +5028,7 @@ class Game {
   // ----- Dibujo -----
   draw() {
     const c = this.ctx;
+    if (this.canvas.clientWidth && this.canvas.clientWidth !== this.cssW) this.resize();
     c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.imageSmoothingEnabled = false;
     c.save();
     if (this.shake > 0) { const m = this.shakeMag * clamp(this.shake / (this.shakeDur || 1), 0, 1); c.translate(rand(-m, m), rand(-m, m)); }
@@ -4786,11 +5048,14 @@ class Game {
     c.globalAlpha = 1;
     c.restore();
 
+    { const v = c.createRadialGradient(W / 2, H * 0.55, H * 0.45, W / 2, H * 0.55, W * 0.62);   // viñeta suave
+      v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.28)"); c.fillStyle = v; c.fillRect(0, 0, W, H); }
     if (this.effects.slowmo > 0) {
       const g = c.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, W * 0.65);
       g.addColorStop(0, "rgba(120,90,255,0.05)"); g.addColorStop(1, "rgba(80,50,200,0.35)");
       c.fillStyle = g; c.fillRect(0, 0, W, H);
     }
+    if (this.flashT > 0) { c.fillStyle = `rgba(255,240,180,${this.flashT * 1.6})`; c.fillRect(0, 0, W, H); }   // destello del rugido solar
     if (this.effects.turbo > 0 && this.state === "playing") {
       c.fillStyle = "rgba(255,255,255,0.35)";
       for (let i = 0; i < 10; i++) c.fillRect(rand(0, W), rand(20, H - 20), rand(40, 140), 2);
@@ -4818,11 +5083,9 @@ class Game {
     if (w && w.lane === lane) {
       const prog = Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME), alpha = 1 - clamp((w.t - CONFIG.ROAR_WAVE_TIME * 0.6) / 0.35, 0, 1);
       const ox = pl.x + 66, oy = -(pl.y + (pl.sliding ? 18 : 42));
-      for (let k = 0; k < 3; k++) {
-        const r = (CONFIG.ROAR_RANGE + 20) * prog - k * 28; if (r <= 4) continue;
-        c.strokeStyle = `rgba(255,${200 + k * 20},${140 + k * 40},${alpha * (0.9 - k * 0.25)})`; c.lineWidth = 5 - k;
-        c.beginPath(); c.arc(ox, oy, r, -0.9, 0.9); c.stroke();
-      }
+      if (w.style && w.style.type === "ghost")   // rugido espectral: ecos del raptor avanzan con la onda
+        for (let k = 1; k <= 3; k++) SE.drawSprite(c, this.skinId, "jump", Math.round((pl.x + prog * 90 * k) / 3), Math.round(-SE.H - pl.y / 3), 3, 0, { tint: w.style.colors[k % 3], alpha: alpha * 0.35 });
+      drawRoarFx(c, w.style, ox, oy, (CONFIG.ROAR_RANGE + 20) * prog, alpha, this.time);
     }
     c.restore();
   }
