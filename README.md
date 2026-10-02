@@ -6,14 +6,14 @@ El raptor viene del kit **Dino Runner**: `skins-engine.js` (`DinoSkinsEngine`, 1
 
 ## Cómo jugar
 
-Menú: **Jugar** (modo Normal, Fácil o Difícil y nivel inicial si tienes checkpoints), **Multijugador**, **Tienda**, **Ruleta**, **Logros**, **Manual** y silenciar.
+Menú: **Jugar** (modo Normal, Fácil o Difícil y nivel inicial si tienes checkpoints), **Tienda**, **Ruleta**, **Logros**, **Álbum**, **Historial**, **Árbol**, **Estadísticas**, **Guardar / Cargar**, **Manual**, **Multijugador**, **Tutorial**, consejos y silenciar. La primera vez que pulsas Jugar empieza el **tutorial**.
 
 | Acción | Teclado | Móvil |
 |---|---|---|
 | Saltar / doble salto | W (otra vez en el aire) | Tocar |
 | Deslizarse / caída rápida | S | Deslizar hacia abajo |
 | Carril de arriba / de abajo | A / D | Botones ▲ ▼ |
-| Rugido | E | Botón «Rugido» |
+| Rugido (con la furia llena: súper rugido) | E | Botón «Rugido» |
 | Pausa (con acceso al manual) | P | Botón ❚❚ |
 
 - **Niveles:** 10 niveles de 1000 puntos (hasta 10 000), cada uno con su bioma: Desierto, Selva, Volcán, Glaciar, Noche estrellada, Playa tropical, Bosque de setas, Fondo marino, Cementerio encantado y Base lunar. Después el viaje vuelve a empezar, más difícil.
@@ -22,13 +22,20 @@ Menú: **Jugar** (modo Normal, Fácil o Difícil y nivel inicial si tienes check
 - **Huevos bonus:** 2 por nivel, 50 monedas cada uno (25 en Fácil, 75 en Difícil). El imán no los atrae. Además se guardan en un **monedero de huevos** que se gasta en la pestaña «Huevos» de la tienda: Huevo de arena (15), de cristal (40) y dorado (80), que al abrirse dan una de 9 skins que solo salen de los huevos (comunes, raras y legendarias, estas con rugido especial). Las partidas antiguas reciben los huevos que ya habían recogido.
 - **Portales:** al final de cada nivel aparece un portal hacia el bioma siguiente; el raptor lo cruza y cambia el mapa.
 - **Bosses:** a mitad de cada nivel (500, 1500… 9500 puntos) llega un boss que te ataca mientras sigues corriendo (40 s para vencerlo). **Cada uno se vence de una forma distinta**: Escorpión gigante (pisotón), Serpiente de lianas (rugido), Golem de lava (devolverle las rocas), Mamut de hielo (saltar por encima), Pterodáctilo sombra (cabezazo desde abajo), Rey cangrejo (rugido para voltear + pisotón), Sapo gigante (setas explosivas), Kraken abisal (deslizarse contra el tentáculo), Rey de los huesos (romper su escudo y pisarle) y Nave nodriza (boss final con 3 fases). La forma de dañar al boss aparece abajo en la pantalla. Al bajar al 50 % de vida (30 % en Fácil; la Nave, en su fase 3) cada boss entra en **forma furiosa**: se tiñe de rojo, ataca un 25 % más rápido con avisos más cortos y añade una mecánica nueva que obliga a cambiar de estrategia (pinchos en los dos carriles, charcos de veneno, carril en llamas, embestida que cambia de carril, lluvia de plumas, burbujas que rebotan, ondas al aterrizar, tinta que oscurece la pantalla, fuegos que persiguen y rayo abductor que te levanta). En Normal y Difícil sigue habiendo una sola vida.
+- **Furia y súper rugido:** la barra de furia se llena esquivando por los pelos, recogiendo huevos, rompiendo cosas con el rugido y dañando a los bosses. Llena, E lanza el **súper rugido**, que destruye todo lo que hay en pantalla (no durante los combates).
+- **Monturas:** en cada nivel hay un 60 % de que aparezca una montura propia del bioma (tabla de arena, tronco por el río, roca flotante, trineo, meteorito domado, tortuga gigante, seta saltarina, delfín, ataúd con ruedas y cohete). Cada una cambia los controles y la física unos segundos; un golpe montado hace perder la montura, no la partida.
+- **Roguelike:** tras cada boss derrotado eliges 1 de 3 **mejoras** para esa partida (barajar cuesta 50, 100, 200… monedas de la partida; saltar da 100). Recoger los 2 huevos de un nivel da una elección de 2 cartas. Hay 39 mejoras de 4 rarezas, 7 **sinergias** y 6 **pactos** del **altar de ámbar** (ventaja fuerte con desventaja). Historial de las últimas 20 builds y álbum con todo lo descubierto.
+- **Árbol de mejoras:** mejoras permanentes en 4 ramas (Supervivencia, Poder, Fortuna y Destino) que se pagan con **fósiles**, ganados al acabar cada partida (niveles, jefes, sinergias y récords).
+- **Estadísticas:** pestañas General, Jefes, Monturas, Roguelike y Otros, con tablas y gráficos.
+- **Guardar / Cargar:** exporta todo el progreso como código de texto o archivo (con suma de comprobación) e impórtalo en otro navegador; se puede deshacer una importación.
+- **Tutorial y consejos:** nivel de práctica sin poder morir y consejos la primera vez que aparece cada cosa (se pueden desactivar).
 - **Tienda:** 16 skins del kit, 3 exclusivas de logros, checkpoints y editor de skins propias (3 ranuras). Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un rugido especial con pose animada.
 - **Ruleta:** apuestas de 10 a 500 monedas del juego y un giro gratis diario.
-- **Logros:** 44 logros con recompensas en monedas y skins exclusivas.
+- **Logros:** 61 logros con recompensas en monedas y skins exclusivas.
 - Todo se guarda en `localStorage` (clave `dinoRunner.save.v2`; las monedas de versiones anteriores se conservan).
 
 ## Ajustes
 
-Todas las constantes de balance están comentadas en `CONFIG`, al principio del último `<script>`: niveles y jefe de cada nivel (`LEVELS`), velocidades, modos Fácil (`EASY`) y Difícil (`HARD`), bosses (`BOSS_*`), huevos (`EGG_*`), checkpoints, editor, ruleta (`ROULETTE_*`, `FREE_SPIN_PRIZES`) y monedas. Los logros están en `ACHIEVEMENTS`. El manual lee estos valores, así que se actualiza solo.
+Todas las constantes de balance están comentadas en `CONFIG`, al principio del último `<script>`: niveles y jefe de cada nivel (`LEVELS`), velocidades, modos Fácil (`EASY`) y Difícil (`HARD`), bosses (`BOSS_*`), huevos (`EGG_*`), checkpoints, editor, ruleta (`ROULETTE_*`, `FREE_SPIN_PRIZES`) y monedas. Los logros están en `ACHIEVEMENTS`. Furia, monturas, roguelike y árbol tienen sus propios bloques: `FURY_CONFIG`, `MOUNT_CONFIG`, `ROGUE_CONFIG` (con `UPGRADES`, `SYNERGIES` y `PACTS`) y `TREE_CONFIG`; también `BACKUP_CONFIG` y `TUTORIAL_CONFIG`. El manual lee estos valores, así que se actualiza solo.
 
-Modo prueba: pon `const DEBUG = true;` para tener 5000 monedas y todos los niveles completados; las teclas 1–9 y 0 saltan a los niveles 1–10 y B lanza el boss del nivel actual. Con DEBUG no se consiguen logros.
+Modo prueba: pon `const DEBUG = true;` para tener 5000 monedas y todos los niveles completados; las teclas 1–9 y 0 saltan a los niveles 1–10, B lanza el boss del nivel actual, M da la montura del bioma (Mayús + M recorre las 10), U abre una elección de mejora (Mayús + U da una mejora al azar), L fuerza una Legendaria en la siguiente tirada y K hace aparecer un altar de ámbar. Con DEBUG no se consiguen logros.

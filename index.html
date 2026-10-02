@@ -463,10 +463,21 @@
   .fossil-ico { width: 16px; height: 16px; image-rendering: pixelated; vertical-align: -2px; }
   .over-fossils { font-family: var(--f-title); font-size: 10px; color: #ffb02e; margin: 0 0 8px; } .over-fossils small { font-family: var(--f-text); color: var(--text-dim); }
   @media (max-width: 640px) { .tnode { width: 23%; grid-template-columns: 1fr; height: 70px; } .tnode canvas { display: none; } .tnode small { white-space: normal; } }
+  /* Tutorial y consejos */
+  #tutSkip { position: absolute; right: 10px; bottom: 10px; z-index: 5; min-width: 0; }
+  .tip-box { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6; display: flex; gap: 12px; align-items: center; max-width: min(92%, 620px);
+    background: var(--surface); border: 2px solid var(--line); outline: 2px solid var(--weak); box-shadow: 4px 4px 0 var(--line); padding: 10px 12px; text-align: left; animation: slidein .25s ease-out; }
+  .tip-box canvas { width: 160px; height: 90px; image-rendering: pixelated; border: 2px solid var(--line); flex: none; }
+  .tip-box small { font-family: var(--f-title); font-size: 10px; color: var(--weak); }
+  .tip-box p { margin: 4px 0 8px; font-size: 15px; line-height: 20px; }
+  .tip-box .btn { font-size: 10px; line-height: 10px; padding: 10px 12px 12px; min-width: 0; }
+  @media (max-width: 640px) { .tip-box canvas { display: none; } }
 </style>
 </head>
 <body>
-<div id="stage"><canvas id="game"></canvas></div>
+<div id="stage"><canvas id="game"></canvas><button class="btn ghost hidden" id="tutSkip">Saltar tutorial ⏭</button>
+  <div id="tip" class="tip-box hidden"><canvas id="tipCanvas" width="160" height="90"></canvas><div><small>CONSEJO</small><p id="tipText"></p><button class="btn primary" id="tipOk">Entendido <kbd>W</kbd></button></div></div>
+</div>
 <div id="touch">
   <button data-act="laneUp">▲ Carril</button>
   <button data-act="laneDown">▼ Carril</button>
@@ -484,7 +495,7 @@
   <div class="card">
     <h1>DINO RUNNER</h1>
     <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus bosses</p>
-    <p class="touch-hint" style="margin:-8px 0 10px">Versión 10 · Portales, huevos de la tienda y trampas</p>
+    <p class="touch-hint" style="margin:-8px 0 10px">Versión 11 · Monturas, roguelike, árbol, estadísticas y tutorial</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
@@ -515,7 +526,7 @@
     </div>
     <p class="touch-hint">Multijugador (2 jugadores, mismo teclado, sin jefes): J1 corre arriba con <kbd>W</kbd> saltar, <kbd>S</kbd> deslizarse y <kbd>E</kbd> rugido y <kbd>A</kbd> trampa · J2 corre abajo con <kbd>↑</kbd> saltar, <kbd>↓</kbd> deslizarse, <kbd>→</kbd> rugido y <kbd>←</kbd> trampa. Gana quien aguante más.</p>
     <p class="touch-hint">Bosses: cada uno se vence de una forma distinta (la verás abajo en la pantalla). Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
-    <div class="actions" style="margin:10px 0 0"><button class="btn ghost" id="btnMute">Sonido: SÍ</button></div>
+    <div class="actions" style="margin:10px 0 0"><button class="btn ghost" id="btnMute">Sonido: SÍ</button><button class="btn ghost" id="btnTips">💡 Consejos: SÍ</button><button class="btn ghost" id="btnTipsReset">Volver a ver los consejos</button><button class="btn ghost" id="btnTutorial">🎓 Tutorial</button></div>
     <p class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso (Guardar / Cargar)</p>
     <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–9 y 0 = nivel 1–10 · B = boss del nivel actual</p>
   </div>
@@ -1162,6 +1173,7 @@ const ACHIEVEMENTS = [
   { id: "sin-red", cat: "modos", name: "Sin red", desc: "Completa el nivel 3 en modo Normal o Difícil", reward: 150 },
   { id: "sin-piedad", cat: "modos", name: "Sin piedad", desc: "Completa el nivel 3 en modo Difícil", reward: 400 },
   { id: "pesadilla", cat: "modos", name: "Pesadilla", desc: "Derrota a un boss en modo Difícil", reward: 300 },
+  { id: "graduado", cat: "modos", name: "Graduado", desc: "Termina el tutorial", reward: 50 },
   { id: "estudiante", cat: "modos", name: "Estudiante", desc: "Abre todas las secciones del manual", reward: 50, goal: 12, stat: "manualSections" },
   // Monturas
   { id: "jinete", cat: "monturas", name: "Jinete", desc: "Usa 5 monturas distintas", reward: 200, goal: 5, stat: "mountTypes" },
@@ -2080,7 +2092,7 @@ class Player {
     if (this.onGround) {
       if (!this.sliding) { this.game.sfx.slide(); this.game.ach.event("slide"); }
       this.slideTime = CONFIG.SLIDE_DURATION * (this.game.versus ? 1 : this.game.stat("slideMult"));
-    } else this.fastFall = true;
+    } else { if (!this.fastFall) this.game.ach.event("fastFall"); this.fastFall = true; }
   }
   changeLane(dir) {
     if (this.game.versus) return;   // en multijugador cada raptor tiene su carril
@@ -2313,7 +2325,7 @@ class FuryMeter {
     this.idle = 0;
     if (this.full) return;
     this.v = Math.min(FURY_CONFIG.MAX, this.v + n * g.stat("furyRate"));
-    if (this.v >= FURY_CONFIG.MAX) { this.charges = g.stat("superRoarUses"); this.flash = 1; g.sfx.furyFull(); g.ach.event("furyFull"); }
+    if (this.v >= FURY_CONFIG.MAX) { this.charges = g.stat("superRoarUses"); this.flash = 1; g.sfx.furyFull(); g.ach.event("furyFull"); if (!g.bosses.active) g.tips.show("superRoar"); }
   }
   update(dt) {
     const g = this.game;
@@ -3469,6 +3481,7 @@ class BossManager {
         this.phase = "fight"; this.hitTaken = false;
         g.bossHearts = g.stat("bossHearts") + g.pendingHeart; g.pendingHeart = 0;   // corazones extra para este combate
         g.ach.event("bossStart", { id: BOSS_IDS[this.pending.type], tier: this.pending.tier });
+        g.tips.show("boss"); if (this.pending.tier) g.tips.show("corrupt");
         if (Math.random() < CONFIG.BOSS_POWERUP_CHANCE) {   // ayuda opcional al empezar la pelea
           const types = ["shield", "turbo"].filter(t => g.effects[t] <= 0);
           if (types.length) g.powerups.push(new PowerUp(choice(types), randInt(0, 1), 1050));
@@ -3626,6 +3639,7 @@ class Boss {
     this.game.addShake(0.5, 9); this.game.sfx.bossWarn();
     const tg = this.target(); this.game.floatText(tg.laneT, tg.x, tg.y + 60, "¡FURIA!", "#ff3b3b", 34);
     this.onFury();
+    this.game.tips.show("fury");
   }
   onFury() {}
   canStomp() { return this.rules.stomp; }
@@ -6110,6 +6124,9 @@ class UI {
     bind("btnBackup", () => game.openBackup());
     bind("btnStats", () => game.openStats());
     bind("btnTree", () => game.openTree());
+    bind("btnTutorial", () => game.startTutorial());
+    bind("btnTips", () => { game.tips.toggle(); this.updateTips(); });
+    bind("btnTipsReset", () => { game.tips.resetSeen(); this.$("btnTipsReset").textContent = "✔ Consejos reiniciados"; });
     bind("btnHistory", () => game.openHistory("over"));
     bind("btnMenuHistory", () => game.openHistory("menu"));
     bind("btnManual", () => game.openManual("menu"));
@@ -6133,13 +6150,14 @@ class UI {
     this.selMode = game.mode.id; this.selLevel = 1;
     this.updateMute();
   }
+  updateTips() { const off = this.game.save.data.tips.off; this.$("btnTips").textContent = off ? "💡 Consejos: NO" : "💡 Consejos: SÍ"; this.$("btnTipsReset").textContent = "Volver a ver los consejos"; }
   updateMute() { this.$("btnMute").textContent = this.game.sfx.muted ? "🔇 Sonido: NO" : "🔊 Sonido: SÍ"; }
   showMenu() {
     const g = this.game, s = g.save.data, sk = SkinCatalog.get(g.skinId);
     this.$("menuHiN").textContent = s.records.normal; this.$("menuHiE").textContent = s.records.easy; this.$("menuHiH").textContent = s.records.hard;
     this.$("menuCoins").textContent = s.coins; this.$("menuEggs").textContent = s.eggWallet; this.$("menuSkin").textContent = sk ? sk.name : "—";
     this.$("menuAch").textContent = `${g.ach.unlockedCount}/${ACHIEVEMENTS.length}`;
-    this.$("menuFossils").textContent = s.fossils;
+    this.$("menuFossils").textContent = s.fossils; this.updateTips();
     this.$("debugHint").classList.toggle("hidden", !DEBUG);
     this.$("bkRemind").classList.toggle("hidden", !g.backup.needsReminder());
     this.hideAll(); this.menu.classList.remove("hidden");
@@ -6232,7 +6250,8 @@ class UI {
   }
   draw(c) {
     const g = this.game;
-    if (["playing", "paused", "over", "choice"].includes(g.state)) this.drawHud(c);
+    if (["playing", "paused", "over", "choice", "tip"].includes(g.state)) this.drawHud(c);
+    if (g.tutorial && ["playing", "paused", "tip"].includes(g.state)) g.tutorial.draw(c, this);
     if (g.state === "playing" || g.state === "paused") { this.drawBanner(c); this.drawBossScreens(c); }
   }
   drawBossScreens(c) {
@@ -6297,7 +6316,7 @@ class UI {
       this.text(c, `NIVEL ${L.level} · ${L.biome.name.toUpperCase()}`, W / 2, 22, 16, L.biome.accent, "center");
       // Cuenta atrás hasta el boss del nivel
       const left = B.nextAt - g.distScore, lvl = Math.floor(B.nextAt / CONFIG.POINTS_PER_LEVEL) + 1;
-      if (!B.active && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
+      if (!B.active && !g.tutorial && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
     }
     if (DEBUG) this.text(c, "DEBUG · 1–9, 0 nivel · B boss", W / 2, H - 42, 10, "#ff8a8a", "center");
 
@@ -7078,6 +7097,7 @@ class AchievementManager {
   // Evento central: todo el juego informa aquí de lo que pasa
   event(type, d = {}) {
     if (this.game.versus) return;                       // en multijugador no se consiguen logros
+    if (this.game.tutorial) { this.game.tutorial.onEvent(type, d); return; }   // el tutorial escucha los eventos (sin logros ni estadísticas)
     if (this.game.statsMgr) this.game.statsMgr.event(type, d);   // las estadísticas usan los mismos eventos
     if (DEBUG) return;                                  // con el modo prueba no se consiguen logros
     const g = this.game, easy = g.mode.id === "easy", hard = g.mode.id === "hard", normal = !easy, run = g.run;   // los logros «solo Normal» también valen en Difícil
@@ -7299,11 +7319,13 @@ const MANUAL_SECTIONS = [
       <tr><td>${kbd("S")}</td><td>En el suelo: deslizarse (${secs(CONFIG.SLIDE_DURATION)}). En el aire: caída rápida.</td></tr>
       <tr><td>${kbd("A")}</td><td>Ir al carril de arriba.</td></tr>
       <tr><td>${kbd("D")}</td><td>Ir al carril de abajo.</td></tr>
-      <tr><td>${kbd("E")}</td><td>Rugido (recarga ${secs(CONFIG.ROAR_COOLDOWN)}, ${secs(CONFIG.EASY.ROAR_COOLDOWN)} en Fácil, ${secs(CONFIG.HARD.ROAR_COOLDOWN)} en Difícil).</td></tr>
+      <tr><td>${kbd("E")}</td><td>Rugido (recarga ${secs(CONFIG.ROAR_COOLDOWN)}, ${secs(CONFIG.EASY.ROAR_COOLDOWN)} en Fácil, ${secs(CONFIG.HARD.ROAR_COOLDOWN)} en Difícil). Con la <b>barra de furia</b> llena: <b>súper rugido</b>, que destruye todo lo que hay en pantalla.</td></tr>
       <tr><td>${kbd("P")}</td><td>Pausa (también congela los combates).</td></tr>
       <tr><td>${kbd("M")}</td><td>Silenciar.</td></tr>
     </table>
-    <p>Las teclas funcionan en mayúsculas y minúsculas.</p>
+    <p>Las teclas funcionan en mayúsculas y minúsculas. En la elección de mejora: ${kbd("A")}/${kbd("D")} elegir carta, ${kbd("W")} cogerla, ${kbd("R")} barajar y ${kbd("Q")} saltar. Montado, cada montura cambia lo que hacen ${kbd("W")} y ${kbd("S")} (mira la sección Monturas).</p>
+    <h4>Furia</h4>
+    <p>La barra de furia (debajo del rugido) se llena esquivando por los pelos (+${FURY_CONFIG.NEAR_MISS}), recogiendo huevos (+${FURY_CONFIG.EGG}), destruyendo con el rugido (+${FURY_CONFIG.ROAR_KILL}) y dañando a los bosses (+${FURY_CONFIG.BOSS_HIT}). Si pasas ${FURY_CONFIG.DECAY_AFTER} s sin sumar, se va vaciando. Durante los combates contra jefes el súper rugido no se puede usar.</p>
     <h4>Móvil</h4>
     <p>Toca la pantalla para saltar y desliza hacia abajo para deslizarte o caer rápido. Los botones de abajo cambian de carril y rugen (se ocultan en los combates).</p>
     <h4>Bosses</h4>
@@ -7415,7 +7437,9 @@ const MANUAL_SECTIONS = [
       <li><b>Jefes</b>: derrota a los ${BOSS_NAMES.length} bosses, y mejor sin recibir golpes.</li>
       <li><b>Habilidad</b>: salta mucho, ruge mucho… o aguanta sin rugir, sin power-ups o sin cambiar de carril.</li>
       <li><b>Colección</b>: ahorra, compra skins, recoge huevos y usa la tienda.</li>
-      <li><b>Ruleta</b> y <b>Modos</b>: prueba la ruleta, el giro diario y los tres modos.</li>
+      <li><b>Ruleta</b> y <b>Modos</b>: prueba la ruleta, el giro diario y los tres modos (y termina el tutorial).</li>
+      <li><b>Roguelike</b>: elige mejoras, activa sinergias, acepta pactos… o gana sin coger nada.</li>
+      <li><b>Árbol</b>: compra nodos con fósiles hasta completar el árbol.</li>
       <li><b>Monturas</b>: prueba las ${MOUNT_BIOMES.length} monturas, aterriza bien del meteorito y haz trucos con la tabla.</li>
       <li><b>Secretos</b>: hay ${ACHIEVEMENTS.filter(a => a.secret).length} logros ocultos. Aparecen como «???» hasta que los consigues.</li>
     </ul>
@@ -7457,6 +7481,32 @@ const MANUAL_SECTIONS = [
     · Busca una sinergia (las cartas que la completan llevan la etiqueta «SINERGIA») en vez de coger un poco de todo.<br>
     · Un pacto compensa si tu build ya tapa su desventaja: el Pacto del silencio con Furia rápida, el de la bestia si llevas Presa fácil…<br>
     · En la pausa ves todo tu build con sus descripciones; en el menú tienes el <b>Álbum</b> y el <b>Historial</b> de tus últimas 20 partidas.</div>`; } },
+  { title: "Árbol de mejoras", html: () => { const F = TREE_CONFIG.FOSSILS; return `
+    <p>Mejoras <b>permanentes</b> que se aplican al empezar cada partida (en todos los modos de un jugador). Se pagan con <b>fósiles</b>, una moneda aparte que no compite con la tienda.</p>
+    <table><tr><th>Cómo se ganan los fósiles (al acabar la partida)</th><th>Fósiles</th></tr>
+      <tr><td>Cada nivel completado</td><td>${F.LEVEL}</td></tr><tr><td>Cada boss derrotado (Corrupto · Dorado)</td><td>${F.BOSS} (${F.BOSS_CORRUPT} · ${F.BOSS_GOLD})</td></tr>
+      <tr><td>Cada sinergia activada</td><td>${F.SYNERGY}</td></tr><tr><td>Superar tu récord</td><td>${F.RECORD}</td></tr></table>
+    <p>En Fácil ganas la mitad (redondeando hacia arriba). El Game Over te dice cuántos has ganado y por qué.</p>
+    ${TREE_CONFIG.branches.map(b => `<h4 style="color:${b.color}">Rama ${b.name}</h4><ul>${b.nodes.map(n => `<li><b>${n.name}</b> (máx. ${n.max}, coste ${n.cost.join("/")}): ${n.desc(n.max)}</li>`).join("")}</ul>`).join("")}
+    <p>Un nodo solo se puede comprar si el anterior de su rama tiene al menos nivel 1 (los primeros cuelgan de la Raíz, gratis). <b>Reiniciar árbol</b> devuelve todos los fósiles gastados: gratis la primera vez y después ${TREE_CONFIG.RESET_COST} monedas.</p>`; } },
+  { title: "Estadísticas", html: () => `
+    <p>En el menú, <b>📊 Estadísticas</b> guarda todo lo que haces, con 5 pestañas:</p>
+    <ul><li><b>General</b>: partidas, tiempo, distancia, récords por modo, monedas ganadas y gastadas, movimientos, qué te mata más y en qué bioma, y un gráfico de tus últimas 20 partidas.</li>
+      <li><b>Jefes</b>: combates, victorias, derrotas, % de victoria, mejor tiempo, corazones perdidos de media y victorias en forma Corrupta y Dorada.</li>
+      <li><b>Monturas</b>: veces usada, tiempo total y veces perdida por un golpe.</li>
+      <li><b>Roguelike</b>: mejora más elegida, rareza más alta, sinergias, pactos y tu mejor build.</li>
+      <li><b>Otros</b>: ruleta, multijugador y skins más usados.</li></ul>
+    <p>«Reiniciar estadísticas» pide doble confirmación y no toca monedas, skins ni logros.</p>` },
+  { title: "Copia de seguridad", html: () => `
+    <p>En el menú, <b>💾 Guardar / Cargar</b>:</p>
+    <ul><li><b>Exportar</b>: crea un código de texto con TODO tu progreso (monedas, skins, diseños, checkpoints, logros, estadísticas, árbol, historial, álbum, consejos y opciones). Cópialo o descárgalo como archivo <i>dino-runner-guardado-AAAA-MM-DD.txt</i>.</li>
+      <li><b>Importar</b>: pega un código o elige un archivo. Si está dañado verás un error y no se cambia nada. Antes de sobrescribir verás un resumen y tendrás que confirmar.</li>
+      <li><b>Deshacer</b>: antes de importar se guarda tu progreso anterior; «Restaurar el guardado anterior» lo recupera.</li></ul>
+    <p>Si pasan ${BACKUP_CONFIG.REMIND_DAYS} días sin exportar y tienes bastante progreso, el menú te lo recordará.</p>` },
+  { title: "Tutorial y consejos", html: () => `
+    <p>El <b>tutorial</b> es un nivel de práctica en el Desierto donde no puedes perder: enseña a saltar y hacer doble salto, deslizarte, la caída rápida, los carriles, el rugido, a coger monedas, power-ups y huevos, y el súper rugido. Al terminarlo por primera vez ganas ${TUTORIAL_CONFIG.REWARD} monedas y el logro «Graduado».</p>
+    <p>Los <b>consejos</b> salen la primera vez que ves algo nuevo (un boss, la forma furiosa, un boss Corrupto, cada montura, el altar de ámbar, la primera elección de mejora y la furia llena). Puedes desactivarlos o volver a verlos desde el menú.</p>
+    <div class="actions"><button class="btn primary" data-act="tutorial">🎓 Repetir el tutorial</button></div>` },
   { title: "Guía para ser PRO", html: () => `
     <ul>
       <li><b>Guarda el rugido para los pájaros</b>: las rocas fáciles se saltan; los pájaros rápidos no perdonan.</li>
@@ -7587,6 +7637,8 @@ class Manual {
       return { ctx: cv.getContext("2d"), fn: DEMOS[cv.dataset.demo], k, arg: cv.dataset.arg, w, h, state: {} };
     });
     this.el.querySelector(".card").scrollTop = 0;
+    const tb = this.content.querySelector("[data-act=tutorial]");
+    if (tb) tb.addEventListener("click", () => { this.game.sfx.click(); this.el.classList.add("hidden"); this.demos = []; this.game.startTutorial(); });
     this.game.ach.event("manualSection", { index: this.page });
   }
   update(dt) { for (const d of this.demos) if (d.state.boss) { d.state.boss.t += dt; d.state.boss.updateBody(dt); } }
@@ -7719,6 +7771,7 @@ class RogueManager {
     const g = this.g, sp = g.effectiveSpeed * (g.effects.slowmo > 0 ? CONFIG.SLOWMO_FACTOR : 1);
     if (this.altar) {
       const A = this.altar; A.t += dt; A.x -= sp * dt;
+      if (!A.tipped && A.x < W - 120) { A.tipped = true; g.tips.show("altar"); }
       const pl = g.player;
       if (!A.taken && A.lane === pl.logicalLane && pl.hitboxes().some(b => overlap(b, A.hitbox()))) {
         A.taken = true; g.sfx.portal(); g.flashT = 0.25;
@@ -8379,6 +8432,162 @@ function fossilsForRun(g) {
   return { total, lines };
 }
 
+// =====================================================================
+//  Tutorial interactivo (nivel de práctica en el Desierto, sin poder morir) y TipManager (consejos la primera vez).
+// =====================================================================
+const TUTORIAL_CONFIG = {
+  REWARD: 100,              // monedas al terminarlo (solo la primera vez)
+  SPEED_MULT: 0.8,          // velocidad del nivel de práctica respecto a la normal
+  RESPAWN_DELAY: 0.9,       // s entre intentos
+  SPAWN_AHEAD: 640,         // px por delante del raptor a los que aparece cada obstáculo de práctica
+};
+// Cada paso espera a que se cumplan sus eventos (need) y a superar su obstáculo sin golpe
+const TUTORIAL_STEPS = [
+  { keys: ["W"], text: "Pulsa W para saltar el cactus", need: ["jump"], spawn: t => t.ground("small", 1) },
+  { keys: ["W", "W"], text: "En el aire, pulsa W otra vez: ¡doble salto! Lo necesitas para lo largo", need: ["doubleJump"], spawn: t => t.ground("big", 3) },
+  { keys: ["S"], text: "Pulsa S para deslizarte bajo el pájaro", need: ["slide"], spawn: t => t.flyer() },
+  { keys: ["W", "S"], text: "Salta el cactus y, ya en el aire, pulsa S: caída rápida", need: ["fastFall"], spawn: t => t.ground("small", 1) },
+  { keys: ["A", "D"], text: "Pulsa A (arriba) o D (abajo) para cambiar de carril y esquivar el muro", need: ["laneChange"], spawn: t => t.wall() },
+  { keys: ["E"], text: "Pulsa E: el rugido rompe la roca", need: ["roarKill"], spawn: t => t.rock(), kill: true },
+  { keys: [], text: "Coge las monedas, el power-up y el huevo", need: ["coinCollected", "powerup", "eggCollected"], spawn: t => t.goodies(), free: true },
+  { keys: ["E"], text: "Rompe rocas con E para llenar la FURIA (arriba a la derecha). Llena: E = ¡SÚPER RUGIDO!", need: ["superRoar"], spawn: t => t.rock(), kill: true, fury: true },
+];
+class Tutorial {
+  constructor(game) { this.g = game; this.step = 0; this.t = 0; this.wait = 1.4; this.seen = new Set(); this.objs = []; this.done = false; this.msgT = 0; this.msg = ""; this.flash = 0; }
+  get cur() { return TUTORIAL_STEPS[this.step]; }
+  onEvent(type) { if (!this.done) this.seen.add(type); if (type === "furyFull") this.say("¡FURIA LLENA! Pulsa E", "#ff9a3c"); }
+  say(t, col = "#ffd23f") { this.msg = t; this.msgCol = col; this.msgT = 1.6; }
+  // Golpe: solo hace retroceder (nunca se pierde)
+  onHit() {
+    const g = this.g, pl = g.player;
+    if (g.grace > 0) return false;
+    g.grace = 1.2; g.sfx.lifeLost(); g.addShake(0.25, 5); this.failed = true;
+    for (const o of g.obstacles) if (o.tut && !o.passed) { o.dead = true; g.puff(o.x, 0, o.lane, 10, "#ffffff"); }
+    pl.x = PLAYER_X - 40;   // retrocede un poco y vuelve a su sitio
+    this.say("¡Casi! Prueba otra vez", "#ff8a8a");
+    return false;
+  }
+  // ----- Obstáculos de práctica -----
+  get lane() { return this.g.player.lane; }
+  get x0() { return PLAYER_X + TUTORIAL_CONFIG.SPAWN_AHEAD; }
+  add(o) { o.tut = true; this.g.obstacles.push(o); this.objs.push(o); return o; }
+  ground(size, count) { return [this.add(new Obstacle("ground", this.lane, this.x0, { size, count }, this.g.level.biome))]; }
+  rock() { return [this.add(new Obstacle("rock", this.lane, this.x0, { size: "small" }, this.g.level.biome))]; }
+  flyer() { const o = new Obstacle("flyer", this.lane, this.x0, { h: "mid" }, this.g.level.biome); o.extra = 0; return [this.add(o)]; }
+  wall() {
+    const b = this.g.level.biome, f = new Obstacle("flyer", this.lane, this.x0, { h: "wall" }, b); f.extra = 0;
+    return [this.add(new Obstacle("ground", this.lane, this.x0, { size: "tall", count: 2 }, b)), this.add(f)];
+  }
+  goodies() {
+    const g = this.g, l = this.lane, x = this.x0;
+    for (let i = 0; i < 5; i++) g.coinsArr.push(new Coin(l, x + i * 34, 22));
+    if (!this.seen.has("powerup")) g.powerups.push(new PowerUp("magnet", l, x + 260));
+    if (!this.seen.has("eggCollected")) { const e = new BonusEgg(l, x + 420, 30); e.level = 1; g.eggs.push(e); }
+    return [];
+  }
+  update(gdt, dt) {
+    const g = this.g; this.t += dt; this.msgT = Math.max(0, this.msgT - dt); this.flash = Math.max(0, this.flash - dt);
+    g.speed = CONFIG.BASE_SPEED * TUTORIAL_CONFIG.SPEED_MULT;
+    const pl = g.player; if (pl.x < PLAYER_X) pl.x = Math.min(PLAYER_X, pl.x + 60 * dt);
+    if (this.done) { if ((this.endT -= dt) <= 0) g.finishTutorial(); return; }
+    const S = this.cur;
+    if (S.fury) { if (g.roarCd > 1) g.roarCd = 1; if (!g.fury.full && g.fury.v < 60) g.fury.v = 60; }
+    // ¿Superado?
+    const behind = o => o.passed || o.x + o.w < PLAYER_X - 10;   // ya ha quedado atrás (también si estaba en el otro carril)
+    const alive = this.objs.filter(o => !o.dead && !behind(o));
+    const cleared = this.objs.length > 0 && alive.length === 0 && !this.failed && (S.kill ? this.objs.every(o => o.dead) : this.objs.every(behind));
+    if (S.need.every(n => this.seen.has(n)) && (S.free || cleared)) return this.next();
+    // Nuevo intento cuando no queda nada de práctica delante
+    const extrasLeft = S.free && (g.coinsArr.length || g.powerups.length || g.eggs.length);
+    if (!alive.length && !extrasLeft) {
+      if (this.objs.length && !this.failed && !S.free) { this.say(S.kill ? "¡Rómpela con E!" : "Usa la acción que se pide", "#ff8a8a"); }
+      if ((this.wait -= dt) <= 0) { this.objs = []; this.failed = false; if (!S.free) for (const n of S.need) if (n !== "superRoar" || !S.fury) this.seen.delete(n); S.spawn(this); this.wait = TUTORIAL_CONFIG.RESPAWN_DELAY; }
+    }
+  }
+  next() {
+    const g = this.g; this.step++; this.objs = []; this.failed = false; this.wait = 1.2; this.seen.clear(); this.flash = 0.6;
+    g.sfx.perfect(); this.say("¡BIEN!", "#5fd15a");
+    if (this.step >= TUTORIAL_STEPS.length) { this.done = true; this.endT = 2.6; g.sfx.levelUp(); g.bossBanner = { t: 2.6, text: "¡TUTORIAL COMPLETADO!", sub: "Ya sabes todo lo básico: ¡a por el récord!", color: "#5fd15a" }; }
+  }
+  // Panel de instrucciones con las teclas dibujadas
+  draw(c, ui) {
+    const g = this.g; if (this.done) return;
+    const S = this.cur, w = 500, x = 214, y = 50;   // entre el marcador de puntos y el rugido
+    c.fillStyle = "rgba(14,11,22,0.85)"; c.fillRect(x, y, w, 66); c.fillStyle = this.flash > 0 ? "#5fd15a" : UI_T.weak; c.fillRect(x, y, w, 3);
+    ui.text(c, `TUTORIAL ${this.step + 1}/${TUTORIAL_STEPS.length}`, x + 12, y + 16, 10, UI_T.dim);
+    let kx = x + 12;
+    for (const k of S.keys) {   // tecla dibujada (parpadea)
+      const on = Math.floor(this.t * 3) % 2 === 0;
+      c.fillStyle = UI_T.line; c.fillRect(kx, y + 26, 28, 26); c.fillStyle = on ? UI_T.weak : "#3d3160"; c.fillRect(kx + 2, y + 28, 24, 20); c.fillStyle = "rgba(0,0,0,0.3)"; c.fillRect(kx + 2, y + 44, 24, 4);
+      ui.text(c, k, kx + 14, y + 38, 14, on ? "#16111f" : UI_T.text, "center"); kx += 34;
+    }
+    c.font = '10px "Raptor Pixel Display", monospace';   // texto en una o dos líneas
+    const words = S.text.toUpperCase().split(" "), lines = [""], maxW = x + w - kx - 16;
+    for (const wd of words) { const t = lines[lines.length - 1] ? lines[lines.length - 1] + " " + wd : wd; if (c.measureText(t).width > maxW && lines[lines.length - 1]) lines.push(wd); else lines[lines.length - 1] = t; }
+    lines.slice(0, 3).forEach((l, i, a) => ui.text(c, l, kx + 6, y + 40 + (i - (a.length - 1) / 2) * 14, 10, UI_T.text));
+    if (S.free) {   // lista de lo que falta coger
+      const parts = [["coinCollected", "MONEDAS"], ["powerup", "POWER-UP"], ["eggCollected", "HUEVO"]].map(([k, n]) => (this.seen.has(k) ? "✔ " : "· ") + n).join("   ");
+      ui.text(c, parts, x + w - 12, y + 16, 10, UI_T.go, "right");
+    }
+    if (this.msgT > 0) { c.globalAlpha = Math.min(1, this.msgT * 2); ui.text(c, this.msg, W / 2, 140, 20, this.msgCol, "center"); c.globalAlpha = 1; }
+  }
+}
+
+// =====================================================================
+//  TipManager: la primera vez que aparece algo, una pausa breve con un consejo de una línea y un dibujo
+// =====================================================================
+const TIPS = {
+  boss: { text: "Llega un boss: el ROJO avisa de su ataque; el AMARILLO marca su punto débil. Mira abajo cómo se vence.", draw: "boss" },
+  fury: { text: "¡Forma furiosa! A media vida el boss acelera y estrena un ataque nuevo: lee el aviso de abajo.", draw: "fury" },
+  corrupt: { text: "Boss Corrupto (reforzado): más vida y más rápido. Da más monedas y fósiles.", draw: "fury" },
+  altar: { text: "Un altar de ámbar: tócalo para recibir un PACTO (ventaja fuerte con desventaja). Puedes rechazarlo.", draw: "altar" },
+  upgrade: { text: "Elige una mejora para esta partida. Las cartas con «SINERGIA» se combinan con lo que ya tienes.", draw: "card" },
+  superRoar: { text: "¡Furia llena! Pulsa E para el SÚPER RUGIDO: destruye todo lo que hay en pantalla.", draw: "furybar" },
+};
+class TipManager {
+  constructor(game) {
+    this.g = game; const $ = id => document.getElementById(id);
+    this.el = $("tip"); this.textEl = $("tipText"); this.cv = $("tipCanvas");
+    $("tipOk").addEventListener("click", e => { e.currentTarget.blur(); this.close(); });
+  }
+  get d() { return this.g.save.data.tips; }
+  get visible() { return !this.el.classList.contains("hidden"); }
+  // key: identificador del consejo · data: datos extra (montura)
+  show(key, data) {
+    const g = this.g; if (this.d.off || g.versus || g.tutorial) return;
+    const id = key === "mount" ? "mount-" + data.id : key;
+    if (this.d.seen[id] || this.visible) return;
+    this.d.seen[id] = 1; g.save.save();
+    const tip = key === "mount" ? { text: `${data.name.toUpperCase()}: ${data.control}`, draw: "mount", mount: data.id } : TIPS[key]; if (!tip) return;
+    this.tip = tip; this.textEl.textContent = tip.text;
+    this.prev = g.state; if (g.state === "playing") g.state = "tip";
+    this.el.classList.remove("hidden"); g.sfx.tick(); this.t = 0;
+  }
+  close() {
+    const g = this.g; this.el.classList.add("hidden");
+    if (g.state === "tip") { g.state = this.prev === "choice" ? "choice" : "playing"; g.grace = Math.max(g.grace, 0.6); }
+  }
+  // Dibujo del consejo (se anima en el bucle)
+  drawCanvas(time) {
+    if (!this.visible || !this.tip) return;
+    const c = this.cv.getContext("2d"), w = this.cv.width, h = this.cv.height, k = this.tip.draw;
+    c.setTransform(1, 0, 0, 1, 0, 0); c.imageSmoothingEnabled = false; c.fillStyle = "#14101f"; c.fillRect(0, 0, w, h);
+    c.fillStyle = "#2f2549"; c.fillRect(0, h - 22, w, 22);
+    if (k === "mount") drawMountIcon(c, this.tip.mount, w / 2, h - 34 + Math.sin(time * 5) * 2, time, 1.3);
+    else if (k === "altar") { c.save(); c.translate(w / 2, h - 22); const A = new AmberAltar(0, 0); A.t = time; A.draw(c); c.restore(); }
+    else if (k === "card") { for (let i = 0; i < 3; i++) { const x = w / 2 - 60 + i * 42, col = [ROGUE_CONFIG.RARITY.comun.color, ROGUE_CONFIG.RARITY.rara.color, ROGUE_CONFIG.RARITY.epica.color][i]; c.fillStyle = "#16111f"; c.fillRect(x - 2, 14 - (i === 1 ? 6 : 0), 40, 56); c.fillStyle = col; c.fillRect(x, 16 - (i === 1 ? 6 : 0), 36, 52); c.fillStyle = "#2f2549"; c.fillRect(x + 3, 19 - (i === 1 ? 6 : 0), 30, 46); drawUpIcon(c, ["roar", "move", "power"][i], col, 3, x + 6, 26 - (i === 1 ? 6 : 0)); } }
+    else if (k === "furybar") { const f = (Math.sin(time * 3) + 1) / 2; c.fillStyle = "#16111f"; c.fillRect(20, 38, w - 40, 18); c.fillStyle = "#3a2f50"; c.fillRect(22, 40, w - 44, 14); c.fillStyle = f > 0.9 ? "#ffd23f" : "#ff9a3c"; c.fillRect(22, 40, (w - 44) * Math.min(1, f * 1.1), 14); }
+    else {   // boss: sombra roja de aviso + rombo amarillo de punto débil
+      const p = (Math.sin(time * 6) + 1) / 2;
+      c.fillStyle = `rgba(255,59,59,${0.35 + 0.4 * p})`; c.beginPath(); c.ellipse(w * 0.32, h - 22, 34, 9, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#ff3b3b"; c.font = '20px "Raptor Pixel Display", monospace'; c.textAlign = "center"; c.fillText("!", w * 0.32, h - 36);
+      c.save(); c.translate(w * 0.7, h - 46); c.rotate(Math.PI / 4); c.fillStyle = "#16111f"; c.fillRect(-13, -13, 26, 26); c.fillStyle = k === "fury" ? "#ff3b3b" : "#ffd23f"; c.fillRect(-10, -10, 20, 20); c.restore();
+    }
+  }
+  resetSeen() { this.d.seen = {}; this.g.save.save(); }
+  toggle() { this.d.off = !this.d.off; this.g.save.save(); }
+}
+
 // Causa de un golpe (estadística «qué te mata más»)
 function obstacleCause(o) {
   if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
@@ -8418,7 +8627,9 @@ class Game {
     this.ach = new AchievementManager(this);
     this.ui = new UI(this); this.shop = new Shop(this); this.roulette = new Roulette(this); this.manual = new Manual(this);
     this.rogue = new RogueManager(this); this.history = new BuildHistory(this); this.album = new UpgradeAlbum(this);
-    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this);
+    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this); this.tips = new TipManager(this);
+    this.tutSkip = document.getElementById("tutSkip");
+    this.tutSkip.addEventListener("click", e => { e.currentTarget.blur(); this.sfx.click(); this.skipTutorial(); });
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
     this.clouds = Array.from({ length: 6 }, () => ({ x: rand(0, W), y: rand(20, 120), w: rand(50, 110) }));
     this.stars = Array.from({ length: 50 }, () => ({ x: rand(0, W), y: rand(0, 190), s: Math.random() < 0.2 ? 3 : 2, tw: rand(1, 4), ph: rand(0, 6) }));
@@ -8489,15 +8700,37 @@ class Game {
     for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el]) el.classList.add("hidden");
   }
   showMenu() {
-    if (["playing", "paused", "choice"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
-    this.versus = false; this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu();
+    if (["playing", "paused", "choice", "tip"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
+    this.versus = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu();
   }
-  openPlay(versus = false) { this.state = "play"; this.closeScreens(); this.ui.showPlay(false, versus); }
+  // ----- Tutorial (nivel de práctica) -----
+  get firstTime() { const s = this.save.data; return !s.tutorialDone && !s.records.normal && !s.records.easy && !s.records.hard; }
+  startTutorial() {
+    this.sfx.unlock();
+    if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
+    this.versus = false; this.mode = MODES.normal; this.startLevel = 1;
+    this.tutorial = new Tutorial(this);
+    this.reset(); this.fury.reset(0); this.state = "playing"; this.closeScreens();
+    this.level.banner = 0; this.bosses.nextAt = 1e9; this.tutSkip.classList.remove("hidden");
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+  finishTutorial() {
+    const s = this.save.data, first = !s.tutorialRewarded;
+    s.tutorialDone = true;
+    if (first) { s.tutorialRewarded = true; s.coins += TUTORIAL_CONFIG.REWARD; }
+    this.save.save(); this.ach.unlock("graduado");
+    this.showMenu();
+  }
+  skipTutorial() { this.save.data.tutorialDone = true; this.save.save(); this.showMenu(); }
+  endTutorial() { this.tutorial = null; if (this.tutSkip) this.tutSkip.classList.add("hidden"); if (this.tips) this.tips.el.classList.add("hidden"); }
+  openPlay(versus = false) {
+    if (!versus && this.firstTime) return this.startTutorial();   // la primera vez: nivel de práctica
+    this.state = "play"; this.closeScreens(); this.ui.showPlay(false, versus); }
   // Empieza una partida en un modo y (opcionalmente) desde un checkpoint
   start(modeId = this.mode.id, startLevel = this.startLevel) {
     this.sfx.unlock();
-    if (["playing", "paused"].includes(this.state)) this.bankRun();
-    this.versus = false;
+    if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
+    this.versus = false; this.endTutorial();
     this.mode = MODES[modeId] || MODES.normal; this.save.data.lastMode = this.mode.id; this.save.save();
     if (startLevel > 1 && !this.checkpoints.owned(startLevel)) startLevel = 1;
     this.startLevel = startLevel;
@@ -8514,8 +8747,8 @@ class Game {
   // Multijugador local sin jefes: J1 en el carril de arriba (WASD) y J2 en el de abajo (flechas)
   startVersus(modeId = this.versus ? this.mode.id : CONFIG.VERSUS_MODE) {
     this.sfx.unlock();
-    if (["playing", "paused"].includes(this.state)) this.bankRun();
-    this.versus = true; this.mode = MODES[modeId] || MODES.normal; this.startLevel = 1;
+    if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
+    this.versus = true; this.endTutorial(); this.mode = MODES[modeId] || MODES.normal; this.startLevel = 1;
     this.p2SkinId = this.pickP2Skin();
     this.reset(); this.player.setLane(0); this.p2.setLane(1);
     for (const p of this.players) p.lives = this.mode.lives;   // Fácil: 3 vidas por raptor
@@ -8523,7 +8756,7 @@ class Game {
     this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = "J1: W · S · E · A trampa      J2: ↑ · ↓ · → · ← trampa";
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
-  retry() { if (this.versus) this.startVersus(); else this.start(); }
+  retry() { if (this.versus) this.startVersus(); else if (this.tutorial) this.startTutorial(); else this.start(); }
   // Coloca la partida al inicio de un nivel (checkpoints y modo prueba), con su velocidad y bioma
   jumpToLevel(level, extraPoints = 0) {
     this.distance = ((level - 1) * CONFIG.POINTS_PER_LEVEL + extraPoints) * CONFIG.PX_PER_POINT;
@@ -9035,6 +9268,7 @@ class Game {
     this.ui.draw(c);
     if (this.roulette.visible) this.roulette.draw();
     if (this.manual.visible) this.manual.drawDemos(this.time);
+    this.tips.drawCanvas(this.time);
   }
   drawEntity(c, laneT, x, fn) { c.save(); applyLane(c, laneT); c.translate(x, 0); fn(); c.restore(); }
   drawLane(c, lane) {
@@ -9122,6 +9356,7 @@ addEventListener("keydown", e => {
   if (game.tree.visible) { if (k === "Escape") game.tree.close(); return; }
   if (game.statsMgr.visible) { if (k === "Escape") game.statsMgr.close(); return; }
   if (game.backup.visible) { if (k === "Escape") game.backup.close(); return; }
+  if (game.tips.visible) { if (["w", "Enter", "Escape", "ArrowUp"].includes(k) || e.code === "Space") game.tips.close(); return; }
   if (st === "choice") {   // elección de mejora o pacto: A/D o flechas + W/Intro, R barajar, Q saltar, 1–4 directa
     const S = game.rogue.screen;
     if (k === "a" || k === "ArrowLeft") S.move(-1);
