@@ -373,7 +373,7 @@
   <div class="card">
     <h1>DINO RUNNER</h1>
     <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus bosses</p>
-    <p class="touch-hint" style="margin:-8px 0 10px">Versión 8 · Jefes redibujados por piezas</p>
+    <p class="touch-hint" style="margin:-8px 0 10px">Versión 8 · Jefes por piezas y forma furiosa</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
@@ -799,6 +799,10 @@ const CONFIG = {
   BOSS_TELEGRAPH: 1,         // multiplicador de los avisos de ataque (más alto = más tiempo para reaccionar)
   BOSS_TELEGRAPH_MIN: 0.45,  // s mínimos de aviso de un ataque
   BOSS_VULN_TIME: 1.5,       // s de ventana de vulnerabilidad tras cada ataque
+  BOSS_FURY_AT: 0.5,         // forma furiosa al bajar a este % de vida: añade la mecánica nueva de cada boss
+  BOSS_FURY_SPEED: 1.25,     // en furia ataca un 25 % más rápido
+  BOSS_FURY_TELEGRAPH: 0.8,  // y sus avisos duran un 20 % menos
+  BOSS_FURY_HINT_TIME: 5,    // s que se muestra el aviso de la mecánica nueva
   BOSS_ATTACK_GAP: 0.7,      // s de pausa entre ataques
   BOSS_DMG_ROAR: 1,          // daño del rugido (solo si es vulnerable y está a su alcance)
   BOSS_DMG_STOMP: 3,         // daño del pisotón sobre el punto débil
@@ -828,6 +832,7 @@ const CONFIG = {
     BOSS_HP_MULT: 0.5,          // bosses con la mitad de vida
     BOSS_VULN_TIME: 2.5,        // s de ventana de vulnerabilidad
     BOSS_TELEGRAPH_MULT: 1.5,   // avisos de ataque un 50 % más largos
+    BOSS_FURY_AT: 0.3,          // la forma furiosa empieza al 30 % de vida
     COIN_VALUE: 0.5,            // monedas, huevos y premios de bosses valen la mitad
   },
 
@@ -982,6 +987,7 @@ class DifficultyMode {
     this.bossSpeedMult = v("BOSS_SPEED_MULT", 1);
     this.bossVulnTime = v("BOSS_VULN_TIME", CONFIG.BOSS_VULN_TIME);
     this.bossTeleMult = v("BOSS_TELEGRAPH_MULT", 1);
+    this.bossFuryAt = v("BOSS_FURY_AT", CONFIG.BOSS_FURY_AT);
     this.coinValue = v("COIN_VALUE", 1);
   }
   // Los patrones de nivel ≥ 3 (ambos carriles y más difíciles) se retrasan en Fácil y se adelantan en Difícil
@@ -2318,9 +2324,19 @@ class Boss {
     this.vulnMult = 1;                           // duración de la ventana de vulnerabilidad
     this.maxTime = CONFIG.BOSS_MAX_TIME;
     this.hint = "";
+    // Forma furiosa (al bajar de CONFIG.BOSS_FURY_AT de vida): más rápido, avisos más cortos y una mecánica nueva
+    this.fury = false; this.furyAt = game.mode.bossFuryAt; this.furyHint = ""; this.furyT = 0;
   }
   setRules(r, hint) { Object.assign(this.rules, r); if (!this.rules.trap) this.trapTimes = []; if (hint) this.hint = hint; }
   hintText() { return this.hint; }
+  hudHint() { return this.furyT > 0 && this.furyHint ? "¡FURIA! " + this.furyHint : this.hintText(); }
+  enterFury() {
+    this.fury = true; this.furyT = CONFIG.BOSS_FURY_HINT_TIME; this.speedMul *= CONFIG.BOSS_FURY_SPEED;
+    this.game.addShake(0.5, 9); this.game.sfx.bossWarn();
+    const tg = this.target(); this.game.floatText(tg.laneT, tg.x, tg.y + 60, "¡FURIA!", "#ff3b3b", 34);
+    this.onFury();
+  }
+  onFury() {}
   canStomp() { return this.rules.stomp; }
   onReflectHit() { if (this.rules.reflect) this.damage(this.dmg.reflect, "reflect"); else this.game.floatText(0, this.target().x, this.target().y + 40, "¡NO LE AFECTA!", "#cccccc", 18); }
   roarHitLimb(L) { if (this.rules.roar) this.damage(this.dmg.roar, "roar", { laneT: L.lane, x: L.x + L.w / 2, y: L.y + L.h }); }
@@ -2329,7 +2345,7 @@ class Boss {
   say(text, color = "#ffd23f", size = 22, laneT = this.p.logicalLane, x = this.p.x + 40, y = this.p.y + 100) { this.game.floatText(laneT, x, y, text, color, size); }
   get p() { return this.game.player; }
   after(d, fn) { this.timers.push({ t: d, fn }); }
-  tele(d) { const m = this.game.mode.bossTeleMult; return Math.max(CONFIG.BOSS_TELEGRAPH_MIN * m, d * CONFIG.BOSS_TELEGRAPH * m / this.speedMul); }
+  tele(d) { const m = this.game.mode.bossTeleMult * (this.fury ? CONFIG.BOSS_FURY_TELEGRAPH : 1); return Math.max(CONFIG.BOSS_TELEGRAPH_MIN * m, d * CONFIG.BOSS_TELEGRAPH * m / this.speedMul); }
   warn(lane, kind, dur, o = {}) { this.teles.push({ lane, kind, dur, t: 0, x: COL_X, y: 0, w: COL_W, h: 0, ...o }); }
   addHazard(o) { const h = new Hazard(o); this.hazards.push(h); return h; }
   setState(s) { this.state = s; this.stateT = 0; }
@@ -2350,16 +2366,17 @@ class Boss {
       onLand: (h, game) => { h.dead = true; game.burst(lane, h.x + 15, 6, this.colors, 10); game.addShake(0.12, 3); } });
   }
   // Pincho que cae del cielo delante del dino y se acerca por el suelo
-  dropSpike(lane, color, hi) {
+  dropSpike(lane, color, hi, draw = drawSpikeHaz) {
     const d = this.tele(0.6);
     this.warn(lane, "arrow", d, { y: 10 });
     this.after(d, () => this.addHazard({ lane, x: 680, y: 240, w: 22, h: 28, vy: -100, g: 2000, color, hi,
-      projectile: true, reflectable: true, destructible: true, draw: drawSpikeHaz,
+      projectile: true, reflectable: true, destructible: true, draw,
       onLand: (h, game) => { h.y = 0; h.vy = 0; h.g = 0; h.scroll = true; game.puff(h.x + 11, 0, lane, 6, hi); } }));
   }
 
   update(dt) {
     this.t += dt; this.stateT += dt;
+    this.furyT = Math.max(0, this.furyT - dt);
     this.flash = Math.max(0, this.flash - dt); this.turboCd = Math.max(0, this.turboCd - dt);
     const due = [];
     for (const tm of this.timers) { tm.t -= dt; if (tm.t <= 0) due.push(tm); }
@@ -2403,6 +2420,7 @@ class Boss {
     g.floatText(pt.laneT, pt.x, pt.y + 30, `-${n}`, "#ffffff", 28);
     g.burst(Math.round(pt.laneT), pt.x, pt.y, this.colors, 14);
     if (this.hp <= 0) this.defeat();
+    else if (!this.fury && this.hp <= this.maxHp * this.furyAt) this.enterFury();
     return true;
   }
   turboHit(at) { if (this.turboCd > 0 || !this.rules.turbo) return; this.turboCd = 1; this.damage(this.dmg.turbo, "turbo", at); }
@@ -2519,6 +2537,9 @@ class Boss {
       if (blink) { c.fillStyle = "#ff3b5c"; c.fillRect(0, -(w.y + w.h / 2) - 1, w.x2, 3); }
     } else if (w.kind === "frost") {
       c.fillStyle = `rgba(210,245,255,${0.7 * k})`; c.fillRect(0, -6, 430 * k, 10);
+    } else if (w.kind === "fire") {
+      c.fillStyle = `rgba(255,90,20,${0.3 + 0.5 * k})`; c.fillRect(0, -6, 430 * k, 10);
+      if (blink) this.bang(c, 215, -60);
     }
   }
   drawTrap(c, tr) {
@@ -2761,7 +2782,7 @@ class GolemBoss extends Boss {
       this.fast = true; this.fistTo = { laneT: lane, x: 152, y: 0 };
       this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
       this.game.addShake(0.2, 6); this.game.sfx.stomp(); this.game.puff(160, 0, lane, 12, "#ff6a1a");
-      this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 36 }, 0, () => { this.idle = true; this.fast = false; });
+      this.rest(lane, { x: COL_X, y: 0, w: COL_W, h: 36 }, 0, () => { this.idle = true; this.fast = false; if (this.fury) this.burn(lane); });
     });
   }
   drawBody(c, lane) {
@@ -2817,6 +2838,10 @@ class MammothBoss extends Boss {
     if (this.mode === "idle" || this.mode === "prep") this.mx = lerp(this.mx, 700 + this.away * 450, Math.min(1, dt * 5));
     else if (this.mode === "charge") {
       this.mx -= CONFIG.MAMMOTH_CHARGE_SPEED * this.speedMul * dt;
+      if (this.fury && !this.swerved && this.mx < 560) {   // furia: cambia de carril a mitad de la embestida
+        this.swerved = true; this.chargeLane = this.laneTo = 1 - this.chargeLane; if (this.hz) this.hz.lane = this.chargeLane;
+        this.game.sfx.stomp(); this.game.addShake(0.15, 4);
+      }
       if (this.mx <= COL_X - 45) {
         this.mx = COL_X - 45; this.mode = "dazed"; if (this.hz) this.hz.dead = true;
         this.game.addShake(0.3, 7); this.game.sfx.stomp();
@@ -2831,8 +2856,8 @@ class MammothBoss extends Boss {
   attack() { if (Math.random() < 0.8) this.charge(this.p.lane); else this.shards(); }
   charge(lane) {   // cambiar de carril o saltar por encima; al acabar queda aturdido
     const d = this.tele(0.95);
-    this.laneTo = lane; this.chargeLane = lane; this.mode = "prep"; this.jumped = false;
-    this.warn(lane, "arrow", d, { y: 40 }); this.game.sfx.stomp();
+    this.laneTo = lane; this.chargeLane = lane; this.mode = "prep"; this.jumped = false; this.swerved = false;
+    this.warn(lane, "arrow", d, { y: 40 }); if (this.fury) this.warn(1 - lane, "arrow", d + 0.4, { y: 40 }); this.game.sfx.stomp();
     this.after(d, () => {
       this.mode = "charge";
       this.hz = this.addHazard({ lane, x: this.mx, y: 0, w: 150, h: 84, isBody: true, life: 5, onUpdate: h => { h.x = this.mx; } });
@@ -3129,7 +3154,7 @@ class FrogBoss extends Boss {
     if (this.mode === "idle") { this.frogX = lerp(this.frogX, 680 + this.away * 450, Math.min(1, dt * 5)); this.frogY = Math.abs(Math.sin(this.t * 3)) * 10; }
     else if (this.mode === "leap") {
       this.k = Math.min(1, this.k + dt / this.leapT);
-      this.frogX = lerp(this.x0, COL_X - 20, this.k); this.frogY = 4 * 230 * this.k * (1 - this.k);
+      this.frogX = lerp(this.x0, this.leapX ?? COL_X - 20, this.k); this.frogY = 4 * 230 * this.k * (1 - this.k);
       if (this.k >= 1) this.land();
     } else if (this.mode === "back") {
       this.frogX += 650 * dt; this.frogY = Math.abs(Math.sin(this.frogX / 60)) * 50;
@@ -3137,13 +3162,20 @@ class FrogBoss extends Boss {
     } else if (this.mode === "rest") this.frogY = 0;
   }
   attack() { if (Math.random() < 0.55) this.leap(this.p.lane); else this.lick(); }
-  leap(lane) {
+  leap(lane, farX) {
     const d = this.tele(0.8);
-    this.warn(lane, "target", d + 0.5); this.game.sfx.toss();
-    this.after(d, () => { this.mode = "leap"; this.k = 0; this.x0 = this.frogX; this.leapT = 0.55 / Math.sqrt(this.speedMul); this.laneTo = lane; this.leapLane = lane; });
+    if (farX === undefined) this.warn(lane, "target", d + 0.5); else { this.warn(0, "arrow", d + 0.4, { y: 0 }); this.warn(1, "arrow", d + 0.4, { y: 0 }); }
+    this.game.sfx.toss();
+    this.after(d, () => { this.mode = "leap"; this.k = 0; this.x0 = this.frogX; this.leapT = 0.55 / Math.sqrt(this.speedMul); this.laneTo = lane; this.leapLane = lane; this.leapX = farX; });
   }
   land() {
     const lane = this.leapLane;
+    if (this.leapX !== undefined) {   // furia: aterrizaje lejos con onda expansiva en los dos carriles
+      this.mode = "hold"; this.frogY = 0; this.leapX = undefined;
+      this.game.addShake(0.3, 7); this.game.sfx.stomp(); this.game.puff(this.frogX + 50, 0, lane, 14, "#6cc25a");
+      for (const L of [0, 1]) this.addHazard({ lane: L, x: this.frogX - 10, y: 0, w: 34, h: 16, vx: -560 * Math.sqrt(this.speedMul), life: 2, draw: drawWaveHaz });
+      return;
+    }
     this.mode = "rest"; this.frogY = 0;
     this.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true });
     this.game.addShake(0.3, 7); this.game.sfx.stomp(); this.game.puff(170, 0, lane, 14, "#6cc25a");
@@ -3460,6 +3492,204 @@ class UfoBoss extends Boss {
   }
 }
 BOSS_CLASSES.push(CrabBoss, FrogBoss, KrakenBoss, BoneRexBoss, UfoBoss);
+
+// =====================================================================
+//  Forma furiosa: al bajar de CONFIG.BOSS_FURY_AT de vida cada boss añade una mecánica nueva
+//  que obliga a cambiar de estrategia. La forma de dañarle no cambia.
+// =====================================================================
+function drawPuddleHaz(c, h) {
+  c.fillStyle = "#1f4a1c"; c.fillRect(Math.round(h.x - 2), -10, h.w + 4, 10);
+  c.fillStyle = "#8bdc3a"; c.fillRect(Math.round(h.x), -8, h.w, 8);
+  c.fillStyle = "#e8ffb0"; c.fillRect(Math.round(h.x + 6), -8, 8, 2); c.fillRect(Math.round(h.x + h.w - 14), -6, 4, 2);
+}
+function drawFireHaz(c, h) {
+  for (let x = h.x; x < h.x + h.w; x += 12) {
+    const f = 8 + Math.abs(Math.sin(h.t * 9 + x * 0.3)) * 8;
+    c.fillStyle = "#7a1a08"; c.fillRect(Math.round(x), -Math.round(f) - 2, 12, Math.round(f) + 2);
+    c.fillStyle = "#ff6a1a"; c.fillRect(Math.round(x + 2), -Math.round(f), 8, Math.round(f));
+    c.fillStyle = "#ffd05a"; c.fillRect(Math.round(x + 4), -Math.round(f * 0.5), 4, Math.round(f * 0.5));
+  }
+}
+function drawWaveHaz(c, h) {
+  c.fillStyle = "#1f3a14"; c.fillRect(Math.round(h.x - 2), -(h.h + 2), h.w + 4, h.h + 2);
+  c.fillStyle = "#6cc25a"; c.fillRect(Math.round(h.x), -h.h, h.w, h.h);
+  c.fillStyle = "#d8f0a0"; c.fillRect(Math.round(h.x), -h.h, h.w, 4);
+}
+// Ataca primero en un carril sin quedarse apoyado (para encadenar con el ataque normal)
+function furyFeint(b, lane, set) {
+  const d = b.tele(0.85);
+  b.warn(lane, "shadow", d);
+  set(lane, false);
+  b.after(d, () => { set(lane, true); b.addHazard({ lane, x: COL_X, y: 0, w: COL_W, h: 320, life: 0.18, isBody: true }); b.game.addShake(0.15, 4); b.game.sfx.stomp(); });
+  return d;
+}
+function furyAttack(Cls, fn) {
+  const old = Cls.prototype.attack;
+  Cls.prototype.attack = function () { return this.fury ? fn.call(this) : old.call(this); };
+}
+
+// 1. Escorpión: pinchos en los dos carriles a la vez (hay que saltarlos) y doble coletazo
+ScorpionBoss.prototype.onFury = function () { this.furyHint = "pinchos en los dos carriles: sáltalos. ¡Y golpea dos veces!"; };
+furyAttack(ScorpionBoss, function () {
+  if (Math.random() < 0.5) {
+    const gap = 0.9 / this.speedMul;
+    for (let i = 0; i < 2; i++) this.after(i * gap, () => { this.dropSpike(0, "#5a2210", "#e07a3f"); this.dropSpike(1, "#5a2210", "#e07a3f"); });
+    this.after(2 * gap + 0.9, () => this.strike(1 - this.p.lane));
+  } else {
+    const A = this.p.lane, d = furyFeint(this, A, (L, down) => { this.idleTip = false; this.fast = down; this.tipTo = { laneT: L, x: down ? 158 : 160, y: down ? 4 : 240 }; });
+    this.after(d + 0.35, () => this.strike(1 - A));
+  }
+});
+
+// 2. Serpiente: escupe charcos de veneno que avanzan por el suelo (sáltalos)
+SerpentBoss.prototype.onFury = function () { this.furyHint = "deja charcos de veneno en el suelo: sáltalos"; };
+furyAttack(SerpentBoss, function () {
+  if (Math.random() < 0.4) return this.double();
+  const L = this.p.lane, n = 3, gap = 0.6 / this.speedMul;
+  this.idle = false; this.fast = false; this.headTo = { laneT: L, x: 420, y: 60 };
+  for (let i = 0; i < n; i++) this.after(0.3 + i * gap, () => {
+    const lane = i % 2 ? 1 - L : L, d = this.tele(0.5);
+    this.headTo = { laneT: lane, x: 420, y: 20 };
+    this.warn(lane, "arrow", d, { y: 0 });
+    this.after(d, () => { this.game.sfx.hiss(); this.addHazard({ lane, x: 400, y: 0, w: 46, h: 10, scroll: true, life: 5, draw: drawPuddleHaz }); });
+  });
+  this.after(0.3 + n * gap + 1.1, () => this.strike(this.p.lane, true));
+});
+
+// 3. Golem: su puño deja el carril ardiendo unos segundos (sal de ese carril)
+GolemBoss.prototype.onFury = function () { this.furyHint = "su puño deja el carril ardiendo: sal de él"; };
+GolemBoss.prototype.burn = function (lane) {
+  this.warn(lane, "fire", 0.5);
+  this.after(0.5, () => this.addHazard({ lane, x: 0, y: 0, w: 430, h: 14, life: 2.5, draw: drawFireHaz }));
+};
+
+// 4. Mamut: en furia cambia de carril a mitad de la embestida (ver updateBody): no te apartes, sáltale
+MammothBoss.prototype.onFury = function () { this.furyHint = "cambia de carril al embestir: no te apartes, sáltale"; };
+
+// 5. Pterodáctilo: lluvia de plumas que caen y avanzan por el suelo, y picados en zigzag
+ShadowPteroBoss.prototype.onFury = function () { this.furyHint = "lluvia de plumas: salta las que caen en tu carril"; };
+furyAttack(ShadowPteroBoss, function () {
+  if (Math.random() < 0.5) {
+    const n = 4, gap = 0.5 / this.speedMul; this.game.sfx.screech();
+    for (let i = 0; i < n; i++) this.after(i * gap, () => this.dropSpike(i % 2 ? 1 - this.p.lane : this.p.lane, "#140a24", "#6a3aa0", drawFeatherHaz));
+    this.after(n * gap + 1, () => this.glide());
+  } else { const A = this.p.lane; this.dive(A, "low", () => this.dive(1 - A, "mid", () => this.glide())); }
+});
+
+// 6. Rey cangrejo: burbujas que rebotan (pasa por debajo o sáltalas a tiempo) y doble pinzazo
+CrabBoss.prototype.onFury = function () { this.furyHint = "burbujas que rebotan: pasa por debajo o sáltalas a tiempo"; };
+furyAttack(CrabBoss, function () {
+  if (Math.random() < 0.5) {
+    const L = this.p.lane, n = 3, gap = 0.6 / this.speedMul;
+    for (let i = 0; i < n; i++) this.after(0.2 + i * gap, () => {
+      const lane = i % 2 ? 1 - L : L, d = this.tele(0.5);
+      this.warn(lane, "arrow", d, { y: 30 });
+      this.after(d, () => { this.game.sfx.hiss(); this.addHazard({ lane, x: 880, y: 6, w: 24, h: 24, vx: -480 * Math.sqrt(this.speedMul),
+        projectile: true, reflectable: true, destructible: true, draw: drawBubbleHaz, onUpdate: h => { h.y = 6 + Math.abs(Math.sin(h.t * 4.5)) * 70; } }); });
+    });
+    this.after(0.2 + n * gap + 1.2, () => this.pinch(1 - this.p.lane));
+  } else {
+    const A = this.p.lane, d = furyFeint(this, A, (L, down) => { this.idle = false; this.fast = down; this.clawTo = { laneT: L, x: 150, y: down ? 0 : 170 }; });
+    this.after(d + 0.35, () => this.pinch(1 - A));
+  }
+});
+
+// 7. Sapo: tres saltos encadenados; los dos primeros aterrizan lejos con una onda por el suelo (salta)
+FrogBoss.prototype.onFury = function () { this.furyHint = "ondas al aterrizar: salta cuando lleguen"; };
+furyAttack(FrogBoss, function () {
+  const hop = () => this.leap(randInt(0, 1), 470);
+  const T = this.tele(0.8) + 0.55 / Math.sqrt(this.speedMul) + 0.5;
+  hop(); this.after(T, hop); this.after(2 * T, () => this.leap(this.p.lane));
+});
+
+// 8. Kraken: su tinta deja media pantalla a oscuras unos segundos (guíate por los avisos)
+KrakenBoss.prototype.onFury = function () { this.furyHint = "su tinta te deja a oscuras: guíate por los avisos"; this.dark = 0; };
+furyAttack(KrakenBoss, function () {
+  const r = Math.random();
+  if (r < 0.45) { const T = 1.15 / Math.sqrt(this.speedMul); this.ink(); this.after(T, () => { this.dark = 3.5; this.game.sfx.hiss(); }); }
+  else if (r < 0.7) this.sweep(); else this.slam(this.p.lane);
+});
+{
+  const up = KrakenBoss.prototype.updateBody, fx = KrakenBoss.prototype.drawFx;
+  KrakenBoss.prototype.updateBody = function (dt) { up.call(this, dt); if (this.dark > 0) this.dark = Math.max(0, this.dark - dt); };
+  KrakenBoss.prototype.drawFx = function (c) {
+    fx.call(this, c);
+    if (!(this.dark > 0) || this.state !== "fight") return;
+    const a = Math.min(1, this.dark / 0.5) * 0.9;
+    c.fillStyle = `rgba(8,4,20,${a})`; c.fillRect(360, 0, W - 360, H);
+    c.fillStyle = `rgba(8,4,20,${a * 0.6})`; c.fillRect(300, 0, 60, H);
+    for (const lane of [0, 1]) for (const w of this.teles) if (w.lane === lane) { c.save(); applyLane(c, lane); this.drawTele(c, w); c.restore(); }
+  };
+}
+
+// 9. Rey de los huesos: el escudo vuelve una vez con 3 cargas y los fuegos fantasma cambian a tu carril
+BoneRexBoss.prototype.onFury = function () {
+  this.furyHint = "los fuegos fantasma te persiguen: sáltalos o devuélvelos";
+  if (this.shield === 0) { this.shield = 3; this.shieldDown = 0; }
+};
+furyAttack(BoneRexBoss, function () {
+  if (this.shield === 0 && Math.random() < 0.5) return this.bite(this.p.lane);
+  const n = 3 + Math.min(1, this.cycle), gap = 0.6 / this.speedMul, d = this.tele(0.55);
+  this.game.sfx.screech();
+  for (let i = 0; i < n; i++) this.after(i * gap, () => {
+    const lane = i % 2 ? 1 - this.p.lane : this.p.lane, hy = Math.random() < 0.5 ? 6 : 40;
+    this.warn(lane, "arrow", d, { y: hy });
+    this.after(d, () => this.addHazard({ lane, x: 880, y: hy, w: 34, h: 16, vx: -560 * Math.sqrt(this.speedMul),
+      projectile: true, reflectable: true, destructible: true, draw: drawWispHaz,
+      onUpdate: (h, dt) => { if (!h.homed && h.x < 560) { h.homed = true; h.lane = this.p.lane; } h.laneT = lerp(h.laneT, h.lane, Math.min(1, dt * 10)); } }));
+  });
+  this.after(n * gap + d + 1.1, () => this.bite(1 - this.p.lane));
+});
+
+// 10. Nave nodriza: en la fase 3 (su furia) el rayo abductor te levanta; pulsa S (caída rápida) para soltarte
+{
+  const ctor = UfoBoss;
+  ctor.prototype.onFury = function () { this.furyHint = "rayo abductor: si te atrapa, pulsa S para soltarte"; };
+  const up = ctor.prototype.updateBody, ex = ctor.prototype.extraCollide;
+  ctor.prototype.updateBody = function (dt) {
+    up.call(this, dt);
+    if (this.furyAt !== 1 / 3) this.furyAt = 1 / 3;   // la furia de la nave es su fase 3
+    if (this.tractor && (this.tractor.t += dt) >= this.tractor.dur) this.tractor = null;
+  };
+  ctor.prototype.extraCollide = function (pl, lane, boxes) {
+    const tr = this.tractor;
+    if (tr && !tr.free && lane === tr.lane && this.state === "fight") {
+      if (pl.fastFall && !pl.onGround) { tr.free = true; this.say("¡LIBRE!", "#7df9ff"); }
+      else {
+        pl.onGround = false; pl.vy = Math.max(pl.vy, 300);
+        if (pl.y > 190) { tr.free = true; if (this.game.hitPlayer()) return true; }
+      }
+    }
+    return ex.call(this, pl, lane, boxes);
+  };
+  furyAttack(ctor, function () {
+    const glide = () => this.glide();
+    if (this.phase < 3) return this.laser(() => this.attack());
+    if (Math.random() < 0.55) {
+      const lane = this.p.lane, d = this.tele(0.9);
+      this.warn(lane, "shadow", d); this.game.sfx.laser();
+      this.after(d, () => {
+        this.tractor = { lane, t: 0, dur: 1.6, free: false };
+        this.addHazard({ lane, x: COL_X - 10, y: 0, w: COL_W + 20, h: 320, life: 1.6, harmful: false, draw: drawBeamHaz });
+      });
+      this.after(d + 1.9, glide);
+    } else this.laser(glide);
+  });
+}
+
+// Textos del manual: la mecánica nueva de cada boss en furia
+const BOSS_FURY_GUIDE = [
+  "Lanza pinchos en los dos carriles a la vez (cambiar de carril ya no sirve: sáltalos o rómpelos con E) y da un coletazo falso antes del de verdad.",
+  "Escupe charcos de veneno que avanzan por el suelo: sáltalos.",
+  "Cada puñetazo deja el carril ardiendo unos segundos: sal de ese carril.",
+  "Cambia de carril a mitad de la embestida: si te apartas, te alcanza. Quédate y sáltale.",
+  "Lluvia de plumas que caen y avanzan por el suelo (sáltalas) y picados en zigzag entre carriles.",
+  "Burbujas que rebotan entre el suelo y media altura: pasa cuando estén arriba o sáltalas cuando bajen. Además, pinzazo falso antes del de verdad.",
+  "Tres saltos seguidos: los dos primeros aterrizan lejos y mandan una onda por el suelo de los dos carriles. Salta cuando llegue.",
+  "Su tinta deja media pantalla a oscuras: las flechas rojas siguen viéndose, guíate por ellas.",
+  "El escudo vuelve una vez con 3 cargas y los fuegos fantasma cambian a tu carril a mitad de camino: sáltalos o devuélvelos con E.",
+  "En la fase 3 el rayo abductor te levanta del suelo: pulsa S (caída rápida) para soltarte antes de llegar arriba.",
+];
 
 // =====================================================================
 //  Biome: dibuja cielo, parallax, suelo y decoración de un bioma
@@ -4268,8 +4498,21 @@ function baImg(id, piece, state) {
   return BA[id][P.archivos ? (P.archivos[state] || Object.values(P.archivos)[0]) : piece + ".png"];
 }
 // Dibuja una pieza con su pivote en (x, y) (coordenadas del lienzo actual); s = escala extra (carril de arriba, cielo…)
+let baFury = false;   // el boss que se dibuja está en forma furiosa: piezas recoloreadas en rojo
+const _baFuryCache = new Map();
+function baFuryImg(im) {
+  let cv = _baFuryCache.get(im);
+  if (!cv) {
+    cv = document.createElement("canvas"); cv.width = im.width; cv.height = im.height;
+    const x = cv.getContext("2d"); x.drawImage(im, 0, 0);
+    x.globalCompositeOperation = "source-atop"; x.fillStyle = "rgba(255,30,20,0.38)"; x.fillRect(0, 0, cv.width, cv.height);
+    _baFuryCache.set(im, cv);
+  }
+  return cv;
+}
 function baDraw(c, id, piece, state, x, y, s = 1) {
-  const im = baImg(id, piece, state); if (!im) return;
+  let im = baImg(id, piece, state); if (!im) return;
+  if (baFury) im = baFuryImg(im);
   const [px, py] = baPart(id, piece).pivote_arte, k = 3 * s;
   c.imageSmoothingEnabled = false;
   c.drawImage(im, Math.round(x - px * k), Math.round(y - py * k), Math.round(im.width * k), Math.round(im.height * k));
@@ -4298,7 +4541,10 @@ function baCommon(c, name, x, y, sx = 1, sy = sx) {
 // Sustituye el dibujo de una clase de jefe manteniendo el anterior como respaldo
 function baPatch(Cls, method, id, fn) {
   const old = Cls.prototype[method];
-  Cls.prototype[method] = function (...a) { return baReady(id) ? fn.apply(this, a) : old.apply(this, a); };
+  Cls.prototype[method] = function (...a) {
+    if (!baReady(id)) return old.apply(this, a);
+    baFury = !!this.fury; try { return fn.apply(this, a); } finally { baFury = false; }
+  };
 }
 const baHurt = b => b.flash > 0;
 const baVuln = b => !!(b.limb && b.vuln > 0);
@@ -4689,7 +4935,7 @@ class UI {
     this.text(c, `${b.hp}/${b.maxHp}`, x - 34, y + 7, 11, UI_T.text, "center");
     if (b.state === "fight") this.pill(c, `${Math.ceil(Math.max(0, CONFIG.BOSS_MAX_TIME - b.fightT))}s`, x + w + 32, y + 7, 10, UI_T.text);
     if (b.vuln > 0 && Math.floor(this.game.time * 8) % 2 === 0) this.pill(c, "¡VULNERABLE!", W / 2, y + 34, 11, "#16111f", UI_T.weak);
-    const hint = b.hintText();
+    const hint = b.hudHint();
     if (hint && b.state === "fight") this.pill(c, hint.toUpperCase(), W / 2, H - 18, 10, UI_T.weak);   // abajo, para no tapar los power-ups
   }
   drawHud(c) {
@@ -5591,6 +5837,7 @@ const MANUAL_SECTIONS = [
       <p><b>Aparece en:</b> ${lv}. Vida base: ${Math.round(CONFIG.BOSS_HP * BOSS_HP_MULTS[i])} (Fácil: la mitad; Difícil: +${pct(CONFIG.HARD.BOSS_HP_MULT - 1)}).</p>
       <div class="tip"><b>Cómo dañarle:</b> ${BOSS_GUIDE[i].how}</div>
       <ul>${BOSS_GUIDE[i].attacks.map(a => `<li>${a}</li>`).join("")}</ul>
+      <div class="tip warn"><b>Furia (${i === 9 ? "al entrar en la fase 3" : `al ${Math.round(CONFIG.BOSS_FURY_AT * 100)} % de vida; ${Math.round(CONFIG.EASY.BOSS_FURY_AT * 100)} % en Fácil`}):</b> se pone roja, ataca un ${Math.round((CONFIG.BOSS_FURY_SPEED - 1) * 100)} % más rápido y con avisos más cortos. ${BOSS_FURY_GUIDE[i]}</div>
       <p><b>Estrategia:</b> ${BOSS_GUIDE[i].tip}</p>`; }).join("")}
     <p>Después del nivel ${CONFIG.LEVELS.length} los bosses vuelven reforzados: en cada vuelta tienen +${pct(CONFIG.BOSS_HP_PER_CYCLE)} de vida, atacan un ${pct(CONFIG.BOSS_SPEED_PER_CYCLE)} más rápido y dan +${CONFIG.BOSS_COINS_PER_CYCLE} monedas por cada refuerzo.</p>` },
   { title: "Modos", html: () => { const E = CONFIG.EASY, H = CONFIG.HARD; return `
