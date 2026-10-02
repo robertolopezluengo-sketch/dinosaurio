@@ -1,0 +1,252 @@
+{
+ "boss": "golem",
+ "nombre": "Golem de lava",
+ "mapa": "volcano",
+ "mira": "izquierda",
+ "estados": {
+  "reposo": "cabeza reposo + nucleo reposo + puno reposo",
+  "lanzar roca": "cabeza enfadado + nucleo brillo + puno cerrado + roca",
+  "puñetazo": "puno cerrado bajando",
+  "puño apoyado (quema)": "puno ardiendo",
+  "herido": "cuerpo herido + cabeza herido + nucleo apagado"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "cuerpo": {
+   "archivos": {
+    "reposo": "cuerpo_reposo.png",
+    "herido": "cuerpo_herido.png"
+   },
+   "tamano_arte": [
+    45,
+    33
+   ],
+   "tamano_logico": [
+    135,
+    99
+   ],
+   "pivote_arte": [
+    22,
+    32
+   ],
+   "pivote_logico": [
+    66,
+    96
+   ],
+   "emisivos": {
+    "reposo": [
+     "#ff9a2e"
+    ]
+   },
+   "nota": "Pivote = centro de la base (cadera). El núcleo va encima, en (22,18)"
+  },
+  "nucleo": {
+   "archivos": {
+    "reposo": "nucleo_reposo.png",
+    "brillo": "nucleo_brillo.png",
+    "apagado": "nucleo_apagado.png"
+   },
+   "tamano_arte": [
+    9,
+    9
+   ],
+   "tamano_logico": [
+    27,
+    27
+   ],
+   "pivote_arte": [
+    4,
+    4
+   ],
+   "pivote_logico": [
+    12,
+    12
+   ],
+   "emisivos": {
+    "reposo": [
+     "#ff9a2e",
+     "#ffe066"
+    ],
+    "brillo": [
+     "#ff9a2e",
+     "#ffe066",
+     "#fff08a",
+     "#ffffff"
+    ]
+   },
+   "nota": "Núcleo brillante 28×28 lógicos; pivote = centro. «brillo» al cargar ataques, «apagado» al recibir daño"
+  },
+  "cabeza": {
+   "archivos": {
+    "reposo": "cabeza_reposo.png",
+    "enfadado": "cabeza_enfadado.png",
+    "herido": "cabeza_herido.png"
+   },
+   "tamano_arte": [
+    19,
+    13
+   ],
+   "tamano_logico": [
+    57,
+    39
+   ],
+   "pivote_arte": [
+    9,
+    12
+   ],
+   "pivote_logico": [
+    27,
+    36
+   ],
+   "emisivos": {
+    "reposo": [
+     "#ff9a2e"
+    ],
+    "enfadado": [
+     "#ff9a2e",
+     "#fff08a"
+    ],
+    "herido": [
+     "#ff9a2e"
+    ]
+   },
+   "nota": "Pivote = cuello (centro abajo)"
+  },
+  "pierna": {
+   "archivos": {
+    "unico": "pierna.png"
+   },
+   "tamano_arte": [
+    11,
+    17
+   ],
+   "tamano_logico": [
+    33,
+    51
+   ],
+   "pivote_arte": [
+    5,
+    0
+   ],
+   "pivote_logico": [
+    15,
+    0
+   ],
+   "emisivos": {
+    "unico": [
+     "#ff9a2e"
+    ]
+   },
+   "nota": "Dos piernas bajo el cuerpo; pivote = cadera (centro arriba)"
+  },
+  "segmento_brazo": {
+   "archivos": {
+    "unico": "segmento_brazo.png"
+   },
+   "tamano_arte": [
+    8,
+    8
+   ],
+   "tamano_logico": [
+    24,
+    24
+   ],
+   "pivote_arte": [
+    4,
+    4
+   ],
+   "pivote_logico": [
+    12,
+    12
+   ],
+   "emisivos": {
+    "unico": [
+     "#ff9a2e"
+    ]
+   },
+   "nota": "Eslabón del brazo-cadena; pivote = centro"
+  },
+  "puno": {
+   "archivos": {
+    "reposo": "puno_reposo.png",
+    "cerrado": "puno_cerrado.png",
+    "ardiendo": "puno_ardiendo.png"
+   },
+   "tamano_arte": [
+    19,
+    12
+   ],
+   "tamano_logico": [
+    57,
+    36
+   ],
+   "pivote_arte": [
+    16,
+    6
+   ],
+   "pivote_logico": [
+    48,
+    18
+   ],
+   "emisivos": {
+    "reposo": [
+     "#ff9a2e"
+    ],
+    "cerrado": [
+     "#ff9a2e"
+    ],
+    "ardiendo": [
+     "#ff9a2e",
+     "#ffe066"
+    ]
+   },
+   "nota": "Puño 56×36 lógicos; pivote = muñeca (lado derecho). «ardiendo» = puño apoyado: QUEMA, no pisar"
+  },
+  "roca": {
+   "archivos": {
+    "unico": "roca.png"
+   },
+   "tamano_arte": [
+    10,
+    10
+   ],
+   "tamano_logico": [
+    30,
+    30
+   ],
+   "pivote_arte": [
+    5,
+    5
+   ],
+   "pivote_logico": [
+    15,
+    15
+   ],
+   "emisivos": {
+    "unico": [
+     "#ff9a2e"
+    ]
+   },
+   "nota": "Roca que lanza (y que el raptor devuelve con el rugido)"
+  }
+ },
+ "cadenas": {
+  "brazo": {
+   "ancla": "cuerpo",
+   "punto_ancla": [
+    4,
+    10
+   ],
+   "segmentos": 5,
+   "piezas": [
+    "segmento_brazo",
+    "segmento_brazo",
+    "segmento_brazo",
+    "segmento_brazo",
+    "segmento_brazo"
+   ],
+   "pieza_final": "puno",
+   "nota": "Brazo izquierdo (hacia el jugador). El derecho puede ser igual y quedarse quieto."
+  }
+ }
+}

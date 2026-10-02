@@ -1,0 +1,219 @@
+{
+ "boss": "escorpion",
+ "nombre": "Escorpión gigante",
+ "mapa": "desert",
+ "mira": "derecha",
+ "estados": {
+  "reposo": "cuerpo reposo/reposo_b + aguijon reposo",
+  "cola preparada": "aguijon preparado (cola alzada)",
+  "aguijón clavado (vulnerable)": "aguijon clavado",
+  "herido": "cuerpo herido",
+  "derrota": "cuerpo derrota (boca arriba), sin cola"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "cuerpo": {
+   "archivos": {
+    "reposo": "cuerpo_reposo.png",
+    "reposo_b": "cuerpo_reposo_b.png",
+    "herido": "cuerpo_herido.png",
+    "derrota": "cuerpo_derrota.png"
+   },
+   "tamano_arte": [
+    63,
+    19
+   ],
+   "tamano_logico": [
+    189,
+    57
+   ],
+   "pivote_arte": [
+    0,
+    18
+   ],
+   "pivote_logico": [
+    0,
+    54
+   ],
+   "emisivos": {
+    "reposo": [
+     "#ffc0a0",
+     "#ffffff"
+    ],
+    "reposo_b": [
+     "#ffc0a0",
+     "#ffffff"
+    ]
+   },
+   "nota": "Base: esquina inferior izquierda (pies). Entra por la izquierda, detrás del raptor."
+  },
+  "segmento_cola_g": {
+   "archivos": {
+    "unico": "segmento_cola_g.png"
+   },
+   "tamano_arte": [
+    7,
+    7
+   ],
+   "tamano_logico": [
+    21,
+    21
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "pivote_logico": [
+    9,
+    9
+   ],
+   "emisivos": {},
+   "nota": "Segmento de la cola; pivote = centro"
+  },
+  "segmento_cola_m": {
+   "archivos": {
+    "unico": "segmento_cola_m.png"
+   },
+   "tamano_arte": [
+    6,
+    6
+   ],
+   "tamano_logico": [
+    18,
+    18
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "pivote_logico": [
+    9,
+    9
+   ],
+   "emisivos": {},
+   "nota": "Segmento de la cola; pivote = centro"
+  },
+  "segmento_cola_p": {
+   "archivos": {
+    "unico": "segmento_cola_p.png"
+   },
+   "tamano_arte": [
+    5,
+    5
+   ],
+   "tamano_logico": [
+    15,
+    15
+   ],
+   "pivote_arte": [
+    2,
+    2
+   ],
+   "pivote_logico": [
+    6,
+    6
+   ],
+   "emisivos": {},
+   "nota": "Segmento de la cola; pivote = centro"
+  },
+  "aguijon": {
+   "archivos": {
+    "reposo": "aguijon_reposo.png",
+    "preparado": "aguijon_preparado.png",
+    "clavado": "aguijon_clavado.png"
+   },
+   "tamano_arte": [
+    11,
+    8
+   ],
+   "tamano_logico": [
+    33,
+    24
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "pivote_logico": [
+    9,
+    9
+   ],
+   "emisivos": {
+    "reposo": [
+     "#f0b8ff",
+     "#ffffff"
+    ],
+    "preparado": [
+     "#f0b8ff",
+     "#ffffff"
+    ],
+    "clavado": [
+     "#f0b8ff"
+    ]
+   },
+   "punto_debil_en_estados": [
+    "clavado"
+   ],
+   "nota": "Pieza final de la cola; pivote = donde se une al último segmento. «clavado» = PUNTO DÉBIL (el juego añade contorno y flecha amarilla)"
+  },
+  "pinza": {
+   "archivos": {
+    "reposo": "pinza_reposo.png",
+    "abierta": "pinza_abierta.png"
+   },
+   "tamano_arte": [
+    12,
+    9
+   ],
+   "tamano_logico": [
+    36,
+    27
+   ],
+   "pivote_arte": [
+    1,
+    4
+   ],
+   "pivote_logico": [
+    3,
+    12
+   ],
+   "emisivos": {},
+   "nota": "Pinzas delante de la cabeza; pivote = muñeca"
+  }
+ },
+ "cadenas": {
+  "cola": {
+   "ancla": "cuerpo",
+   "punto_ancla": [
+    3,
+    4
+   ],
+   "segmentos": 10,
+   "piezas": [
+    "segmento_cola_g",
+    "segmento_cola_g",
+    "segmento_cola_g",
+    "segmento_cola_m",
+    "segmento_cola_m",
+    "segmento_cola_m",
+    "segmento_cola_m",
+    "segmento_cola_p",
+    "segmento_cola_p",
+    "segmento_cola_p"
+   ],
+   "tamanos_logicos": "22 → 14",
+   "pieza_final": "aguijon",
+   "nota": "La cola sale de la parte trasera-alta del cuerpo y se arquea por encima hacia la derecha."
+  },
+  "pinzas": {
+   "ancla": "cuerpo",
+   "punto_ancla": [
+    60,
+    10
+   ],
+   "segmentos": 0,
+   "pieza_final": "pinza",
+   "nota": "Dos pinzas: una en (60,7) y otra en (60,13) del cuerpo."
+  }
+ }
+}

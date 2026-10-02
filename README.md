@@ -2,7 +2,7 @@
 
 Endless runner protagonizado por un velociraptor, en un único `index.html` (HTML + CSS + JavaScript puro con `<canvas>`, sin librerías ni conexión a internet). Se abre con doble clic. El canvas se dibuja a la resolución real de la pantalla.
 
-El raptor viene del kit **Dino Runner**: `skins-engine.js` (`DinoSkinsEngine`, 16 skins de velociraptor) y sus datos (`const SKINS_DATA = {…}`) van incrustados en `index.html`. Todo lo demás (bosses, obstáculos, fondos, power-ups, huevos e interfaz) es pixel art propio. Desde la versión 7, la interfaz, los 10 escenarios y los obstáculos siguen la propuesta de estilo «Expedición arcade» de Claude Design (carpeta `diseno/`), con sus dos fuentes pixel (Raptor Pixel y Raptor Pixel Display) incrustadas.
+El raptor viene del kit **Dino Runner**: `skins-engine.js` (`DinoSkinsEngine`, 16 skins de velociraptor) y sus datos (`const SKINS_DATA = {…}`) van incrustados en `index.html`. Los 10 jefes se dibujan por piezas (cuerpo, eslabones y pieza final con su pivote) con los PNG de `diseno/bosses/` (encargo `diseno/JEFES_PIEZAS.md`), incrustados como `data:` URIs. Todo lo demás (obstáculos, fondos, power-ups, huevos e interfaz) es pixel art propio. Desde la versión 7, la interfaz, los 10 escenarios y los obstáculos siguen la propuesta de estilo «Expedición arcade» de Claude Design (carpeta `diseno/`), con sus dos fuentes pixel (Raptor Pixel y Raptor Pixel Display) incrustadas.
 
 ## Cómo jugar
 

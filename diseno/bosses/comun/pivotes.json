@@ -1,0 +1,260 @@
+{
+ "piezas": {
+  "pincho": {
+   "archivo": "pincho.png",
+   "tamano_arte": [
+    9,
+    5
+   ],
+   "tamano_logico": [
+    27,
+    15
+   ],
+   "pivote_arte": [
+    4,
+    2
+   ],
+   "nota": "Escorpión: pinchos que caen"
+  },
+  "veneno": {
+   "archivo": "veneno.png",
+   "tamano_arte": [
+    9,
+    6
+   ],
+   "tamano_logico": [
+    27,
+    18
+   ],
+   "pivote_arte": [
+    4,
+    3
+   ],
+   "nota": "Serpiente: veneno verde"
+  },
+  "roca_lava": {
+   "archivo": "roca_lava.png",
+   "tamano_arte": [
+    10,
+    10
+   ],
+   "tamano_logico": [
+    30,
+    30
+   ],
+   "pivote_arte": [
+    5,
+    5
+   ],
+   "nota": "Golem: roca de lava"
+  },
+  "fragmento_hielo": {
+   "archivo": "fragmento_hielo.png",
+   "tamano_arte": [
+    10,
+    7
+   ],
+   "tamano_logico": [
+    30,
+    21
+   ],
+   "pivote_arte": [
+    5,
+    3
+   ],
+   "nota": "Mamut: fragmentos de hielo"
+  },
+  "pluma": {
+   "archivo": "pluma.png",
+   "tamano_arte": [
+    10,
+    6
+   ],
+   "tamano_logico": [
+    30,
+    18
+   ],
+   "pivote_arte": [
+    5,
+    3
+   ],
+   "nota": "Pterodáctilo: plumas"
+  },
+  "burbuja": {
+   "archivo": "burbuja.png",
+   "tamano_arte": [
+    7,
+    7
+   ],
+   "tamano_logico": [
+    21,
+    21
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "nota": "Cangrejo: burbujas"
+  },
+  "tinta": {
+   "archivo": "tinta.png",
+   "tamano_arte": [
+    10,
+    8
+   ],
+   "tamano_logico": [
+    30,
+    24
+   ],
+   "pivote_arte": [
+    5,
+    4
+   ],
+   "nota": "Kraken: tinta"
+  },
+  "hueso": {
+   "archivo": "hueso.png",
+   "tamano_arte": [
+    11,
+    5
+   ],
+   "tamano_logico": [
+    33,
+    15
+   ],
+   "pivote_arte": [
+    5,
+    2
+   ],
+   "nota": "Rey de los huesos: huesos en arco"
+  },
+  "fuego_fantasma": {
+   "archivo": "fuego_fantasma.png",
+   "tamano_arte": [
+    7,
+    9
+   ],
+   "tamano_logico": [
+    21,
+    27
+   ],
+   "pivote_arte": [
+    3,
+    4
+   ],
+   "nota": "Rey de los huesos: fuegos fantasma"
+  },
+  "mininave": {
+   "archivo": "mininave.png",
+   "tamano_arte": [
+    13,
+    6
+   ],
+   "tamano_logico": [
+    39,
+    18
+   ],
+   "pivote_arte": [
+    6,
+    3
+   ],
+   "nota": "Nave: mininaves"
+  },
+  "laser_tramo": {
+   "archivo": "laser_tramo.png",
+   "tamano_arte": [
+    8,
+    3
+   ],
+   "tamano_logico": [
+    24,
+    9
+   ],
+   "pivote_arte": [
+    4,
+    1
+   ],
+   "nota": "Nave: láser rosa (tramo que se repite en horizontal)"
+  },
+  "rayo_tramo": {
+   "archivo": "rayo_tramo.png",
+   "tamano_arte": [
+    24,
+    4
+   ],
+   "tamano_logico": [
+    72,
+    12
+   ],
+   "pivote_arte": [
+    12,
+    2
+   ],
+   "nota": "Nave: rayo abductor verde (tramo que se repite en vertical)"
+  },
+  "aviso_sombra": {
+   "archivo": "aviso_sombra.png",
+   "tamano_arte": [
+    20,
+    8
+   ],
+   "tamano_logico": [
+    60,
+    24
+   ],
+   "pivote_arte": [
+    10,
+    4
+   ],
+   "nota": "Aviso: sombra roja con «!» (golpe desde arriba)"
+  },
+  "aviso_flecha": {
+   "archivo": "aviso_flecha.png",
+   "tamano_arte": [
+    12,
+    9
+   ],
+   "tamano_logico": [
+    36,
+    27
+   ],
+   "pivote_arte": [
+    6,
+    4
+   ],
+   "nota": "Aviso: flecha roja (algo viene por ese carril)"
+  },
+  "aviso_diana": {
+   "archivo": "aviso_diana.png",
+   "tamano_arte": [
+    13,
+    13
+   ],
+   "tamano_logico": [
+    39,
+    39
+   ],
+   "pivote_arte": [
+    6,
+    6
+   ],
+   "nota": "Aviso: diana roja (proyectil en arco)"
+  },
+  "aviso_linea": {
+   "archivo": "aviso_linea.png",
+   "tamano_arte": [
+    8,
+    2
+   ],
+   "tamano_logico": [
+    24,
+    6
+   ],
+   "pivote_arte": [
+    4,
+    1
+   ],
+   "nota": "Aviso: línea roja parpadeante (láser); tramo de 8 px de arte que se repite"
+  }
+ }
+}

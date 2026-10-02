@@ -1,0 +1,148 @@
+{
+ "boss": "mamut",
+ "nombre": "Mamut de hielo",
+ "mapa": "glacier",
+ "mira": "izquierda",
+ "estados": {
+  "reposo": "cabeza reposo",
+  "preparar embestida": "cabeza carga",
+  "embestida": "cabeza carga + patas a/b alternando",
+  "aturdido": "cabeza aturdido + estrellas",
+  "herido": "cuerpo herido"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "cuerpo": {
+   "archivos": {
+    "reposo": "cuerpo_reposo.png",
+    "herido": "cuerpo_herido.png"
+   },
+   "tamano_arte": [
+    50,
+    21
+   ],
+   "tamano_logico": [
+    150,
+    63
+   ],
+   "pivote_arte": [
+    25,
+    20
+   ],
+   "pivote_logico": [
+    75,
+    60
+   ],
+   "emisivos": {},
+   "nota": "Pivote = centro de la base. Cabeza en (2,6), patas en x 8/18/32/42"
+  },
+  "cabeza": {
+   "archivos": {
+    "reposo": "cabeza_reposo.png",
+    "carga": "cabeza_carga.png",
+    "aturdido": "cabeza_aturdido.png"
+   },
+   "tamano_arte": [
+    17,
+    15
+   ],
+   "tamano_logico": [
+    51,
+    45
+   ],
+   "pivote_arte": [
+    15,
+    6
+   ],
+   "pivote_logico": [
+    45,
+    18
+   ],
+   "emisivos": {
+    "reposo": [
+     "#dcffff"
+    ],
+    "carga": [
+     "#ffb0b0"
+    ]
+   },
+   "nota": "Pivote = cuello (derecha). «carga» = ojo ROJO (prepara/embiste)"
+  },
+  "colmillo": {
+   "archivos": {
+    "unico": "colmillo.png"
+   },
+   "tamano_arte": [
+    10,
+    6
+   ],
+   "tamano_logico": [
+    30,
+    18
+   ],
+   "pivote_arte": [
+    9,
+    1
+   ],
+   "pivote_logico": [
+    27,
+    3
+   ],
+   "emisivos": {},
+   "nota": "Se dibuja delante de la cabeza en (4,9); pivote = raíz"
+  },
+  "pata": {
+   "archivos": {
+    "a": "pata_a.png",
+    "b": "pata_b.png"
+   },
+   "tamano_arte": [
+    6,
+    10
+   ],
+   "tamano_logico": [
+    18,
+    30
+   ],
+   "pivote_arte": [
+    3,
+    0
+   ],
+   "pivote_logico": [
+    9,
+    0
+   ],
+   "emisivos": {},
+   "nota": "4 patas; pivote = cadera. Alterna a/b al embestir"
+  },
+  "estrellas": {
+   "archivos": {
+    "unico": "estrellas.png"
+   },
+   "tamano_arte": [
+    13,
+    5
+   ],
+   "tamano_logico": [
+    39,
+    15
+   ],
+   "pivote_arte": [
+    6,
+    4
+   ],
+   "pivote_logico": [
+    18,
+    12
+   ],
+   "emisivos": {
+    "unico": [
+     "#ffffff",
+     "#ffffff"
+    ]
+   },
+   "nota": "Aturdido: gira sobre la cabeza"
+  }
+ },
+ "cadenas": {}
+}

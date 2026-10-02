@@ -1,0 +1,197 @@
+{
+ "boss": "nave",
+ "nombre": "Nave nodriza",
+ "mapa": "moon",
+ "mira": "izquierda",
+ "estados": {
+  "vuelo": "platillo fase1 + cupula normal + luces on/off alternando",
+  "disparo": "canon disparo",
+  "rayo abductor": "emisor + proyectil rayo",
+  "aterrizada": "patas aterrizada",
+  "fases 1-2-3": "platillo fase1/fase2/fase3",
+  "herida": "platillo herido + luces alerta"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "platillo": {
+   "archivos": {
+    "fase1": "platillo_fase1.png",
+    "fase2": "platillo_fase2.png",
+    "fase3": "platillo_fase3.png",
+    "herido": "platillo_herido.png"
+   },
+   "tamano_arte": [
+    41,
+    9
+   ],
+   "tamano_logico": [
+    123,
+    27
+   ],
+   "pivote_arte": [
+    20,
+    4
+   ],
+   "pivote_logico": [
+    60,
+    12
+   ],
+   "emisivos": {
+    "fase3": [
+     "#ff9a9a"
+    ],
+    "herido": [
+     "#ff9a9a"
+    ]
+   },
+   "nota": "Platillo 124×26 lógicos; pivote = centro. fase2 con grietas, fase3 pierde una placa y enseña un chispazo rojo"
+  },
+  "cupula": {
+   "archivos": {
+    "normal": "cupula_normal.png",
+    "agrietada": "cupula_agrietada.png",
+    "brillante": "cupula_brillante.png"
+   },
+   "tamano_arte": [
+    20,
+    9
+   ],
+   "tamano_logico": [
+    60,
+    27
+   ],
+   "pivote_arte": [
+    10,
+    8
+   ],
+   "pivote_logico": [
+    30,
+    24
+   ],
+   "emisivos": {
+    "brillante": [
+     "#fff6b0"
+    ]
+   },
+   "punto_debil_en_estados": [
+    "agrietada",
+    "brillante"
+   ],
+   "nota": "Cúpula 60×28 lógicos sobre el platillo en (20,0). Fase 2: pisarla («agrietada» tras el golpe). Fase 3: «brillante» al pasar rasante"
+  },
+  "luz": {
+   "archivos": {
+    "on": "luz_on.png",
+    "off": "luz_off.png",
+    "alerta": "luz_alerta.png"
+   },
+   "tamano_arte": [
+    3,
+    3
+   ],
+   "tamano_logico": [
+    9,
+    9
+   ],
+   "pivote_arte": [
+    1,
+    1
+   ],
+   "pivote_logico": [
+    3,
+    3
+   ],
+   "emisivos": {
+    "on": [
+     "#fff6b0",
+     "#ffffff"
+    ],
+    "alerta": [
+     "#ff9a9a",
+     "#ffffff"
+    ]
+   },
+   "nota": "6 luces en x 6,12,18,24,30,36 del platillo (y 4); parpadean"
+  },
+  "patas": {
+   "archivos": {
+    "aterrizada": "patas_aterrizada.png"
+   },
+   "tamano_arte": [
+    41,
+    8
+   ],
+   "tamano_logico": [
+    123,
+    24
+   ],
+   "pivote_arte": [
+    20,
+    0
+   ],
+   "pivote_logico": [
+    60,
+    0
+   ],
+   "emisivos": {},
+   "nota": "Al aterrizar, bajo el platillo"
+  },
+  "canon": {
+   "archivos": {
+    "reposo": "canon_reposo.png",
+    "disparo": "canon_disparo.png"
+   },
+   "tamano_arte": [
+    8,
+    4
+   ],
+   "tamano_logico": [
+    24,
+    12
+   ],
+   "pivote_arte": [
+    7,
+    1
+   ],
+   "pivote_logico": [
+    21,
+    3
+   ],
+   "emisivos": {
+    "disparo": [
+     "#ffd0ea",
+     "#ffffff"
+    ]
+   },
+   "nota": "Cañón láser bajo el platillo (izquierda)"
+  },
+  "emisor": {
+   "archivos": {
+    "rayo": "emisor_rayo.png"
+   },
+   "tamano_arte": [
+    8,
+    3
+   ],
+   "tamano_logico": [
+    24,
+    9
+   ],
+   "pivote_arte": [
+    4,
+    0
+   ],
+   "pivote_logico": [
+    12,
+    0
+   ],
+   "emisivos": {
+    "rayo": [
+     "#d0ffe0"
+    ]
+   },
+   "nota": "Emisor del rayo abductor bajo el centro"
+  }
+ },
+ "cadenas": {}
+}

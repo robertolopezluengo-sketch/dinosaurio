@@ -1,0 +1,76 @@
+{
+ "boss": "ptero",
+ "nombre": "Pterodáctilo sombra",
+ "mapa": "night",
+ "mira": "izquierda",
+ "estados": {
+  "vuelo": "vuelo_1 → vuelo_2 → vuelo_3 → vuelo_2 (cada 6 frames)",
+  "picado": "picado",
+  "rasante brillante": "rasante",
+  "herido": "herido"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "cuerpo": {
+   "archivos": {
+    "vuelo_1": "cuerpo_vuelo_1.png",
+    "vuelo_2": "cuerpo_vuelo_2.png",
+    "vuelo_3": "cuerpo_vuelo_3.png",
+    "picado": "cuerpo_picado.png",
+    "rasante": "cuerpo_rasante.png",
+    "herido": "cuerpo_herido.png"
+   },
+   "tamano_arte": [
+    50,
+    22
+   ],
+   "tamano_logico": [
+    150,
+    66
+   ],
+   "pivote_arte": [
+    25,
+    11
+   ],
+   "pivote_logico": [
+    75,
+    33
+   ],
+   "emisivos": {
+    "vuelo_1": [
+     "#e8c0ff",
+     "#ffc0c8",
+     "#ffffff"
+    ],
+    "vuelo_2": [
+     "#ffc0c8",
+     "#e8c0ff",
+     "#ffffff"
+    ],
+    "vuelo_3": [
+     "#ffc0c8",
+     "#ffffff",
+     "#e8c0ff"
+    ],
+    "picado": [
+     "#e8c0ff",
+     "#ffc0c8",
+     "#ffffff"
+    ],
+    "rasante": [
+     "#ffc0c8",
+     "#ffffff",
+     "#fff08a"
+    ],
+    "herido": [
+     "#e8c0ff"
+    ]
+   },
+   "punto_debil_en_estados": [
+    "rasante"
+   ],
+   "nota": "Sprite completo (envergadura 150 lógicos). Pivote = centro del cuerpo. «rasante» brillante = VULNERABLE (cabezazo desde abajo)"
+  }
+ },
+ "cadenas": {}
+}

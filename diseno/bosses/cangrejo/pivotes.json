@@ -1,0 +1,126 @@
+{
+ "boss": "cangrejo",
+ "nombre": "Rey cangrejo",
+ "mapa": "beach",
+ "mira": "izquierda",
+ "estados": {
+  "reposo": "cuerpo reposo/reposo_b + pinza reposo",
+  "pinzazo": "pinza abierta (sube) → apoyada (golpea)",
+  "pinza apoyada": "pinza apoyada",
+  "pinza volteada": "pinza volteada",
+  "herido": "cuerpo herido"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "cuerpo": {
+   "archivos": {
+    "reposo": "cuerpo_reposo.png",
+    "reposo_b": "cuerpo_reposo_b.png",
+    "herido": "cuerpo_herido.png"
+   },
+   "tamano_arte": [
+    50,
+    21
+   ],
+   "tamano_logico": [
+    150,
+    63
+   ],
+   "pivote_arte": [
+    26,
+    20
+   ],
+   "pivote_logico": [
+    78,
+    60
+   ],
+   "emisivos": {
+    "reposo": [
+     "#fff08a",
+     "#ffffff",
+     "#aef6ff"
+    ],
+    "reposo_b": [
+     "#fff08a",
+     "#ffffff",
+     "#aef6ff"
+    ],
+    "herido": [
+     "#fff08a",
+     "#ffffff",
+     "#aef6ff"
+    ]
+   },
+   "nota": "Ojos en pedúnculos, corona y 3 pares de patas. Pivote = centro de la base"
+  },
+  "segmento_brazo": {
+   "archivos": {
+    "unico": "segmento_brazo.png"
+   },
+   "tamano_arte": [
+    7,
+    6
+   ],
+   "tamano_logico": [
+    21,
+    18
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "pivote_logico": [
+    9,
+    9
+   ],
+   "emisivos": {},
+   "nota": "Eslabón del brazo de la pinza"
+  },
+  "pinza": {
+   "archivos": {
+    "reposo": "pinza_reposo.png",
+    "abierta": "pinza_abierta.png",
+    "apoyada": "pinza_apoyada.png",
+    "volteada": "pinza_volteada.png"
+   },
+   "tamano_arte": [
+    21,
+    11
+   ],
+   "tamano_logico": [
+    63,
+    33
+   ],
+   "pivote_arte": [
+    19,
+    5
+   ],
+   "pivote_logico": [
+    57,
+    15
+   ],
+   "emisivos": {},
+   "punto_debil_en_estados": [
+    "volteada"
+   ],
+   "nota": "Pinza gigante 62×34 lógicos; pivote = muñeca (derecha). «volteada» enseña la barriga rosa = VULNERABLE al pisotón"
+  }
+ },
+ "cadenas": {
+  "brazo": {
+   "ancla": "cuerpo",
+   "punto_ancla": [
+    6,
+    10
+   ],
+   "segmentos": 4,
+   "piezas": [
+    "segmento_brazo",
+    "segmento_brazo",
+    "segmento_brazo",
+    "segmento_brazo"
+   ],
+   "pieza_final": "pinza"
+  }
+ }
+}

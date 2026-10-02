@@ -1,0 +1,128 @@
+{
+ "boss": "sapo",
+ "nombre": "Sapo gigante",
+ "mapa": "mushroom",
+ "mira": "izquierda",
+ "estados": {
+  "sentado": "sentado",
+  "salto (aire)": "salto",
+  "aterrizaje": "aterrizaje",
+  "lengua": "lengua + cadena de lengua",
+  "herido": "herido"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "cuerpo": {
+   "archivos": {
+    "sentado": "cuerpo_sentado.png",
+    "salto": "cuerpo_salto.png",
+    "aterrizaje": "cuerpo_aterrizaje.png",
+    "lengua": "cuerpo_lengua.png",
+    "herido": "cuerpo_herido.png"
+   },
+   "tamano_arte": [
+    37,
+    19
+   ],
+   "tamano_logico": [
+    111,
+    57
+   ],
+   "pivote_arte": [
+    18,
+    18
+   ],
+   "pivote_logico": [
+    54,
+    54
+   ],
+   "emisivos": {
+    "sentado": [
+     "#fff08a",
+     "#f0b0ff",
+     "#ffffff"
+    ],
+    "salto": [
+     "#fff08a",
+     "#f0b0ff",
+     "#ffffff"
+    ],
+    "aterrizaje": [
+     "#fff08a",
+     "#f0b0ff",
+     "#ffffff"
+    ],
+    "lengua": [
+     "#fff08a",
+     "#f0b0ff",
+     "#ffffff"
+    ],
+    "herido": [
+     "#fff08a",
+     "#f0b0ff",
+     "#ffffff"
+    ]
+   },
+   "nota": "Cuerpo 110×56 lógicos. Verrugas moradas brillantes = piel venenosa (no tocar). Pivote = centro de la base"
+  },
+  "lengua_segmento": {
+   "archivos": {
+    "unico": "lengua_segmento.png"
+   },
+   "tamano_arte": [
+    3,
+    3
+   ],
+   "tamano_logico": [
+    9,
+    9
+   ],
+   "pivote_arte": [
+    1,
+    1
+   ],
+   "pivote_logico": [
+    3,
+    3
+   ],
+   "emisivos": {},
+   "nota": "Se repite en línea desde la boca (2,9)"
+  },
+  "lengua_punta": {
+   "archivos": {
+    "unico": "lengua_punta.png"
+   },
+   "tamano_arte": [
+    5,
+    5
+   ],
+   "tamano_logico": [
+    15,
+    15
+   ],
+   "pivote_arte": [
+    4,
+    2
+   ],
+   "pivote_logico": [
+    12,
+    6
+   ],
+   "emisivos": {}
+  }
+ },
+ "cadenas": {
+  "lengua": {
+   "ancla": "cuerpo",
+   "punto_ancla": [
+    2,
+    9
+   ],
+   "segmentos": "variable (hasta 30)",
+   "piezas": [
+    "lengua_segmento"
+   ],
+   "pieza_final": "lengua_punta"
+  }
+ }
+}

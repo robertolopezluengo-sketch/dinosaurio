@@ -1,0 +1,228 @@
+{
+ "boss": "kraken",
+ "nombre": "Kraken abisal",
+ "mapa": "ocean",
+ "mira": "izquierda",
+ "estados": {
+  "cabeza en reposo": "cabeza reposo",
+  "tentáculo arriba": "punta reposo (cadena alzada)",
+  "golpe": "cabeza enfadado + punta golpe",
+  "tentáculo apoyado (se corta)": "punta apoyada → cortada",
+  "herido": "cabeza herido"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "cabeza": {
+   "archivos": {
+    "reposo": "cabeza_reposo.png",
+    "enfadado": "cabeza_enfadado.png",
+    "herido": "cabeza_herido.png"
+   },
+   "tamano_arte": [
+    48,
+    33
+   ],
+   "tamano_logico": [
+    144,
+    99
+   ],
+   "pivote_arte": [
+    26,
+    0
+   ],
+   "pivote_logico": [
+    78,
+    0
+   ],
+   "emisivos": {
+    "reposo": [
+     "#b0fff2",
+     "#ffffff",
+     "#fff08a",
+     "#ffffff"
+    ],
+    "enfadado": [
+     "#b0fff2",
+     "#ffffff",
+     "#fff08a",
+     "#ffffff"
+    ],
+    "herido": [
+     "#b0fff2",
+     "#ffffff",
+     "#fff08a",
+     "#ffffff"
+    ]
+   },
+   "nota": "Cabeza 144×100 lógicos asomando arriba a la derecha, con 5 tentáculos colgando. Pivote = centro arriba"
+  },
+  "segmento_g": {
+   "archivos": {
+    "unico": "segmento_g.png"
+   },
+   "tamano_arte": [
+    7,
+    7
+   ],
+   "tamano_logico": [
+    21,
+    21
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "pivote_logico": [
+    9,
+    9
+   ],
+   "emisivos": {}
+  },
+  "segmento_m": {
+   "archivos": {
+    "unico": "segmento_m.png"
+   },
+   "tamano_arte": [
+    6,
+    6
+   ],
+   "tamano_logico": [
+    18,
+    18
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "pivote_logico": [
+    9,
+    9
+   ],
+   "emisivos": {}
+  },
+  "segmento_p": {
+   "archivos": {
+    "unico": "segmento_p.png"
+   },
+   "tamano_arte": [
+    5,
+    5
+   ],
+   "tamano_logico": [
+    15,
+    15
+   ],
+   "pivote_arte": [
+    2,
+    2
+   ],
+   "pivote_logico": [
+    6,
+    6
+   ],
+   "emisivos": {}
+  },
+  "punta": {
+   "archivos": {
+    "reposo": "punta_reposo.png",
+    "golpe": "punta_golpe.png",
+    "apoyada": "punta_apoyada.png",
+    "cortada": "punta_cortada.png"
+   },
+   "tamano_arte": [
+    15,
+    8
+   ],
+   "tamano_logico": [
+    45,
+    24
+   ],
+   "pivote_arte": [
+    14,
+    3
+   ],
+   "pivote_logico": [
+    42,
+    9
+   ],
+   "emisivos": {},
+   "punto_debil_en_estados": [
+    "apoyada"
+   ],
+   "nota": "Punta 44×24 lógicos; pivote = unión (derecha). «apoyada» = VULNERABLE al corte deslizándose; «cortada» tras el corte"
+  },
+  "barredor": {
+   "archivos": {
+    "unico": "barredor.png"
+   },
+   "tamano_arte": [
+    30,
+    9
+   ],
+   "tamano_logico": [
+    90,
+    27
+   ],
+   "pivote_arte": [
+    29,
+    2
+   ],
+   "pivote_logico": [
+    87,
+    6
+   ],
+   "emisivos": {},
+   "nota": "Tentáculo barredor 90×26 lógicos (a ras de suelo)"
+  },
+  "tinta": {
+   "archivos": {
+    "unico": "tinta.png"
+   },
+   "tamano_arte": [
+    10,
+    8
+   ],
+   "tamano_logico": [
+    30,
+    24
+   ],
+   "pivote_arte": [
+    5,
+    4
+   ],
+   "pivote_logico": [
+    15,
+    12
+   ],
+   "emisivos": {},
+   "nota": "Mancha de tinta"
+  }
+ },
+ "cadenas": {
+  "tentaculo_largo": {
+   "ancla": "cabeza",
+   "punto_ancla": [
+    12,
+    26
+   ],
+   "segmentos": 14,
+   "piezas": [
+    "segmento_g",
+    "segmento_g",
+    "segmento_g",
+    "segmento_g",
+    "segmento_m",
+    "segmento_m",
+    "segmento_m",
+    "segmento_m",
+    "segmento_m",
+    "segmento_p",
+    "segmento_p",
+    "segmento_p",
+    "segmento_p",
+    "segmento_p"
+   ],
+   "pieza_final": "punta"
+  }
+ }
+}

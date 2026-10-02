@@ -1,0 +1,157 @@
+{
+ "boss": "serpiente",
+ "nombre": "Serpiente de lianas",
+ "mapa": "jungle",
+ "mira": "izquierda",
+ "estados": {
+  "colgando": "cabeza reposo",
+  "ataque desde arriba": "cabeza ataque",
+  "escupir veneno": "cabeza escupir",
+  "cabeza apoyada (vulnerable)": "cabeza apoyada",
+  "herida": "cabeza herida"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "segmento_g": {
+   "archivos": {
+    "liso": "segmento_g_liso.png",
+    "hoja": "segmento_g_hoja.png"
+   },
+   "tamano_arte": [
+    7,
+    7
+   ],
+   "tamano_logico": [
+    21,
+    21
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "pivote_logico": [
+    9,
+    9
+   ],
+   "emisivos": {},
+   "nota": "Segmento del cuerpo; pivote = centro"
+  },
+  "segmento_m": {
+   "archivos": {
+    "liso": "segmento_m_liso.png",
+    "hoja": "segmento_m_hoja.png"
+   },
+   "tamano_arte": [
+    6,
+    6
+   ],
+   "tamano_logico": [
+    18,
+    18
+   ],
+   "pivote_arte": [
+    3,
+    3
+   ],
+   "pivote_logico": [
+    9,
+    9
+   ],
+   "emisivos": {},
+   "nota": "Segmento del cuerpo; pivote = centro"
+  },
+  "segmento_p": {
+   "archivos": {
+    "liso": "segmento_p_liso.png",
+    "hoja": "segmento_p_hoja.png"
+   },
+   "tamano_arte": [
+    5,
+    5
+   ],
+   "tamano_logico": [
+    15,
+    15
+   ],
+   "pivote_arte": [
+    2,
+    2
+   ],
+   "pivote_logico": [
+    6,
+    6
+   ],
+   "emisivos": {},
+   "nota": "Segmento del cuerpo; pivote = centro"
+  },
+  "cabeza": {
+   "archivos": {
+    "reposo": "cabeza_reposo.png",
+    "ataque": "cabeza_ataque.png",
+    "escupir": "cabeza_escupir.png",
+    "apoyada": "cabeza_apoyada.png",
+    "herida": "cabeza_herida.png"
+   },
+   "tamano_arte": [
+    21,
+    11
+   ],
+   "tamano_logico": [
+    63,
+    33
+   ],
+   "pivote_arte": [
+    19,
+    4
+   ],
+   "pivote_logico": [
+    57,
+    12
+   ],
+   "emisivos": {
+    "reposo": [
+     "#fff08a"
+    ],
+    "ataque": [
+     "#fff08a"
+    ],
+    "escupir": [
+     "#fff08a",
+     "#dcff9a",
+     "#ffffff"
+    ]
+   },
+   "punto_debil_en_estados": [
+    "apoyada"
+   ],
+   "nota": "Pivote = nuca (lado derecho, donde se une al último segmento). Pinchos DEBAJO: no se puede pisar. «apoyada» = vulnerable al rugido"
+  }
+ },
+ "cadenas": {
+  "cuerpo": {
+   "ancla": "arriba-derecha de la pantalla",
+   "segmentos": 16,
+   "piezas": [
+    "segmento_p",
+    "segmento_p",
+    "segmento_p",
+    "segmento_p",
+    "segmento_p",
+    "segmento_m",
+    "segmento_m",
+    "segmento_m",
+    "segmento_m",
+    "segmento_m",
+    "segmento_m",
+    "segmento_g",
+    "segmento_g",
+    "segmento_g",
+    "segmento_g",
+    "segmento_g"
+   ],
+   "tamanos_logicos": "16 → 22 (del techo hacia la cabeza)",
+   "pieza_final": "cabeza",
+   "nota": "Alterna «liso» y «hoja» (1 de cada 3 con hoja)."
+  }
+ }
+}

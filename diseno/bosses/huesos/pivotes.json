@@ -1,0 +1,276 @@
+{
+ "boss": "huesos",
+ "nombre": "Rey de los huesos",
+ "mapa": "graveyard",
+ "mira": "izquierda",
+ "estados": {
+  "reposo": "craneo reposo + mandibula cerrada + escudo cargas_3",
+  "mordisco": "craneo mordisco + mandibula abierta",
+  "cráneo apoyado": "craneo apoyado",
+  "escudo activo / roto": "escudo cargas_3/2/1 → roto",
+  "herido": "cuerpo herido + craneo herido"
+ },
+ "escala": "1 px de arte = 3 px lógicos; dibujar con vecino más cercano",
+ "piezas": {
+  "cuerpo": {
+   "archivos": {
+    "reposo": "cuerpo_reposo.png",
+    "herido": "cuerpo_herido.png"
+   },
+   "tamano_arte": [
+    40,
+    24
+   ],
+   "tamano_logico": [
+    120,
+    72
+   ],
+   "pivote_arte": [
+    20,
+    23
+   ],
+   "pivote_logico": [
+    60,
+    69
+   ],
+   "emisivos": {},
+   "nota": "Patas, costillas y columna. Cola desde (38,6); cuello desde (4,3). Pivote = centro de la base"
+  },
+  "vertebra_g": {
+   "archivos": {
+    "unico": "vertebra_g.png"
+   },
+   "tamano_arte": [
+    5,
+    5
+   ],
+   "tamano_logico": [
+    15,
+    15
+   ],
+   "pivote_arte": [
+    2,
+    2
+   ],
+   "pivote_logico": [
+    6,
+    6
+   ],
+   "emisivos": {}
+  },
+  "vertebra_m": {
+   "archivos": {
+    "unico": "vertebra_m.png"
+   },
+   "tamano_arte": [
+    4,
+    4
+   ],
+   "tamano_logico": [
+    12,
+    12
+   ],
+   "pivote_arte": [
+    2,
+    2
+   ],
+   "pivote_logico": [
+    6,
+    6
+   ],
+   "emisivos": {}
+  },
+  "vertebra_p": {
+   "archivos": {
+    "unico": "vertebra_p.png"
+   },
+   "tamano_arte": [
+    3,
+    3
+   ],
+   "tamano_logico": [
+    9,
+    9
+   ],
+   "pivote_arte": [
+    1,
+    1
+   ],
+   "pivote_logico": [
+    3,
+    3
+   ],
+   "emisivos": {}
+  },
+  "bracito": {
+   "archivos": {
+    "unico": "bracito.png"
+   },
+   "tamano_arte": [
+    6,
+    5
+   ],
+   "tamano_logico": [
+    18,
+    15
+   ],
+   "pivote_arte": [
+    5,
+    0
+   ],
+   "pivote_logico": [
+    15,
+    0
+   ],
+   "emisivos": {},
+   "nota": "Bracito bajo el cuello, en (6,9) del cuerpo"
+  },
+  "craneo": {
+   "archivos": {
+    "reposo": "craneo_reposo.png",
+    "mordisco": "craneo_mordisco.png",
+    "apoyado": "craneo_apoyado.png",
+    "herido": "craneo_herido.png"
+   },
+   "tamano_arte": [
+    27,
+    11
+   ],
+   "tamano_logico": [
+    81,
+    33
+   ],
+   "pivote_arte": [
+    25,
+    6
+   ],
+   "pivote_logico": [
+    75,
+    18
+   ],
+   "emisivos": {
+    "reposo": [
+     "#b0ffc8",
+     "#ffffff"
+    ],
+    "mordisco": [
+     "#b0ffc8",
+     "#ffffff"
+    ],
+    "apoyado": [
+     "#b0ffc8",
+     "#ffffff"
+    ],
+    "herido": [
+     "#b0ffc8"
+    ]
+   },
+   "punto_debil_en_estados": [
+    "apoyado"
+   ],
+   "nota": "Cráneo 80×34 lógicos, con corona y ojo verde; pivote = unión con el cuello (derecha). «apoyado» con el escudo roto = VULNERABLE a pisarlo"
+  },
+  "mandibula": {
+   "archivos": {
+    "cerrada": "mandibula_cerrada.png",
+    "abierta": "mandibula_abierta.png"
+   },
+   "tamano_arte": [
+    23,
+    4
+   ],
+   "tamano_logico": [
+    69,
+    12
+   ],
+   "pivote_arte": [
+    21,
+    0
+   ],
+   "pivote_logico": [
+    63,
+    0
+   ],
+   "emisivos": {},
+   "nota": "Mandíbula 70×12 lógicos bajo el cráneo, en (2,10); «abierta» = baja 4 px de arte al morder"
+  },
+  "escudo": {
+   "archivos": {
+    "cargas_3": "escudo_cargas_3.png",
+    "cargas_2": "escudo_cargas_2.png",
+    "cargas_1": "escudo_cargas_1.png",
+    "roto": "escudo_roto.png"
+   },
+   "tamano_arte": [
+    61,
+    45
+   ],
+   "tamano_logico": [
+    183,
+    135
+   ],
+   "pivote_arte": [
+    30,
+    22
+   ],
+   "pivote_logico": [
+    90,
+    66
+   ],
+   "emisivos": {
+    "cargas_3": [
+     "#b0ffc8",
+     "#ffffff"
+    ],
+    "cargas_2": [
+     "#b0ffc8",
+     "#ffffff"
+    ],
+    "cargas_1": [
+     "#b0ffc8",
+     "#ffffff"
+    ],
+    "roto": [
+     "#b0ffc8"
+    ]
+   },
+   "nota": "Escudo de almas (elipse) centrado en el pecho; un orbe por carga. «roto» = discontinuo"
+  }
+ },
+ "cadenas": {
+  "cuello": {
+   "ancla": "cuerpo",
+   "punto_ancla": [
+    4,
+    3
+   ],
+   "segmentos": 4,
+   "piezas": [
+    "vertebra_g",
+    "vertebra_g",
+    "vertebra_g",
+    "vertebra_g"
+   ],
+   "pieza_final": "craneo"
+  },
+  "cola": {
+   "ancla": "cuerpo",
+   "punto_ancla": [
+    38,
+    6
+   ],
+   "segmentos": 8,
+   "piezas": [
+    "vertebra_m",
+    "vertebra_m",
+    "vertebra_m",
+    "vertebra_m",
+    "vertebra_p",
+    "vertebra_p",
+    "vertebra_p",
+    "vertebra_p"
+   ],
+   "pieza_final": null
+  }
+ }
+}
