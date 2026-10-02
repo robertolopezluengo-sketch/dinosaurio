@@ -346,6 +346,14 @@
   #mPage { font-family: var(--f-title); font-size: 10px; color: var(--text-dim); }
   .boss-sheet { background: var(--surface); }
   .stars, .roar-label { color: var(--weak); }
+  /* Resultado del multijugador */
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 14px; }
+  .vs > div { background: var(--surface-2); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel); padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .vs > div.win { outline: 2px solid var(--weak); background: var(--surface-3); }
+  .vs small { font-family: var(--f-title); font-size: 10px; line-height: 16px; color: var(--text-dim); }
+  .vs b { font-family: var(--f-title); font-weight: 400; font-size: 40px; line-height: 44px; }
+  .vs span { font-size: 10px; color: var(--text-dim); }
+  .vs .touch-hint { grid-column: span 2; }
   @media (max-width: 640px) {
     h1 { font-size: 20px; line-height: 30px; } .danger, .big { font-size: 20px; line-height: 30px; }
     .btn { font-size: 10px; line-height: 10px; padding: 10px 12px 12px; min-width: 0; }
@@ -373,7 +381,7 @@
   <div class="card">
     <h1>DINO RUNNER</h1>
     <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus bosses</p>
-    <p class="touch-hint" style="margin:-8px 0 10px">Versión 8 · Jefes por piezas y forma furiosa</p>
+    <p class="touch-hint" style="margin:-8px 0 10px">Versión 9 · Multijugador para 2 jugadores</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
@@ -388,12 +396,14 @@
       <button class="btn purple" id="btnRoulette">Ruleta</button>
       <button class="btn" id="btnAch">🏆 Logros</button>
       <button class="btn" id="btnManual">Manual</button>
+      <button class="btn purple" id="btnVersus">👥 Multijugador</button>
     </div>
     <div class="keys">
       <span><kbd>W</kbd> saltar / doble salto</span><span><kbd>S</kbd> deslizarse / caída rápida</span>
       <span><kbd>A</kbd> carril de arriba</span><span><kbd>D</kbd> carril de abajo</span>
       <span><kbd>E</kbd> rugido</span><span><kbd>P</kbd> pausa</span>
     </div>
+    <p class="touch-hint">Multijugador (2 jugadores, mismo teclado, sin jefes): J1 corre arriba con <kbd>W</kbd> saltar, <kbd>S</kbd> deslizarse y <kbd>E</kbd> rugido · J2 corre abajo con <kbd>↑</kbd> saltar, <kbd>↓</kbd> deslizarse y <kbd>→</kbd> rugido. Gana quien aguante más.</p>
     <p class="touch-hint">Bosses: cada uno se vence de una forma distinta (la verás abajo en la pantalla). Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
     <div class="actions" style="margin:10px 0 0"><button class="btn ghost" id="btnMute">Sonido: SÍ</button></div>
     <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–9 y 0 = nivel 1–10 · B = boss del nivel actual</p>
@@ -490,8 +500,10 @@
 <!-- Game Over -->
 <div id="over" class="overlay hidden">
   <div class="card">
-    <h2 class="danger">GAME OVER</h2>
+    <h2 class="danger" id="overTitle">GAME OVER</h2>
     <small id="overModeLbl">MODO NORMAL</small>
+    <div id="overVs" class="vs hidden"></div>
+    <div id="overSolo">
     <div class="big" id="overScore">0</div>
     <small>PUNTOS</small>
     <div id="overRecord" class="record hidden">¡NUEVO RÉCORD!</div>
@@ -503,6 +515,7 @@
       <div><small>LOGROS</small><b id="overAch">0</b></div>
       <div><small>TOTAL</small><b><span class="coin"></span> <span id="overWallet">0</span></b></div>
       <div><small>RÉCORD</small><b id="overHi">0</b></div>
+    </div>
     </div>
     <div class="over-ach" id="overAchList"></div>
     <div class="actions">
@@ -799,6 +812,7 @@ const CONFIG = {
   BOSS_TELEGRAPH: 1,         // multiplicador de los avisos de ataque (más alto = más tiempo para reaccionar)
   BOSS_TELEGRAPH_MIN: 0.45,  // s mínimos de aviso de un ataque
   BOSS_VULN_TIME: 1.5,       // s de ventana de vulnerabilidad tras cada ataque
+  VERSUS_MODE: "normal",    // multijugador: velocidad y dificultad de este modo (sin jefes, power-ups ni huevos)
   BOSS_FURY_AT: 0.5,         // forma furiosa al bajar a este % de vida: añade la mecánica nueva de cada boss
   BOSS_FURY_SPEED: 1.25,     // en furia ataca un 25 % más rápido
   BOSS_FURY_TELEGRAPH: 0.8,  // y sus avisos duran un 20 % menos
@@ -1558,14 +1572,19 @@ class Particle {
 //  Hitbox: columnas 8–16 y filas 2–19 del sprite (cuerpo); al deslizarse, una caja baja.
 // =====================================================================
 class Player {
-  constructor(game) { this.game = game; this.skinState = { tick: 0, speed: 2, trail: null }; this.reset(); }
+  constructor(game, num = 1) { this.game = game; this.num = num; this.skinState = { tick: 0, speed: 2, trail: null }; this.reset(); }
   reset() {
     this.x = PLAYER_X; this.y = 0; this.vy = 0; this.prevY = 0;
     this.onGround = true; this.jumps = 0; this.fastFall = false; this.slideTime = 0; this.downHeld = false;
     this.lane = 1; this.laneFrom = 1; this.laneT = 1; this.laneProgress = 1;
     this.anim = 0; this.dustTimer = 0; this.tickAcc = 0; this.advance = true;
     this.skinState.trail = null;
+    // Multijugador: cada raptor tiene su rugido, sus monedas y su puntuación
+    this.dead = false; this.deadT = 0; this.score = 0; this.coins = 0; this.downHeld = false;
+    this.roarCd = 0; this.roarCdMax = 1; this.roarWave = null; this.roarAnim = 0;
   }
+  setLane(l) { this.lane = this.laneFrom = this.laneT = l; this.laneProgress = 1; }
+  get skinId() { return this.num === 2 ? this.game.p2SkinId : this.game.skinId; }
   get sliding() { return this.slideTime > 0 && this.onGround; }
   get logicalLane() { return this.laneT < 0.5 ? 0 : 1; }
   get center() { return { x: this.x + 38, y: this.y + (this.sliding ? 12 : 27) }; }
@@ -1585,6 +1604,7 @@ class Player {
     else this.fastFall = true;
   }
   changeLane(dir) {
+    if (this.game.versus) return;   // en multijugador cada raptor tiene su carril
     const target = clamp(this.lane + dir, 0, 1);
     if (target === this.lane) return;
     this.laneFrom = this.laneT; this.lane = target; this.laneProgress = 0;
@@ -1633,7 +1653,8 @@ class Player {
     return [{ x: x + 8 * S, y, w: 9 * S, h: 18 * S }];            // columnas 8–16, filas 2–19
   }
   draw(ctx) {
-    const g = this.game, dead = g.state === "over", S = CONFIG.RAPTOR_SCALE, id = g.skinId;
+    const g = this.game, dead = g.state === "over" || this.dead, S = CONFIG.RAPTOR_SCALE, id = this.skinId;
+    const roarAnim = g.versus ? this.roarAnim : g.roarAnim, roarWave = g.versus ? this.roarWave : g.roarWave;
     drawShadow(ctx, 36, 54, this.y);
     const blinking = g.grace > 0 && !dead && Math.floor(g.grace * 14) % 2 === 0;
     const jumpY = this.y / S, adv = this.advance; this.advance = false;
@@ -1645,9 +1666,9 @@ class Player {
       SE.drawSprite(ctx, id, frame, -10, oy, S, this.skinState.tick, { alpha: 0.12 });
     }
     if (this.sliding && !dead) { ctx.translate(-6, 0); ctx.scale(1.25, 0.5); }   // agachado: el raptor se aplasta
-    else if (g.roarAnim > 0 && !dead) {   // pose de rugido (con aura en los skins de rugido especial)
-      const k = roarPose(ctx, g.roarWave && g.roarWave.style, 1 - g.roarAnim / 0.6, 40, -(this.y + 34), 1);
-      const tilt = g.roarWave && g.roarWave.style ? 0.2 : 0.08;
+    else if (roarAnim > 0 && !dead) {   // pose de rugido (con aura en los skins de rugido especial)
+      const k = roarPose(ctx, roarWave && roarWave.style, 1 - roarAnim / 0.6, 40, -(this.y + 34), 1);
+      const tilt = roarWave && roarWave.style ? 0.2 : 0.08;
       ctx.translate(30, -this.y); ctx.rotate(-tilt * k); ctx.scale(1 + 0.08 * k, 1 + 0.08 * k); ctx.translate(-30, this.y);
     }
     drawRaptor(ctx, id, this.skinState, jumpY, dead, adv);
@@ -1662,6 +1683,12 @@ class Player {
         ctx.fill(); ctx.stroke();
         ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.fillRect(10, cy - 20, 6, 6);
       }
+    }
+    if (g.versus) {   // etiqueta J1 / J2 sobre la cabeza
+      const ty = -(this.y + (this.sliding ? 40 : 82)), col = this.num === 1 ? UI_T.go : UI_T.info;
+      ctx.fillStyle = UI_T.line; ctx.fillRect(22, ty - 9, 32, 18); ctx.fillStyle = this.dead ? "#5a5468" : col; ctx.fillRect(24, ty - 7, 28, 14);
+      ctx.font = '10px "Raptor Pixel Display", monospace'; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#16111f";
+      ctx.fillText(this.dead ? "K.O." : "J" + this.num, 38, ty + 1);
     }
     if (g.effects.magnet > 0) drawIcon(ctx, "magnet", 38, -(this.y + (this.sliding ? 44 : 84)) + Math.sin(g.time * 5) * 2, 7);
   }
@@ -2024,6 +2051,12 @@ const PATTERNS = [
 ];
 
 
+// Patrones que se pueden superar sin cambiar de carril (los únicos del multijugador)
+const _solo = new Map();
+function soloPattern(p) {
+  if (!_solo.has(p)) _solo.set(p, p.build(0, 1).every(it => it.lane === 0 && it.h !== "wall"));
+  return _solo.get(p);
+}
 class Spawner {
   constructor(game) { this.game = game; this.reset(); }
   reset() { this.nextAt = CONFIG.FIRST_SPAWN_DISTANCE; this.last = null; this.plans = {}; }
@@ -2034,7 +2067,7 @@ class Spawner {
   }
   spawnPattern() {
     const g = this.game, L = g.level, biome = L.biome;
-    let pool = PATTERNS.filter(p => g.mode.patternLevel(p) <= L.level && (!p.biome || p.biome === (biome.patternBiome || biome.id)));
+    let pool = PATTERNS.filter(p => g.mode.patternLevel(p) <= L.level && (!p.biome || p.biome === (biome.patternBiome || biome.id)) && (!g.versus || soloPattern(p)));
     if (pool.length > 1) pool = pool.filter(p => p !== this.last);
     // Los patrones más avanzados pesan más cuando están disponibles
     const weights = pool.map(p => p.w * (1 + 0.35 * (p.lvl - 1)) * (p.biome ? 1.5 : 1));
@@ -2046,7 +2079,10 @@ class Spawner {
     const travel = (SPAWN_X - PLAYER_X) / sp;   // s que tarda el suelo en llegar al raptor
     let end = 0;
     const placed = [];
-    for (const it of p.build(A, B)) {
+    let items = p.build(A, B);
+    // Multijugador: los dos carriles reciben exactamente los mismos obstáculos y monedas
+    if (g.versus) items = items.flatMap(it => [{ ...it, lane: 0 }, { ...it, lane: 1 }]);
+    for (const it of items) {
       const x = SPAWN_X + it.t * sp;
       if (it.o) {
         const o = new Obstacle(it.o, it.lane, x, it, biome);
@@ -2064,7 +2100,7 @@ class Spawner {
         end = Math.max(end, it.t * sp + it.n * 34);
       }
     }
-    this.tryEgg(placed, A, B, sp);
+    if (!g.versus) this.tryEgg(placed, A, B, sp);
     const gapS = L.gapSeconds() * g.mode.gapMult;
     const gap = (gapS + Math.random() * CONFIG.GAP_RANDOM * (gapS / CONFIG.GAP_START)) * sp;
     this.nextAt = g.distance + end + gap;
@@ -2072,7 +2108,7 @@ class Spawner {
     // Extras en el hueco hasta el siguiente patrón (zona libre de obstáculos)
     const midX = SPAWN_X + end + gap * 0.5;
     let puLane = -1;
-    if (g.distScore >= CONFIG.POWERUP_MIN_SCORE && Math.random() < Math.min(0.6, L.powerupChance() * g.mode.powerupChanceMult)) {
+    if (!g.versus && g.distScore >= CONFIG.POWERUP_MIN_SCORE && Math.random() < Math.min(0.6, L.powerupChance() * g.mode.powerupChanceMult)) {
       const types = POWERUP_TYPES.filter(t => g.effects[t] <= 0 && !g.powerups.some(pu => pu.type === t));
       if (types.length) { puLane = randInt(0, 1); g.powerups.push(new PowerUp(choice(types), puLane, midX)); }
     }
@@ -2080,7 +2116,7 @@ class Spawner {
     if (gap > 220 && Math.random() < coinChance) {
       const lane = puLane >= 0 ? 1 - puLane : randInt(0, 1);
       const n = Math.min(CONFIG.COIN_LINE_MAX, Math.floor(gap * 0.6 / 34));
-      for (let i = 0; i < n; i++) g.coinsArr.push(new Coin(lane, midX - n * 17 + i * 34, 22));
+      for (const l of g.versus ? [0, 1] : [lane]) for (let i = 0; i < n; i++) g.coinsArr.push(new Coin(l, midX - n * 17 + i * 34, 22));
     }
   }
   // Huevos bonus en sitios que exigen habilidad: encima de un obstáculo (hace falta doble salto)
@@ -2128,7 +2164,7 @@ class LevelManager {
       const eggs = g.onLevelComplete(this.level);
       this.level++;
       this.setBiome((this.level - 1) % this.biomes.length);   // tras el último bioma vuelve a empezar el ciclo
-      this.banner = CONFIG.LEVEL_BANNER_TIME; this.bannerSub = `Huevos del nivel ${this.level - 1}: ${eggs}/${CONFIG.EGGS_PER_LEVEL}`;
+      this.banner = CONFIG.LEVEL_BANNER_TIME; this.bannerSub = g.versus ? "¡Más rápido!" : `Huevos del nivel ${this.level - 1}: ${eggs}/${CONFIG.EGGS_PER_LEVEL}`;
       g.sfx.levelUp(); g.ach.event("levelReached", { level: this.level });
     }
   }
@@ -4815,7 +4851,8 @@ class UI {
     bind("btnAch", () => game.openAchievements("menu"));
     bind("btnManual", () => game.openManual("menu"));
     bind("btnMute", () => game.toggleMute());
-    bind("btnRetry", () => game.start());
+    bind("btnRetry", () => game.retry());
+    bind("btnVersus", () => game.startVersus());
     bind("btnOverShop", () => game.openShop("over"));
     bind("btnMenu", () => game.showMenu());
     bind("btnGo", () => game.start(this.selMode, this.selLevel));
@@ -4861,6 +4898,18 @@ class UI {
   showPause() { this.hideAll(); this.pause.classList.remove("hidden"); }
   showOver() {
     const g = this.game, s = g.save.data;
+    this.$("overSolo").classList.toggle("hidden", g.versus); this.$("overVs").classList.toggle("hidden", !g.versus);
+    this.$("overAchList").classList.toggle("hidden", g.versus);
+    if (g.versus) {   // resultado del multijugador
+      const [a, b] = [g.player, g.p2], win = a.score === b.score ? 0 : a.score > b.score ? 1 : 2;
+      this.$("overTitle").textContent = win ? `¡GANA EL JUGADOR ${win}!` : "¡EMPATE!";
+      this.$("overTitle").style.color = win === 1 ? UI_T.go : win === 2 ? UI_T.info : UI_T.weak;
+      this.$("overModeLbl").textContent = `MULTIJUGADOR · NIVEL ${g.level.level} · ${g.level.biome.name.toUpperCase()}`;
+      const card = (p, keys) => `<div class="${p.num === win ? "win" : ""}"><small>JUGADOR ${p.num} · ${keys}</small><b>${p.score}</b><small>PUNTOS · <span class="coin"></span> ${Math.floor(p.coins + 1e-6)}</small><span>${SkinCatalog.get(p.skinId) ? SkinCatalog.get(p.skinId).name : ""}</span></div>`;
+      this.$("overVs").innerHTML = card(a, "WASD") + card(b, "FLECHAS") + `<p class="touch-hint">Las monedas de los dos (${g.runCoinsInt}) van a tu monedero: ahora tienes <span class="coin"></span> ${s.coins}.</p>`;
+      this.hideAll(); this.over.classList.remove("hidden"); return;
+    }
+    this.$("overTitle").textContent = "GAME OVER"; this.$("overTitle").style.color = "";
     this.$("overScore").textContent = g.distScore; this.$("overLevel").textContent = g.level.level;
     this.$("overCoins").textContent = g.runCoinsInt; this.$("overWallet").textContent = s.coins; this.$("overHi").textContent = s.records[g.mode.id];
     this.$("overRecord").classList.toggle("hidden", !g.newRecord);
@@ -4940,6 +4989,7 @@ class UI {
   }
   drawHud(c) {
     const g = this.game, L = g.level;
+    if (g.versus) return this.drawVersusHud(c);
     // Panel de puntuación (arriba a la izquierda)
     this.panel(c, 10, 10, 196, 76);
     c.textBaseline = "middle"; c.textAlign = "left";
@@ -4989,17 +5039,40 @@ class UI {
       y += 28;
     }
 
-    // Indicador circular de recarga del rugido
-    const cx = W - 48, cy = 46, r = 26, cd = g.roarCd, ready = cd <= 0;
+    this.drawRoarRing(c, W - 48, 46, g.roarCd, g.roarCdMax || g.mode.roarCooldown, "E", "RUGIDO");
+  }
+  // Marcador del multijugador: puntos y rugido de cada raptor
+  drawVersusHud(c) {
+    const g = this.game, L = g.level;
+    this.panel(c, 10, 10, 214, 76);
+    c.textBaseline = "middle"; c.textAlign = "left";
+    [g.player, g.p2].forEach((p, i) => {
+      const y = 26 + i * 26, col = i ? UI_T.info : UI_T.go;
+      c.fillStyle = col; c.fillRect(20, y - 7, 30, 14);
+      c.font = '10px "Raptor Pixel Display", monospace'; c.fillStyle = "#16111f"; c.textAlign = "center"; c.fillText("J" + p.num, 35, y + 1);
+      c.textAlign = "left"; c.font = '20px "Raptor Pixel Display", monospace'; c.fillStyle = p.dead ? UI_T.dim : UI_T.text;
+      c.fillText(pad(p.dead ? p.score : g.distScore), 60, y + 1);
+      if (p.dead) { c.font = '10px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.danger; c.fillText("K.O.", 182, y + 1); }
+    });
+    c.fillStyle = UI_T.line; c.fillRect(17, 62, 200, 2);
+    c.fillStyle = UI_T.gold; c.beginPath(); c.arc(26, 75, 6, 0, Math.PI * 2); c.fill();
+    c.font = '14px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.gold; c.fillText(String(g.runCoinsInt), 38, 76);
+    c.font = '10px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.dim; c.fillText("MULTIJUGADOR", 112, 76);
+    this.text(c, `NIVEL ${L.level} · ${L.biome.name.toUpperCase()}`, W / 2, 22, 16, L.biome.accent, "center");
+    this.drawRoarRing(c, W - 118, 46, g.player.roarCd, g.player.roarCdMax, "E", "J1 RUGIDO", UI_T.go);
+    this.drawRoarRing(c, W - 48, 46, g.p2.roarCd, g.p2.roarCdMax, "→", "J2 RUGIDO", UI_T.info);
+  }
+  drawRoarRing(c, cx, cy, cd, cdMax, key, label, labelCol) {
+    const g = this.game, r = 26, ready = cd <= 0;
     c.fillStyle = UI_T.line; c.beginPath(); c.arc(cx, cy, r + 6, 0, Math.PI * 2); c.fill();
     c.fillStyle = UI_T.panel; c.beginPath(); c.arc(cx, cy, r + 4, 0, Math.PI * 2); c.fill();
     c.lineWidth = 6; c.lineCap = "butt"; c.strokeStyle = "#3a2f50"; c.beginPath(); c.arc(cx, cy, r - 3, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = ready ? (Math.floor(g.time * 4) % 2 ? UI_T.roar : "#ffc078") : UI_T.roar;
-    c.beginPath(); c.arc(cx, cy, r - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cd / (g.roarCdMax || g.mode.roarCooldown))); c.stroke();
+    c.beginPath(); c.arc(cx, cy, r - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cd / (cdMax || 1))); c.stroke();
     if (ready) { c.fillStyle = UI_T.roar; c.beginPath(); c.arc(cx, cy, r - 9, 0, Math.PI * 2); c.fill(); }
     c.font = '20px "Raptor Pixel Display", monospace'; c.textAlign = "center"; c.textBaseline = "middle";
-    c.fillStyle = ready ? "#16111f" : UI_T.text; c.fillText(ready ? "E" : String(Math.ceil(cd)), cx, cy + 1);
-    this.text(c, "RUGIDO", cx, cy + r + 16, 10, ready ? UI_T.roar : UI_T.dim, "center");
+    c.fillStyle = ready ? "#16111f" : UI_T.text; c.fillText(ready ? key : String(Math.ceil(cd)), cx, cy + 1);
+    this.text(c, label, cx, cy + r + 16, 10, labelCol || (ready ? UI_T.roar : UI_T.dim), "center");
   }
   drawBanner(c) {
     const L = this.game.level; if (L.banner <= 0) return;
@@ -5011,7 +5084,7 @@ class UI {
     c.fillStyle = L.biome.accent; c.fillRect(-W / 2, -50, W, 3); c.fillRect(-W / 2, -50 + h - 3, W, 3);
     this.text(c, `¡NIVEL ${L.level}! ${L.biome.name.toUpperCase()}`, 0, -14, 36, L.biome.accent, "center");
     if (L.bannerSub) this.text(c, L.bannerSub.toUpperCase(), 0, 26, 14, "#fff3c4", "center");
-    else this.text(c, this.game.mode.id !== "normal" ? this.game.mode.label : "¡A CORRER!", 0, 26, 14, this.game.mode.id === "hard" ? UI_T.danger : UI_T.text, "center");
+    else this.text(c, this.game.versus ? "MULTIJUGADOR" : this.game.mode.id !== "normal" ? this.game.mode.label : "¡A CORRER!", 0, 26, 14, this.game.mode.id === "hard" ? UI_T.danger : UI_T.text, "center");
     c.restore();
   }
 }
@@ -5577,7 +5650,7 @@ class AchievementManager {
   checkStat(k) { for (const a of ACHIEVEMENTS) if (a.stat === k && this.stat(k) >= a.goal) this.unlock(a.id); }
   // Evento central: todo el juego informa aquí de lo que pasa
   event(type, d = {}) {
-    if (DEBUG) return;                                   // con el modo prueba no se consiguen logros
+    if (DEBUG || this.game.versus) return;              // con el modo prueba o en multijugador no se consiguen logros
     const g = this.game, easy = g.mode.id === "easy", hard = g.mode.id === "hard", normal = !easy, run = g.run;   // los logros «solo Normal» también valen en Difícil
     switch (type) {
       case "runStart":
@@ -5854,7 +5927,14 @@ const MANUAL_SECTIONS = [
       <tr><td>Monedas y huevos</td><td>×1</td><td>×${fmtNum(E.COIN_VALUE)}</td><td>×${fmtNum(H.COIN_VALUE)}</td></tr>
       <tr><td>Récord</td><td colspan="3">Cada modo guarda el suyo.</td></tr>
     </table>
-    <p>Los bosses se vencen igual en los tres modos: solo cambian su vida, su velocidad y el tiempo que tienes para dañarlos.</p>`; } },
+    <p>Los bosses se vencen igual en los tres modos: solo cambian su vida, su velocidad y el tiempo que tienes para dañarlos.</p>
+    <h4>Multijugador (2 jugadores en el mismo teclado)</h4>
+    <p>Sin jefes, power-ups ni huevos. Cada raptor tiene su carril y una sola vida; los dos carriles reciben los mismos obstáculos al mismo tiempo. Gana quien aguante más: cuando cae uno, el otro sigue corriendo hasta que también cae. Las monedas de los dos van a tu monedero; no cuenta para récords ni logros.</p>
+    <table><tr><th></th><th>Jugador 1 (carril de arriba)</th><th>Jugador 2 (carril de abajo)</th></tr>
+      <tr><td>Saltar / doble salto</td><td>${kbd("W")}</td><td>${kbd("↑")}</td></tr>
+      <tr><td>Deslizarse / caída rápida</td><td>${kbd("S")}</td><td>${kbd("↓")}</td></tr>
+      <tr><td>Rugido</td><td>${kbd("E")} o ${kbd("D")}</td><td>${kbd("→")} o ${kbd("Intro")}</td></tr>
+    </table>`; } },
   { title: "Tienda", html: () => { const R = ["Común", "Raro", "Épico", "Legendario", "Supremo"]; return `
     <h4>Skins</h4><p>${SkinCatalog.shop.length} velociraptores, solo estéticos:</p>
     <table><tr><th>Rareza</th><th>Precios</th><th>Qué tienen</th></tr>
@@ -6020,7 +6100,8 @@ class Game {
     this.sfx = new Sfx(); this.save = new SaveManager();
     this.mode = MODES[this.save.data.lastMode] || MODES.normal; this.startLevel = 1; this.lives = 1;
     this.run = this.newRun();
-    this.player = new Player(this); this.spawner = new Spawner(this); this.level = new LevelManager(this);
+    this.versus = false; this.p2SkinId = CONFIG.DEFAULT_SKIN;   // multijugador: J1 (WASD, carril de arriba) contra J2 (flechas, carril de abajo)
+    this.player = new Player(this); this.p2 = new Player(this, 2); this.spawner = new Spawner(this); this.level = new LevelManager(this);
     this.bosses = new BossManager(this);
     this.checkpoints = new CheckpointManager(this.save);
     this.sfx.muted = this.save.data.muted;
@@ -6052,11 +6133,17 @@ class Game {
     this.overTime = 0; this.overShown = false; this.newRecord = false; this.banked = false;
     this.bossBanner = null; this.runBosses = 0; this.floaters = [];
     this.run = this.newRun();
-    this.player.reset(); this.spawner.reset(); this.level.reset(); this.bosses.reset();
+    this.player.reset(); this.p2.reset(); this.spawner.reset(); this.level.reset(); this.bosses.reset();
   }
   // Skin equipado (si el guardado apunta a uno que ya no existe, se usa el de por defecto)
   get skinId() { const id = this.save.data.equipped; return SkinCatalog.exists(id) && this.save.owns(id) ? id : CONFIG.DEFAULT_SKIN; }
   onSkinChanged() { this.player.skinState.trail = null; }
+  get players() { return this.versus ? [this.player, this.p2] : [this.player]; }
+  // Skin del J2: otro skin comprado o, si no hay, uno distinto del catálogo
+  pickP2Skin() {
+    const own = SkinCatalog.shop.find(k => k.id !== this.skinId && this.save.owns(k.id));
+    return own ? own.id : (SkinCatalog.shop.find(k => k.id !== this.skinId) || { id: CONFIG.DEFAULT_SKIN }).id;
+  }
   get distScore() { return Math.floor(this.distance / CONFIG.PX_PER_POINT); }
   get effectiveSpeed() { return this.speed * (this.effects.turbo > 0 ? CONFIG.TURBO_MULT : 1); }
   get runCoinsInt() { return Math.floor(this.runCoins + 1e-6); }
@@ -6069,13 +6156,14 @@ class Game {
   }
   showMenu() {
     if (["playing", "paused"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
-    this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu();
+    this.versus = false; this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu();
   }
   openPlay() { this.state = "play"; this.closeScreens(); this.ui.showPlay(); }
   // Empieza una partida en un modo y (opcionalmente) desde un checkpoint
   start(modeId = this.mode.id, startLevel = this.startLevel) {
     this.sfx.unlock();
     if (["playing", "paused"].includes(this.state)) this.bankRun();
+    this.versus = false;
     this.mode = MODES[modeId] || MODES.normal; this.save.data.lastMode = this.mode.id; this.save.save();
     if (startLevel > 1 && !this.checkpoints.owned(startLevel)) startLevel = 1;
     this.startLevel = startLevel;
@@ -6087,6 +6175,18 @@ class Game {
     this.ach.event("runStart");
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
+  // Multijugador local sin jefes: J1 en el carril de arriba (WASD) y J2 en el de abajo (flechas)
+  startVersus() {
+    this.sfx.unlock();
+    if (["playing", "paused"].includes(this.state)) this.bankRun();
+    this.versus = true; this.mode = MODES[CONFIG.VERSUS_MODE] || MODES.normal; this.startLevel = 1;
+    this.p2SkinId = this.pickP2Skin();
+    this.reset(); this.player.setLane(0); this.p2.setLane(1);
+    this.state = "playing"; this.closeScreens();
+    this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = "J1: W · S · E      J2: ↑ · ↓ · →";
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+  retry() { if (this.versus) this.startVersus(); else this.start(); }
   // Coloca la partida al inicio de un nivel (checkpoints y modo prueba), con su velocidad y bioma
   jumpToLevel(level, extraPoints = 0) {
     this.distance = ((level - 1) * CONFIG.POINTS_PER_LEVEL + extraPoints) * CONFIG.PX_PER_POINT;
@@ -6130,8 +6230,26 @@ class Game {
     this.run.lastRoar = this.distScore; this.ach.event("roar");
     if (this.bosses.boss) this.bosses.boss.onRoar(this.player.logicalLane);
   }
+  // Rugido de un raptor en multijugador (cada uno con su recarga)
+  roarP(p) {
+    if (this.state !== "playing" || p.dead || p.roarCd > 0) return;
+    p.roarCd = p.roarCdMax = this.mode.roarCooldown;
+    p.roarWave = { t: 0, lane: p.logicalLane, style: roarStyle(p.skinId) };
+    p.roarAnim = 0.6; this.addShake(0.25, 5); this.sfx.roar();
+    const st = p.roarWave.style;
+    if (st) { for (let i = 0; i < 24; i++) this.particles.push(new Particle(p.logicalLane, p.x + 66, p.y + rand(20, 60), rand(150, 650), rand(-150, 350), rand(0.4, 0.9), choice(st.colors), rand(3, 7))); this.sfx.roarSpecial(st.type); }
+  }
   // Recibir un golpe: el turbo y la invulnerabilidad lo ignoran y el escudo lo absorbe. Devuelve true si muere.
-  hitPlayer() {
+  hitPlayer(pl = this.player) {
+    if (this.versus) {   // multijugador: una sola vida por raptor; la partida acaba cuando caen los dos
+      if (this.state !== "playing" || pl.dead) return false;
+      pl.dead = true; pl.score = this.distScore; this.sfx.hit(); this.addShake(0.3, 6);
+      const c = pl.center, sk = SkinCatalog.get(pl.skinId), cols = sk ? [sk.pal.b, sk.pal.o, "#ffffff"] : ["#ffffff"];
+      for (let i = 0; i < 20; i++) this.particles.push(new Particle(pl.logicalLane, c.x, c.y, rand(-250, 250), rand(100, 500), rand(0.5, 1), choice(cols), rand(3, 6)));
+      this.floatText(pl.laneT, pl.x + 30, pl.y + 100, `¡J${pl.num} K.O.!`, "#ff6b6b", 24);
+      if (this.players.every(p => p.dead)) this.gameOver();
+      return true;
+    }
     if (this.state !== "playing" || this.effects.turbo > 0 || this.grace > 0) return false;
     this.bosses.hitTaken = true;
     if (this.effects.shield > 0) { this.effects.shield = 0; this.grace = CONFIG.HIT_GRACE; this.sfx.shieldBreak(); this.addShake(0.2, 5); return false; }
@@ -6147,7 +6265,7 @@ class Game {
 
   // ----- Niveles, huevos y jefes -----
   onLevelComplete(level) {
-    this.save.markCompleted(level);                       // desbloquea el checkpoint del nivel siguiente
+    if (!this.versus) this.save.markCompleted(level);     // desbloquea el checkpoint del nivel siguiente (no en multijugador)
     this.run.biomes.add(biomeOfLevel(level + 1).id);
     if (level % CONFIG.LEVELS.length === 0) {   // 10 000 puntos: los 10 niveles completados
       this.bossBanner = { t: 4, text: `¡HAS COMPLETADO LOS ${CONFIG.LEVELS.length} NIVELES!`, sub: "El viaje vuelve a empezar, más difícil", color: "#ffd23f" };
@@ -6214,6 +6332,7 @@ class Game {
     this.banked = true;
     const s = this.save.data, earned = this.runCoinsInt;
     s.coins += earned;
+    if (this.versus) { this.save.save(); return; }   // en multijugador no hay récords ni logros
     if (this.distScore > s.records[this.mode.id]) { s.records[this.mode.id] = this.distScore; this.newRecord = true; }
     this.save.save();
     this.ach.event("score", { score: this.distScore });
@@ -6222,6 +6341,7 @@ class Game {
   }
   gameOver() {
     this.state = "over"; this.overTime = 0; this.overShown = false; this.sfx.hit(); this.sfx.defeat(); this.addShake(0.4, 8);
+    if (this.versus) { this.sfx.victory(); this.bankRun(); return; }
     const c = this.player.center, sk = SkinCatalog.get(this.skinId), cols = sk ? [sk.pal.b, sk.pal.o, "#ffffff"] : ["#ffffff"];
     for (let i = 0; i < 20; i++) this.particles.push(new Particle(this.player.logicalLane, c.x, c.y, rand(-250, 250), rand(100, 500), rand(0.5, 1), choice(cols), rand(3, 6)));
     if (navigator.vibrate) try { navigator.vibrate(150); } catch (e) {}
@@ -6271,10 +6391,14 @@ class Game {
     this.speed += (this.level.targetSpeed() - this.speed) * Math.min(1, gdt * CONFIG.SPEED_SMOOTHING);
     const sp = this.effectiveSpeed;
     this.distance += sp * gdt; this.scroll = this.distance;
-    this.player.tickSkin(dt, sp * (gdt / Math.max(dt, 1e-6)));   // px nativos por tick (con cámara lenta y turbo)
+    for (const p of this.players) p.tickSkin(dt, sp * (gdt / Math.max(dt, 1e-6)));   // px nativos por tick (con cámara lenta y turbo)
 
-    this.player.update(gdt);
-    if (!this.bosses.active) {
+    for (const p of this.players) {
+      if (!p.dead) p.update(gdt);
+      else { p.deadT += dt; p.x -= sp * gdt; }   // el raptor eliminado se queda atrás
+    }
+    if (this.versus) { this.level.check(); this.spawner.update(); }   // multijugador: sin jefes
+    else if (!this.bosses.active) {
       this.level.check();                                    // durante un boss el cambio de nivel espera
       this.bosses.update(gdt, dt);                           // a mitad de nivel: "¡PELIGRO!" y llega el boss
       if (!this.bosses.active) this.spawner.update();        // durante un boss no hay obstáculos normales
@@ -6290,6 +6414,14 @@ class Game {
       this.particles.push(new Particle(p.logicalLane, p.x + 10, p.y + rand(8, p.sliding ? 22 : 50), rand(-400, -250), rand(-30, 30), 0.3, choice(["#ffb000", "#ff6a00", "#fff2a8"]), rand(3, 6), 0));
     }
 
+    if (this.versus) for (const p of this.players) {   // rugidos de los dos raptores
+      p.roarCd = Math.max(0, p.roarCd - dt); p.roarAnim = Math.max(0, p.roarAnim - dt);
+      const w = p.roarWave; if (!w) continue;
+      w.t += dt;
+      const reach = p.x + 70 + CONFIG.ROAR_RANGE * Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME);
+      for (const o of this.obstacles) if (!o.dead && o.destructible && o.lane === w.lane && o.x < reach && o.x + o.w > p.x) this.destroy(o, true);
+      if (w.t > CONFIG.ROAR_WAVE_TIME + 0.2) p.roarWave = null;
+    }
     // Onda del rugido: destruye rocas y pájaros delante del raptor en su carril (no cactus ni estalactitas)
     if (this.roarWave) {
       const w = this.roarWave; w.t += dt;
@@ -6300,7 +6432,8 @@ class Game {
       if (w.t > CONFIG.ROAR_WAVE_TIME + 0.2) this.roarWave = null;
     }
 
-    this.checkCollisions();
+    if (this.versus) { for (const p of this.players) if (!p.dead && this.state === "playing") this.checkCollisions(p); }
+    else this.checkCollisions();
 
     this.obstacles = this.obstacles.filter(o => !o.dead && o.x + o.w > DESPAWN_X);
     this.coinsArr = this.coinsArr.filter(c => !c.taken && c.x > DESPAWN_X);
@@ -6329,8 +6462,8 @@ class Game {
     for (const a of this.ambient) { a.x += (a.vx + Math.sin(this.time * 2 + a.ph) * (a.kind === "leaves" ? 30 : 8)) * dt; a.y += a.vy * dt; }
     this.ambient = this.ambient.filter(a => a.y < H + 10 && a.y > -20 && a.x > -20);
   }
-  checkCollisions() {
-    const pl = this.player, lane = pl.logicalLane, boxes = pl.hitboxes();
+  checkCollisions(pl = this.player) {
+    const lane = pl.logicalLane, boxes = pl.hitboxes();
     const hits = b => boxes.some(a => overlap(a, b));
     for (const o of this.obstacles) {
       if (o.dead || o.lane !== lane) continue;
@@ -6347,17 +6480,17 @@ class Game {
       o.passed = true; o.minGap = null;
       if (this.effects.turbo > 0) { this.destroy(o); this.addShake(0.15, 4); continue; }
       if (this.grace > 0) continue;
-      if (this.hitPlayer()) return;
+      if (this.hitPlayer(pl)) return;
       this.destroy(o);   // el escudo o la vida perdida rompen el obstáculo
     }
-    if (this.bosses.boss && this.bosses.boss.collide(pl)) return;
+    if (!this.versus && this.bosses.boss && this.bosses.boss.collide(pl)) return;
     const c0 = pl.center;
     for (const c of this.coinsArr) {
       if (c.taken) continue;
       if (this.effects.magnet > 0 && !c.magnet && Math.hypot(c.x - c0.x, c.y - c0.y) < CONFIG.MAGNET_RADIUS && c.x > pl.x - 20) c.magnet = true;
       const got = c.magnet ? Math.hypot(c.x - c0.x, c.y - c0.y) < 26 : (c.lane === lane && hits(c.hitbox()));
       if (got) {
-        c.taken = true; this.runCoins += this.mode.coinValue; this.sfx.coin();
+        c.taken = true; this.runCoins += this.mode.coinValue; pl.coins += this.mode.coinValue; this.sfx.coin();
         for (let i = 0; i < 6; i++) this.particles.push(new Particle(lane, c.x, c.y, rand(-120, 120), rand(60, 260), 0.4, choice(["#ffe27a", "#fff3b0", "#f7c948"]), rand(2, 4), 900));
         this.ach.event("coinCollected");
       }
@@ -6415,12 +6548,17 @@ class Game {
     for (const e of this.eggs) if (e.lane === lane) this.drawEntity(c, lane, e.x, () => e.draw(c));
     for (const h of this.hatches) if (h.lane === lane) this.drawEntity(c, lane, h.x, () => drawEggHalves(c, 0, -h.y, h.t / 0.8, 3));
     if (boss) boss.drawLayer(c, lane);
+    for (const p of this.players) if ((p.laneT < 0.5 ? 0 : 1) === lane) this.drawEntity(c, p.laneT, p.x, () => p.draw(c));
     const pl = this.player;
-    if ((pl.laneT < 0.5 ? 0 : 1) === lane) this.drawEntity(c, pl.laneT, pl.x, () => pl.draw(c));
     c.save(); applyLane(c, lane);
     for (const p of this.particles) if (p.lane === lane) p.draw(c);
     c.globalAlpha = 1;
-    const w = this.roarWave;
+    if (this.versus) for (const p of this.players) {
+      const w = p.roarWave; if (!w || w.lane !== lane) continue;
+      const prog = Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME), alpha = 1 - clamp((w.t - CONFIG.ROAR_WAVE_TIME * 0.6) / 0.35, 0, 1);
+      drawRoarFx(c, w.style, p.x + 66, -(p.y + (p.sliding ? 18 : 42)), (CONFIG.ROAR_RANGE + 20) * prog, alpha, this.time);
+    }
+    const w = this.versus ? null : this.roarWave;
     if (w && w.lane === lane) {
       const prog = Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME), alpha = 1 - clamp((w.t - CONFIG.ROAR_WAVE_TIME * 0.6) / 0.35, 0, 1);
       const ox = pl.x + 66, oy = -(pl.y + (pl.sliding ? 18 : 42));
@@ -6449,7 +6587,9 @@ addEventListener("keydown", e => {
   if ((e.code === "Space" || e.code === "Enter") && e.target.closest && e.target.closest("button")) return;
   // Controles: W saltar · S deslizarse/caída rápida · A carril de arriba · D carril de abajo · E rugido · P pausa
   if ("wasde".includes(k) && k.length === 1) e.preventDefault();
+  if (k.startsWith("Arrow") && ["playing", "paused"].includes(st)) e.preventDefault();   // las flechas no mueven la página
   if (k === "s") game.player.downHeld = true;
+  if (k === "ArrowDown") game.p2.downHeld = true;
   if (e.repeat) return;
   if (k === "m") { game.toggleMute(); return; }
   if (game.manual.visible) {
@@ -6472,11 +6612,22 @@ addEventListener("keydown", e => {
     if (k === "Escape") game.shop.close();
   } else if (st === "over") {
     if (game.overTime < 0.7) return;
-    if (k === "w") game.start();
+    if (k === "w") game.retry();
     else if (k === "t") game.openShop("over");
     else if (k === "Escape") game.showMenu();
   } else if (st === "paused") {
     if (k === "p" || k === "Escape" || k === "w") game.setPaused(false);
+  } else if (st === "playing" && game.versus) {
+    // Multijugador — J1: W saltar · S deslizarse · E/D rugido   J2: ↑ saltar · ↓ deslizarse · →/Intro rugido
+    switch (k) {
+      case "w": game.player.jump(); break;
+      case "s": game.player.slide(); break;
+      case "e": case "d": game.roarP(game.player); break;
+      case "ArrowUp": game.p2.jump(); break;
+      case "ArrowDown": game.p2.slide(); break;
+      case "ArrowRight": case "Enter": case "ShiftRight": game.roarP(game.p2); break;
+      case "p": case "Escape": game.setPaused(true); break;
+    }
   } else if (st === "playing") {
     switch (k) {
       case "w": game.jump(); break;
@@ -6488,7 +6639,7 @@ addEventListener("keydown", e => {
     }
   }
 });
-addEventListener("keyup", e => { if (keyOf(e) === "s") game.player.downHeld = false; });
+addEventListener("keyup", e => { const k = keyOf(e); if (k === "s") game.player.downHeld = false; if (k === "ArrowDown") game.p2.downHeld = false; });
 
 // Gestos: tocar = saltar, deslizar ↓ = deslizarse / caída rápida
 let touch = null;
@@ -6523,7 +6674,7 @@ document.querySelectorAll("#touch button").forEach(b => b.addEventListener("poin
   switch (b.dataset.act) {
     case "laneUp": if (playing) game.player.changeLane(-1); break;
     case "laneDown": if (playing) game.player.changeLane(1); break;
-    case "roar": game.roar(); break;
+    case "roar": if (game.versus) game.roarP(game.player); else game.roar(); break;
     case "pause": game.togglePause(); break;
   }
 }));
