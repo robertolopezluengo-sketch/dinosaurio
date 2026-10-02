@@ -995,13 +995,19 @@ const ACHIEVEMENTS = [
   { id: "sin-piedad", cat: "modos", name: "Sin piedad", desc: "Completa el nivel 3 en modo Difícil", reward: 400 },
   { id: "pesadilla", cat: "modos", name: "Pesadilla", desc: "Derrota a un boss en modo Difícil", reward: 300 },
   { id: "estudiante", cat: "modos", name: "Estudiante", desc: "Abre todas las secciones del manual", reward: 50, goal: 12, stat: "manualSections" },
+  // Monturas
+  { id: "jinete", cat: "monturas", name: "Jinete", desc: "Usa 5 monturas distintas", reward: 200, goal: 5, stat: "mountTypes" },
+  { id: "domador-total", cat: "monturas", name: "Domador total", desc: "Usa las 10 monturas", reward: 600, goal: 10, stat: "mountTypes" },
+  { id: "aterrizaje-perfecto", cat: "monturas", name: "Aterrizaje perfecto", desc: "Salta a tiempo del meteorito 5 veces", reward: 200, goal: 5, stat: "meteorPerfect" },
+  { id: "surfista", cat: "monturas", name: "Surfista", desc: "Haz 10 trucos con la tabla de arena", reward: 150, goal: 10, stat: "boardTricks" },
+  { id: "sin-rasgunos", cat: "monturas", name: "Sin rasguños", desc: "Termina 10 monturas sin perderlas por un golpe", reward: 250, goal: 10, stat: "mountsClean" },
   // Secretos
   { id: "por-los-pelos", cat: "secretos", secret: true, name: "Por los pelos", desc: "Esquiva un obstáculo a menos de 5 px", reward: 100 },
   { id: "todo-o-nada", cat: "secretos", secret: true, name: "Todo o nada", desc: "Apuesta el máximo en la ruleta y gana", reward: 150 },
   { id: "constancia", cat: "secretos", secret: true, name: "Constancia", desc: "Juega 100 partidas", reward: 300, goal: 100, stat: "games" },
   { id: "raptor-completo", cat: "secretos", secret: true, name: "Raptor completo", desc: "Consigue todos los demás logros", reward: 5000, skin: "fosil-legendario" },
 ];
-const ACH_CATS = { carrera: "Carrera", jefes: "Jefes", habilidad: "Habilidad", coleccion: "Colección", ruleta: "Ruleta", modos: "Modos", secretos: "Secretos" };
+const ACH_CATS = { carrera: "Carrera", jefes: "Jefes", habilidad: "Habilidad", coleccion: "Colección", ruleta: "Ruleta", modos: "Modos", monturas: "Monturas", secretos: "Secretos" };
 
 // Skins exclusivos de logros (mismo formato que SKINS_DATA, reutilizando sprites del kit)
 const EXCLUSIVE_SKINS = [
@@ -1092,6 +1098,180 @@ class DifficultyMode {
 }
 const MODES = { normal: new DifficultyMode("normal"), easy: new DifficultyMode("easy"), hard: new DifficultyMode("hard") };
 
+
+// =====================================================================
+//  FURIA, MONTURAS, ROGUELIKE Y ÁRBOL — constantes de balance (todos son valores de partida)
+// =====================================================================
+const FURY_CONFIG = {
+  MAX: 100,                 // barra llena
+  NEAR_MISS: 15,            // esquivar por los pelos (menos de NEAR_MISS_PX)
+  NEAR_MISS_PX: 8,
+  EGG: 25,                  // recoger un huevo
+  ROAR_KILL: 8,             // cada obstáculo destruido con el rugido
+  BOSS_HIT: 10,             // dañar a un boss
+  DECAY_AFTER: 10,          // s sin llenarla antes de empezar a vaciarse
+  DECAY_RATE: 8,            // puntos por segundo al vaciarse
+};
+
+// --- Monturas (una por bioma). duration en s; speed = multiplicador de la velocidad del juego ---
+const MOUNT_CONFIG = {
+  CHANCE: 0.6,              // probabilidad de que aparezca una montura en un nivel
+  WINDOW: [0.15, 0.75],     // tramo del nivel en el que puede aparecer
+  BOSS_MARGIN: 300,         // puntos antes de un boss en los que nunca aparece
+  CLEAR_PX: 150,            // px libres antes y después del icono
+  MOUNT_INVULN: 0.3,        // s invencible al montarse
+  END_INVULN: 1,            // s invencible al bajarse por tiempo
+  HIT_INVULN: 1.5,          // s invencible al perderla por un golpe
+  EASY_DURATION_MULT: 1.5,  // modo Fácil: duran un 50 % más
+  EASY_WARN_MULT: 1.5,      // y los avisos de sus obstáculos especiales duran un 50 % más
+  WARN_TIME: 0.8,           // s de aviso de los obstáculos especiales (cocodrilos, chorros, olas, tiburones…)
+  mounts: {
+    desert:    { id: "board",    name: "Tabla de arena",   duration: 8,  speed: 1.4, control: "W salta largo · S agacharse",          roar: true,  icon: "#e9c48a" },
+    jungle:    { id: "log",      name: "Tronco por el río", duration: 8, speed: 1,   control: "W salta · arrolla lo pequeño",          roar: true,  icon: "#8a5a2a" },
+    volcano:   { id: "lavarock", name: "Roca flotante",    duration: 8,  speed: 1,   control: "W sube · S baja",                       roar: true,  icon: "#ff6a1a" },
+    glacier:   { id: "sled",     name: "Trineo",           duration: 8,  speed: 2,   control: "¡No se puede frenar! Monedas ×2",       roar: true,  icon: "#c4e4f6" },
+    night:     { id: "meteor",   name: "Meteorito domado", duration: 6,  speed: 1.6, control: "Lo destruye todo · W al final: ¡SALTA!", roar: false, icon: "#ff8a2a" },
+    beach:     { id: "turtle",   name: "Tortuga gigante",  duration: 10, speed: 0.7, control: "S para esconderte",                     roar: true,  icon: "#3aa878" },
+    mushroom:  { id: "shroom",   name: "Seta saltarina",   duration: 8,  speed: 1,   control: "Rebota sola · W más alto · S corta",    roar: true,  icon: "#ff7ad0" },
+    ocean:     { id: "dolphin",  name: "Delfín",           duration: 8,  speed: 1,   control: "W salto alto · S para bucear",          roar: "surface", icon: "#5ab0e8" },
+    graveyard: { id: "coffin",   name: "Ataúd con ruedas", duration: 8,  speed: 1.2, control: "S frena · atraviesa fantasmas",         roar: true,  icon: "#6a4a3a" },
+    moon:      { id: "rocket",   name: "Cohete",           duration: 8,  speed: 1,   control: "W impulso hacia arriba",                roar: true,  icon: "#ff3b5c" },
+  },
+  BOARD_JUMP: 0.846, BOARD_GRAVITY: 0.651,   // salto un 30 % más largo y un 10 % más alto
+  BOARD_TRICK_COINS: 5,
+  SLED_LANE_TIME: 0.35, SLED_JUMP: 0.8, SLED_COIN_MULT: 2,
+  METEOR_HEIGHT: 60, METEOR_JUMP_WINDOW: [0.25, 0.85], METEOR_PERFECT_COINS: 50, METEOR_PERFECT_FURY: 30,
+  TURTLE_JUMP: 0.75, TURTLE_HIDE: 1, TURTLE_HIDE_CD: 3,
+  SHROOM_BOUNCE: 860, SHROOM_HOLD_GRAVITY: 0.6,  SHROOM_STOMP_COINS: 10,
+  DOLPHIN_ARC: 520, DOLPHIN_JUMP: 1000, DOLPHIN_DIVE_MAX: 2, DOLPHIN_DIVE_CD: 1, DOLPHIN_DEPTH: 46,
+  COFFIN_BRAKE: 0.6, COFFIN_JUMP: 0.75,
+  ROCKET_GRAVITY: 0.4, ROCKET_IMPULSE: 520, ROCKET_CEIL: 240, ROCKET_STUN: 1,
+  LAVA_MAX_Y: 180, LAVA_SPEED: 320, LAVA_SINK: 90,
+};
+
+// --- Roguelike: mejoras temporales por partida ---
+// rareza: comun · rara · epica · legendaria. mod[stat](valor, nivel) devuelve el valor modificado.
+const ROGUE_CONFIG = {
+  RARITY_ODDS: { comun: 0.60, rara: 0.28, epica: 0.10, legendaria: 0.02 },
+  ODDS_PER_BOSS: { comun: -0.02, epica: 0.01, legendaria: 0.01 },   // por cada jefe derrotado en la partida
+  MIN_COMMON: 0.30,
+  LEGENDARY_AFTER_BOSSES: 2,
+  CARDS: 3, EGG_CARDS: 2,
+  REROLL_BASE: 50,          // barajar: 50, 100, 200… (se duplica)
+  SKIP_COINS: 100,          // saltar la elección
+  ALTAR_CHANCE: 0.25,       // probabilidad de altar de ámbar por nivel
+  MAX_PACTS: 2,
+  CHECKPOINT_PICKS_PER: 2,  // 1 elección gratis por cada 2 niveles saltados con un checkpoint
+  RARITY: {
+    comun:      { name: "Común",      color: "#b3a7cc" },
+    rara:       { name: "Rara",       color: "#5fb4ff" },
+    epica:      { name: "Épica",      color: "#9b5cff" },
+    legendaria: { name: "Legendaria", color: "#ffb938" },
+  },
+  CATS: { roar: "Rugido", move: "Movimiento", def: "Defensa", power: "Power-ups y furia", eco: "Economía", boss: "Jefes", mount: "Monturas", egg: "Huevos", legend: "Legendarias" },
+};
+const pctS = v => `${Math.round(v * 100)} %`;
+const UPGRADES = [
+  // Rugido
+  { id: "rugido-amplio", name: "Rugido amplio", rarity: "comun", cat: "roar", max: 3, desc: l => `+${20 * l} % de alcance del rugido`, mod: { roarRange: (v, l) => v * (1 + 0.2 * l) } },
+  { id: "garganta-hierro", name: "Garganta de hierro", rarity: "comun", cat: "roar", max: 3, desc: l => `−${l} s de recarga del rugido (mín. 2 s)`, mod: { roarCooldown: (v, l) => Math.max(2, v - l) } },
+  { id: "rugido-doble", name: "Rugido doble", rarity: "rara", cat: "roar", desc: () => "El rugido sale hacia delante y hacia atrás", mod: { roarBack: () => 1 } },
+  { id: "eco", name: "Eco", rarity: "rara", cat: "roar", desc: () => "El rugido se repite 0,5 s después con la mitad de alcance", mod: { roarEcho: () => 1 } },
+  { id: "rugido-carril", name: "Rugido de carril", rarity: "epica", cat: "roar", desc: () => "El rugido afecta a los dos carriles", mod: { roarBothLanes: () => 1 } },
+  { id: "rugido-cortante", name: "Rugido cortante", rarity: "epica", cat: "roar", desc: () => "El rugido también destruye cactus y obstáculos de suelo", mod: { roarCactus: () => 1 } },
+  // Movimiento
+  { id: "patas-ligeras", name: "Patas ligeras", rarity: "comun", cat: "move", max: 2, desc: l => `+${10 * l} % de altura de salto`, mod: { jumpMult: (v, l) => v * (1 + 0.1 * l) } },
+  { id: "triple-salto", name: "Triple salto", rarity: "rara", cat: "move", desc: () => "Un salto extra en el aire", mod: { airJumps: v => v + 1 } },
+  { id: "planeo", name: "Planeo", rarity: "rara", cat: "move", desc: () => "Mantén W tras el último salto para caer despacio 1,5 s", mod: { glide: () => 1 } },
+  { id: "deslizamiento-largo", name: "Deslizamiento largo", rarity: "comun", cat: "move", desc: () => "El deslizamiento dura el doble", mod: { slideMult: v => v * 2 } },
+  { id: "cambio-fantasma", name: "Cambio fantasma", rarity: "rara", cat: "move", desc: () => "Eres invencible mientras cambias de carril", mod: { laneGhost: () => 1 } },
+  { id: "pisoton-sismico", name: "Pisotón sísmico", rarity: "epica", cat: "move", desc: () => "La caída rápida lanza una onda al aterrizar que destruye los obstáculos bajos cercanos", mod: { stompWave: () => 1 } },
+  // Defensa
+  { id: "piel-dura", name: "Piel dura", rarity: "rara", cat: "def", max: 2, desc: l => `Empiezas cada combate de jefe con +${l} corazón${l > 1 ? "es" : ""}`, mod: { bossHearts: (v, l) => v + l } },
+  { id: "segunda-oportunidad", name: "Segunda oportunidad", rarity: "epica", cat: "def", desc: () => "La primera vez que perderías, sobrevives con 2 s de invencibilidad", mod: { secondChance: v => v + 1 } },
+  { id: "escudo-inicial", name: "Escudo inicial", rarity: "comun", cat: "def", desc: () => "Al empezar cada nivel recibes un escudo de 3 s", mod: { startShield: v => Math.max(v, 3) } },
+  { id: "esquiva-perfecta", name: "Esquiva perfecta", rarity: "rara", cat: "def", desc: () => "Esquivar por los pelos da 0,5 s de invencibilidad", mod: { nearMissInvuln: () => 0.5 } },
+  // Power-ups y furia
+  { id: "powerups-duraderos", name: "Power-ups duraderos", rarity: "comun", cat: "power", max: 3, desc: l => `+${20 * l} % de duración de los power-ups`, mod: { powerupDurMult: (v, l) => v * (1 + 0.2 * l) } },
+  { id: "iman-natural", name: "Imán natural", rarity: "rara", cat: "power", desc: () => "Imán permanente de corto alcance (la mitad que el power-up)", mod: { naturalMagnet: () => CONFIG.MAGNET_RADIUS / 2 } },
+  { id: "furia-rapida", name: "Furia rápida", rarity: "comun", cat: "power", max: 2, desc: l => `La furia se llena un ${25 * l} % más rápido`, mod: { furyRate: (v, l) => v * (1 + 0.25 * l) } },
+  { id: "furia-eterna", name: "Furia eterna", rarity: "epica", cat: "power", desc: () => "La barra de furia ya no se vacía con el tiempo", mod: { furyNoDecay: () => 1 } },
+  { id: "doble-super", name: "Doble súper rugido", rarity: "legendaria", cat: "power", desc: () => "Con la barra llena, el súper rugido se puede usar dos veces", mod: { superRoarUses: () => 2 } },
+  // Economía
+  { id: "bolsillos-grandes", name: "Bolsillos grandes", rarity: "comun", cat: "eco", max: 3, desc: l => `+${15 * l} % de monedas`, mod: { coinMult: (v, l) => v * (1 + 0.15 * l) } },
+  { id: "huevos-dorados", name: "Huevos dorados", rarity: "rara", cat: "eco", desc: () => "Los huevos bonus valen el doble", mod: { eggMult: v => v * 2 } },
+  { id: "interes", name: "Interés", rarity: "rara", cat: "eco", desc: () => "Al pasar de nivel ganas un 5 % de tus monedas de la partida (máx. 100)", mod: { interest: () => 0.05, interestCap: () => 100 } },
+  { id: "tarifa-plana", name: "Tarifa plana", rarity: "comun", cat: "eco", desc: () => "Barajar de nuevo cuesta siempre 50", mod: { rerollFlat: () => 1 } },
+  { id: "tesoro-jefe", name: "Tesoro del jefe", rarity: "epica", cat: "eco", desc: () => "Los jefes dan un 50 % más de monedas", mod: { bossCoinMult: v => v * 1.5 } },
+  // Jefes
+  { id: "ojo-cazador", name: "Ojo de cazador", rarity: "comun", cat: "boss", desc: () => "Las ventanas de vulnerabilidad de los jefes duran un 30 % más", mod: { bossVulnMult: v => v * 1.3 } },
+  { id: "golpe-critico", name: "Golpe crítico", rarity: "rara", cat: "boss", desc: () => "Cada golpe al jefe tiene un 20 % de quitar el doble", mod: { critChance: v => Math.max(v, 0.2) } },
+  { id: "calma", name: "Calma", rarity: "rara", cat: "boss", desc: () => "La forma furiosa de los jefes empieza al 30 % de vida", mod: { bossFuryAt: v => Math.min(v, 0.3) } },
+  { id: "presa-facil", name: "Presa fácil", rarity: "epica", cat: "boss", desc: () => "Los jefes empiezan con un 20 % menos de vida", mod: { bossHpMult: v => v * 0.8 } },
+  // Monturas
+  { id: "jinete-experto", name: "Jinete experto", rarity: "comun", cat: "mount", max: 2, desc: l => `Las monturas duran +${3 * l} s`, mod: { mountDurAdd: (v, l) => v + 3 * l } },
+  { id: "establo", name: "Establo", rarity: "rara", cat: "mount", desc: () => "Siempre aparece una montura en cada nivel", mod: { mountChance: () => 1 } },
+  { id: "montura-blindada", name: "Montura blindada", rarity: "epica", cat: "mount", desc: () => "La montura aguanta un golpe antes de perderse", mod: { mountArmor: v => v + 1 } },
+  // Huevos (el rival no existe en este juego: «Pies de liebre» se cambia por una de huevos)
+  { id: "nido-dorado", name: "Nido dorado", rarity: "comun", cat: "egg", desc: () => "Cada huevo recogido llena también la furia al máximo", mod: { eggFullFury: () => 1 } },
+  { id: "olfato-nido", name: "Olfato de nido", rarity: "rara", cat: "egg", desc: () => "Una flecha en el borde de la pantalla señala el siguiente huevo", mod: { eggArrow: () => 1 } },
+  // Legendarias
+  { id: "corazon-trex", name: "Corazón de T-Rex", rarity: "legendaria", cat: "legend", desc: () => "+1 corazón en jefes, rugido con el doble de alcance y que destruye cactus", mod: { bossHearts: v => v + 1, roarRange: v => v * 2, roarCactus: () => 1 } },
+  { id: "raptor-tiempo", name: "Raptor del tiempo", rarity: "legendaria", cat: "legend", desc: () => "Cámara lenta de 1 s cuando un obstáculo está a punto de golpearte (recarga 10 s)", mod: { timeRaptor: () => 1 } },
+  { id: "midas", name: "Midas", rarity: "legendaria", cat: "legend", desc: () => "Todas las monedas valen el triple, pero el imán ya no funciona", mod: { coinMult: v => v * 3, midas: () => 1 } },
+  { id: "manada-fantasma", name: "Manada fantasma", rarity: "legendaria", cat: "legend", desc: () => "Dos raptores fantasma corren delante y destruyen el primer obstáculo que tocan cada 5 s", mod: { ghostPack: () => 1 } },
+];
+// Sinergias: se activan solas al tener todas sus piezas
+const SYNERGIES = [
+  { id: "tormenta", name: "Tormenta", need: [["rugido-doble", 1], ["eco", 1]], desc: "El eco también sale en las dos direcciones", mod: { roarEchoBack: () => 1 } },
+  { id: "bailarin", name: "Bailarín", need: [["triple-salto", 1], ["planeo", 1]], desc: "Cada salto en el aire da +2 monedas", mod: { airJumpCoins: () => 2 } },
+  { id: "fortaleza", name: "Fortaleza", need: [["piel-dura", 1], ["escudo-inicial", 1]], desc: "El escudo inicial dura 6 s", mod: { startShield: () => 6 } },
+  { id: "avaricia", name: "Avaricia", need: [["bolsillos-grandes", 3], ["interes", 1]], desc: "El interés sube al 10 % (máx. 200)", mod: { interest: () => 0.1, interestCap: () => 200 } },
+  { id: "cazador-nato", name: "Cazador nato", need: [["ojo-cazador", 1], ["golpe-critico", 1]], desc: "El crítico sube al 35 %", mod: { critChance: v => Math.max(v, 0.35) } },
+  { id: "furia-imparable", name: "Furia imparable", need: [["furia-rapida", 2], ["furia-eterna", 1]], desc: "El súper rugido además da 2 s de turbo", mod: { superRoarTurbo: () => 2 } },
+  { id: "domador", name: "Domador", need: [["jinete-experto", 2], ["montura-blindada", 1]], desc: "Al bajar de una montura ganas un escudo de 3 s", mod: { mountEndShield: () => 3 } },
+];
+// Pactos del altar de ámbar: ventaja fuerte con desventaja para toda la partida
+const PACTS = [
+  { id: "pacto-sangre", name: "Pacto de sangre", good: "+2 corazones en los jefes", bad: "El escudo (power-up) ya no aparece", mod: { bossHearts: v => v + 2, noShieldPowerup: () => 1 } },
+  { id: "pacto-oro", name: "Pacto del oro", good: "Monedas ×2", bad: "Los obstáculos aparecen un 20 % más a menudo", mod: { coinMult: v => v * 2, obstacleFreq: v => v * 1.2 } },
+  { id: "pacto-bestia", name: "Pacto de la bestia", good: "Rugido sin recarga", bad: "Los jefes tienen un 30 % más de vida", mod: { roarNoCd: () => 1, bossHpMult: v => v * 1.3 } },
+  { id: "pacto-prisa", name: "Pacto de la prisa", good: "Puntuación ×1,5", bad: "El juego va un 15 % más rápido y pierdes el doble salto", mod: { speedMult: v => v * 1.15, scoreMult: v => v * 1.5, noDoubleJump: () => 1 } },
+  { id: "pacto-silencio", name: "Pacto del silencio", good: "La furia se llena el triple de rápido", bad: "El rugido normal desaparece (solo queda el súper rugido)", mod: { furyRate: v => v * 3, noRoar: () => 1 } },
+  { id: "pacto-jinete", name: "Pacto del jinete", good: "Monturas en cada nivel y duran el doble", bad: "Sin montura vas un 10 % más lento", mod: { mountChance: () => 1, mountDurMult: v => v * 2, unmountedSpeed: v => v * 0.9 } },
+];
+
+// --- Árbol de mejoras permanentes (se paga con fósiles) ---
+const TREE_CONFIG = {
+  FOSSILS: { LEVEL: 1, BOSS: 2, BOSS_CORRUPT: 3, BOSS_GOLD: 5, SYNERGY: 1, RECORD: 5, EASY_MULT: 0.5 },
+  RESET_COST: 500,          // monedas para reiniciar el árbol (la primera vez es gratis)
+  branches: [
+    { id: "superv", name: "Supervivencia", color: "#5fd15a", nodes: [
+      { id: "escamas", name: "Escamas", max: 3, cost: [3, 6, 10], desc: l => `+${5 * l} % de duración del escudo y de la invencibilidad`, mod: { graceMult: (v, l) => v * (1 + 0.05 * l) } },
+      { id: "corazon-extra", name: "Corazón extra", max: 1, cost: [15], desc: () => "+1 corazón en los combates de jefe", mod: { bossHearts: v => v + 1 } },
+      { id: "instinto", name: "Instinto", max: 2, cost: [8, 14], desc: l => `Los avisos de jefes y obstáculos especiales duran +${10 * l} %`, mod: { teleMult: (v, l) => v * (1 + 0.1 * l) } },
+      { id: "resurreccion", name: "Resurrección", max: 1, cost: [30], desc: () => "Una vez por partida, al morir revives con 2 s de invencibilidad", mod: { resurrection: () => 1 } },
+    ] },
+    { id: "poder", name: "Poder", color: "#ff9a3c", nodes: [
+      { id: "pulmones", name: "Pulmones", max: 3, cost: [3, 6, 10], desc: l => `−${fmtNum(0.3 * l)} s de recarga del rugido`, mod: { roarCooldown: (v, l) => Math.max(2, v - 0.3 * l) } },
+      { id: "furia-innata", name: "Furia innata", max: 2, cost: [6, 12], desc: l => `Empiezas con la furia al ${25 * l} %`, mod: { furyStart: (v, l) => 0.25 * l } },
+      { id: "garras", name: "Garras", max: 2, cost: [10, 18], desc: l => `+${10 * l} % de probabilidad de golpe doble a los jefes`, mod: { critChance: (v, l) => v + 0.1 * l } },
+      { id: "despertar", name: "Despertar", max: 1, cost: [30], desc: () => "El primer súper rugido de cada partida no vacía la barra", mod: { despertar: () => 1 } },
+    ] },
+    { id: "fortuna", name: "Fortuna", color: "#ffb938", nodes: [
+      { id: "ojo-brillo", name: "Ojo para el brillo", max: 3, cost: [3, 6, 10], desc: l => `+${5 * l} % de monedas`, mod: { coinMult: (v, l) => v * (1 + 0.05 * l) } },
+      { id: "nido-seguro", name: "Nido seguro", max: 1, cost: [10], desc: () => "Los huevos aparecen 2 s más y no se pierden si te golpean cerca", mod: { eggSafe: () => 1 } },
+      { id: "regateo", name: "Regateo", max: 2, cost: [8, 14], desc: l => `−${25 * l} % de coste al barajar cartas`, mod: { rerollDiscount: (v, l) => 0.25 * l } },
+      { id: "racha-suerte", name: "Racha de suerte", max: 1, cost: [25], desc: () => "+1 giro gratis semanal en la ruleta", mod: { weeklySpin: () => 1 } },
+    ] },
+    { id: "destino", name: "Destino", color: "#9b5cff", nodes: [
+      { id: "carta-extra", name: "Carta extra", max: 1, cost: [12], desc: () => "Las elecciones tras un jefe muestran 4 cartas", mod: { extraCard: () => 1 } },
+      { id: "sangre-antigua", name: "Sangre antigua", max: 3, cost: [6, 10, 16], desc: l => `+${l} punto${l > 1 ? "s" : ""} de probabilidad de Épica y Legendaria`, mod: { rarityBonus: (v, l) => 0.01 * l } },
+      { id: "domador-arbol", name: "Domador", max: 2, cost: [6, 12], desc: l => `Las monturas duran +${fmtNum(1.5 * l)} s`, mod: { mountDurAdd: (v, l) => v + 1.5 * l } },
+      { id: "elegido", name: "Elegido", max: 1, cost: [35], desc: () => "Empiezas cada partida con una mejora Común aleatoria", mod: { chosenStart: () => 1 } },
+    ] },
+  ],
+};
 
 // =====================================================================
 //  BIOMAS — uno por nivel (se repiten en ciclo). Paleta, fondo y obstáculos propios.
@@ -1674,7 +1854,10 @@ class Player {
     this.dead = false; this.deadT = 0; this.lives = 1; this.grace = 0; this.score = 0; this.coins = 0; this.downHeld = false;
     this.roarCd = 0; this.roarCdMax = 1; this.roarWave = null; this.roarAnim = 0;
     this.traps = 0; this.trapT = 0; this.nextTrap = randInt(0, TRAP_TYPES.length - 1); this.ink = 0;
+    this.upHeld = false; this.glideT = 0; this.laneTime = CONFIG.LANE_SWITCH_TIME;
   }
+  get mount() { return this.num === 1 && this.game.mounts ? this.game.mounts.active : null; }
+  get maxJumps() { const g = this.game; return g.versus ? 2 : 1 + (g.stat("noDoubleJump") ? 0 : g.stat("airJumps")); }
   setLane(l) { this.lane = this.laneFrom = this.laneT = l; this.laneProgress = 1; }
   get skinId() { return this.num === 2 ? this.game.p2SkinId : this.game.skinId; }
   get sliding() { return this.slideTime > 0 && this.onGround; }
@@ -1682,23 +1865,31 @@ class Player {
   get center() { return { x: this.x + 38, y: this.y + (this.sliding ? 12 : 27) }; }
 
   jump() {
-    const g = this.game;
+    const g = this.game, M = this.mount;
+    if (M) return M.jump();   // montado: cada montura decide qué hace W
+    const k = g.versus ? 1 : g.stat("jumpMult");
     if (this.onGround) {
-      this.vy = CONFIG.JUMP_VELOCITY; this.onGround = false; this.jumps = 1; this.slideTime = 0; this.fastFall = false;
+      this.vy = CONFIG.JUMP_VELOCITY * k; this.onGround = false; this.jumps = 1; this.slideTime = 0; this.fastFall = false; this.glideT = 0;
       g.sfx.jump(); g.ach.event("jump");
-    } else if (this.jumps < 2) {
-      this.vy = CONFIG.DOUBLE_JUMP_VELOCITY; this.jumps = 2; this.fastFall = false;
-      g.sfx.doubleJump(); g.puff(this.x + 30, this.y, this.logicalLane, 10, "#ffffff"); g.ach.event("jump");
+    } else if (this.jumps < this.maxJumps) {
+      this.vy = CONFIG.DOUBLE_JUMP_VELOCITY * k; this.jumps++; this.fastFall = false;
+      g.sfx.doubleJump(); g.puff(this.x + 30, this.y, this.logicalLane, 10, "#ffffff"); g.ach.event("jump"); g.ach.event("doubleJump");
+      const bonus = g.versus ? 0 : g.stat("airJumpCoins");   // sinergia Bailarín
+      if (bonus) { g.addRunCoins(bonus, true); g.floatText(this.laneT, this.x + 30, this.y + 90, `+${bonus}`, "#ffd23f", 18); }
     }
   }
   slide() {
-    if (this.onGround) { if (!this.sliding) this.game.sfx.slide(); this.slideTime = CONFIG.SLIDE_DURATION; }
-    else this.fastFall = true;
+    const M = this.mount; if (M) return M.down(true);
+    if (this.onGround) {
+      if (!this.sliding) { this.game.sfx.slide(); this.game.ach.event("slide"); }
+      this.slideTime = CONFIG.SLIDE_DURATION * (this.game.versus ? 1 : this.game.stat("slideMult"));
+    } else this.fastFall = true;
   }
   changeLane(dir) {
     if (this.game.versus) return;   // en multijugador cada raptor tiene su carril
-    const target = clamp(this.lane + dir, 0, 1);
-    if (target === this.lane) return;
+    const target = clamp(this.lane + dir, 0, 1), M = this.mount;
+    if (target === this.lane || (M && !M.canChangeLane())) return;
+    this.laneTime = M ? M.laneTime : CONFIG.LANE_SWITCH_TIME;
     this.laneFrom = this.laneT; this.lane = target; this.laneProgress = 0;
     this.game.sfx.lane(); this.game.ach.event("laneChange");
   }
@@ -1719,17 +1910,24 @@ class Player {
     this.prevY = this.y;
     this.anim += dt;
     if (this.laneProgress < 1) {
-      this.laneProgress = Math.min(1, this.laneProgress + dt / CONFIG.LANE_SWITCH_TIME);
+      this.laneProgress = Math.min(1, this.laneProgress + dt / this.laneTime);
       this.laneT = lerp(this.laneFrom, this.lane, easeInOut(this.laneProgress));
     }
+    const M = this.mount;
+    if (M) { M.update(dt); return; }   // montado: la montura mueve al raptor
     if (!this.onGround) {
-      this.vy -= CONFIG.GRAVITY * (this.fastFall ? CONFIG.FAST_FALL_MULT : 1) * dt;
+      // Planeo: mantener W tras el último salto hace caer despacio (máx. 1,5 s)
+      const gliding = !g.versus && g.stat("glide") && this.upHeld && this.vy < 0 && this.jumps >= this.maxJumps && this.glideT < 1.5;
+      if (gliding) { this.glideT += dt; this.vy = Math.max(this.vy - CONFIG.GRAVITY * 0.15 * dt, -110); }
+      else this.vy -= CONFIG.GRAVITY * (this.fastFall ? CONFIG.FAST_FALL_MULT : 1) * dt;
       this.y += this.vy * dt;
       if (this.y <= 0) {
-        this.y = 0; this.vy = 0; this.onGround = true; this.jumps = 0;
+        const stomp = this.fastFall;
+        this.y = 0; this.vy = 0; this.onGround = true; this.jumps = 0; this.glideT = 0;
         if (this.fastFall && this.downHeld) this.slideTime = CONFIG.SLIDE_DURATION;  // S mantenida: aterriza deslizándose
         this.fastFall = false;
         g.puff(this.x + 36, 0, this.logicalLane, 6, g.level.biome.pal.bandEdge);
+        if (stomp && this.num === 1) g.onStompLand(this);
       }
     }
     if (this.slideTime > 0) this.slideTime -= dt;
@@ -1740,6 +1938,7 @@ class Player {
     }
   }
   hitboxes() {
+    if (this.mount) return this.mount.hitboxes();
     const x = this.x, y = this.y, S = CONFIG.RAPTOR_SCALE;
     if (this.sliding) return [{ x: x + 6 * S, y, w: 17 * S, h: 8 * S }];
     return [{ x: x + 8 * S, y, w: 9 * S, h: 18 * S }];            // columnas 8–16, filas 2–19
@@ -1747,6 +1946,7 @@ class Player {
   draw(ctx) {
     const g = this.game, dead = g.state === "over" || this.dead, S = CONFIG.RAPTOR_SCALE, id = this.skinId;
     const roarAnim = g.versus ? this.roarAnim : g.roarAnim, roarWave = g.versus ? this.roarWave : g.roarWave;
+    if (this.mount) { this.mount.draw(ctx); this.drawExtras(ctx); return; }
     drawShadow(ctx, 36, 54, this.y);
     const blinking = (g.versus ? this.grace : g.grace) > 0 && !dead && Math.floor(g.grace * 14) % 2 === 0;
     const jumpY = this.y / S, adv = this.advance; this.advance = false;
@@ -1765,6 +1965,10 @@ class Player {
     }
     drawRaptor(ctx, id, this.skinState, jumpY, dead, adv);
     ctx.restore();
+    this.drawExtras(ctx);
+  }
+  drawExtras(ctx) {
+    const g = this.game;
     const cy = -(this.y + (this.sliding ? 14 : 30));
     if (g.effects.shield > 0) {
       const rem = g.effects.shield;
@@ -1839,6 +2043,689 @@ function drawTrapIcon(c, id, x, y) {
   else if (id === "bird") { R("#5e2d73", -6, -2, 12, 4); R("#9b59b6", -4, -1, 8, 2); R("#5e2d73", -2, -6, 4, 4); R("#f5b041", -8, -1, 2, 2); }
   else if (id === "rock") { R("#2a2830", -5, -6, 10, 12); R("#8b9099", -4, -5, 8, 10); R("#b9bec7", -3, -4, 3, 3); }
   else { R("#0e0b16", -6, -4, 12, 8); R("#2a1a4a", -5, -3, 10, 6); R("#6a4aa0", -3, -2, 3, 2); }
+}
+
+// =====================================================================
+//  RunBuild: mejoras de la partida (roguelike), sinergias, pactos y árbol permanente.
+//  Todo el juego lee sus valores con game.stat("clave"): parte del valor base y aplica, en orden,
+//  el árbol de mejoras, las mejoras de la partida, las sinergias y los pactos.
+// =====================================================================
+const STAT_ONE = new Set(["jumpMult", "slideMult", "powerupDurMult", "furyRate", "coinMult", "eggMult", "bossCoinMult", "bossVulnMult",
+  "bossHpMult", "mountDurMult", "obstacleFreq", "speedMult", "scoreMult", "unmountedSpeed", "graceMult", "teleMult", "superRoarUses", "airJumps"]);
+function statBase(g, k) {
+  switch (k) {
+    case "roarRange": return CONFIG.ROAR_RANGE;
+    case "roarCooldown": return g.mode.roarCooldown;
+    case "bossFuryAt": return g.mode.bossFuryAt;
+    case "mountChance": return MOUNT_CONFIG.CHANCE;
+  }
+  return STAT_ONE.has(k) ? 1 : 0;
+}
+const UPGRADE_BY_ID = Object.fromEntries(UPGRADES.map(u => [u.id, u]));
+const PACT_BY_ID = Object.fromEntries(PACTS.map(p => [p.id, p]));
+const TREE_NODES = TREE_CONFIG.branches.flatMap(b => b.nodes.map((n, i) => Object.assign(n, { branch: b.id, index: i })));
+class RunBuild {
+  constructor(game) { this.game = game; this.reset(); }
+  reset() {
+    this.levels = {}; this.order = []; this.pacts = []; this.synergies = []; this.cache = {};
+    this.skipped = 0; this.picks = 0; this.rerolls = 0; this.bossesBeaten = 0; this.forceLegend = false;
+    this.used = { secondChance: 0, resurrection: 0, despertar: 0 };
+  }
+  level(id) { return this.levels[id] || 0; }
+  has(id) { return this.level(id) > 0; }
+  add(id) {
+    this.levels[id] = this.level(id) + 1; this.order.push(id); this.picks++; this.cache = {};
+    this.game.onUpgradeAdded(UPGRADE_BY_ID[id]);
+    this.checkSynergies();
+  }
+  addPact(id) { if (!this.pacts.includes(id)) { this.pacts.push(id); this.cache = {}; this.game.onPactAdded(PACT_BY_ID[id]); } }
+  synergyReady(s, extra) {   // extra = mejora que se añadiría (para la etiqueta SINERGIA de las cartas)
+    return s.need.every(([id, lv]) => this.level(id) + (id === extra ? 1 : 0) >= lv);
+  }
+  checkSynergies() {
+    for (const s of SYNERGIES) if (!this.synergies.includes(s.id) && this.synergyReady(s)) {
+      this.synergies.push(s.id); this.cache = {}; this.game.onSynergy(s);
+    }
+  }
+  *sources() {
+    const g = this.game, tree = g.save.data.tree || {};
+    if (!g.versus && !g.tutorial) for (const n of TREE_NODES) if (tree[n.id]) yield [n.mod, tree[n.id]];
+    for (const id in this.levels) yield [UPGRADE_BY_ID[id].mod, this.levels[id]];
+    for (const id of this.synergies) yield [SYNERGIES.find(s => s.id === id).mod, 1];
+    for (const id of this.pacts) yield [PACT_BY_ID[id].mod, 1];
+  }
+  stat(k) {
+    if (k in this.cache) return this.cache[k];
+    let v = statBase(this.game, k);
+    for (const [mod, l] of this.sources()) if (mod[k]) v = mod[k](v, l);
+    return (this.cache[k] = v);
+  }
+  // Para el álbum y el historial
+  summary() { return { ups: { ...this.levels }, pacts: this.pacts.slice(), syn: this.synergies.slice() }; }
+}
+
+// =====================================================================
+//  Barra de furia y súper rugido (no se usa durante los combates contra jefes)
+// =====================================================================
+class FuryMeter {
+  constructor(game) { this.game = game; this.reset(); }
+  reset(start = 0) { this.v = start * FURY_CONFIG.MAX; this.idle = 0; this.charges = 0; this.flash = 0; this.wasFull = false; }
+  get full() { return this.charges > 0; }
+  add(n) {
+    const g = this.game; if (g.versus || n <= 0) return;
+    this.idle = 0;
+    if (this.full) return;
+    this.v = Math.min(FURY_CONFIG.MAX, this.v + n * g.stat("furyRate"));
+    if (this.v >= FURY_CONFIG.MAX) { this.charges = g.stat("superRoarUses"); this.flash = 1; g.sfx.furyFull(); g.ach.event("furyFull"); }
+  }
+  update(dt) {
+    const g = this.game;
+    this.flash = Math.max(0, this.flash - dt);
+    if (this.full) return;
+    this.idle += dt;
+    if (this.idle > FURY_CONFIG.DECAY_AFTER && !g.stat("furyNoDecay")) this.v = Math.max(0, this.v - FURY_CONFIG.DECAY_RATE * dt);
+  }
+  // Consume una carga; devuelve true si había
+  use() {
+    const g = this.game, b = g.build;
+    if (!this.full) return false;
+    if (g.stat("despertar") && !b.used.despertar) { b.used.despertar = 1; return true; }   // el primero no vacía la barra
+    this.charges--;
+    if (this.charges <= 0) { this.v = 0; this.idle = 0; }
+    return true;
+  }
+}
+
+// =====================================================================
+//  MONTURAS: una por bioma. El raptor se sube unos segundos y cambian sus controles y su física.
+//  Mount (base) + 10 subclases, MountPickup (icono en el camino) y MountManager.
+//  Coordenadas: las del carril (y = altura sobre el suelo). El arte se dibuja en px de arte (×3).
+// =====================================================================
+const MS = 3;   // px lógicos por píxel de arte (igual que el raptor)
+// Rectángulo en px de arte con el origen abajo a la izquierda (y hacia arriba)
+function ma(c, col, ox, oy, x, y, w, h) { c.fillStyle = col; c.fillRect(Math.round(ox + x * MS), Math.round(oy - (y + h) * MS), w * MS, h * MS); }
+// Raptor montado con su skin (frame idle o jump) con los pies a la altura feetY (px)
+function drawRider(c, g, frame, feetY, dx = 0, clip = 0) {
+  const id = g.skinId; if (!SE.get(id)) return;
+  c.save();
+  if (clip) { c.beginPath(); c.rect(-100, -feetY - 400, 400, 400 - clip); c.clip(); }   // sentado: la parte de abajo queda dentro
+  SE.drawSprite(c, id, frame, dx / MS, Math.round(-SE.H - feetY / MS), MS, g.player.skinState.tick);
+  c.restore();
+}
+class Mount {
+  constructor(game, cfg, biome) {
+    this.g = game; this.cfg = cfg; this.id = cfg.id; this.biome = biome; this.name = cfg.name;
+    this.t = 0; this.y = 0; this.vy = 0; this.onGround = true; this.inv = MOUNT_CONFIG.MOUNT_INVULN;
+    const easy = game.mode.id === "easy" ? MOUNT_CONFIG.EASY_DURATION_MULT : 1;
+    this.duration = this.timeLeft = (cfg.duration * easy + game.stat("mountDurAdd")) * game.stat("mountDurMult");
+    this.armor = game.stat("mountArmor"); this.coinMult = 1; this.baseSpeed = cfg.speed; this.laneTime = CONFIG.LANE_SWITCH_TIME;
+    this.deck = 12; this.width = 28; this.riderH = 54; this.frame = "idle";
+  }
+  get pl() { return this.g.player; }
+  get speedMult() { return this.baseSpeed; }
+  get invulnerable() { return this.inv > 0; }
+  get warn() { return MOUNT_CONFIG.WARN_TIME * (this.g.mode.id === "easy" ? MOUNT_CONFIG.EASY_WARN_MULT : 1) * this.g.stat("teleMult"); }
+  canChangeLane() { return true; }
+  canRoar() { return this.cfg.roar === true; }
+  passesThrough() { return false; }
+  destroys() { return false; }
+  onDestroy() {}
+  onPass() {}
+  jump() {}
+  down() {}
+  spawn() { return false; }      // generador propio de obstáculos (true = ya ha generado este tramo)
+  allowPattern() { return true; }
+  gapMult() { return 1; }
+  // Salto genérico (sin doble salto)
+  doJump(v) { if (this.onGround) { this.vy = v * this.g.stat("jumpMult"); this.onGround = false; this.g.sfx.jump(); this.g.ach.event("jump"); } }
+  physics(dt, grav = 1) {
+    if (this.onGround) return;
+    this.vy -= CONFIG.GRAVITY * grav * dt; this.y += this.vy * dt;
+    if (this.y <= 0) { this.y = 0; this.vy = 0; this.onGround = true; this.land(); }
+  }
+  land() { this.g.puff(this.pl.x + 36, 0, this.pl.logicalLane, 6, this.g.level.biome.pal.bandEdge); }
+  update(dt) {
+    this.t += dt; this.inv = Math.max(0, this.inv - dt);
+    this.step(dt);
+    const p = this.pl; p.y = this.y + this.deck; p.onGround = this.onGround && this.y <= 0; p.vy = this.vy;
+    this.timeLeft -= dt;
+    if (this.timeLeft <= 0) this.end();
+  }
+  step(dt) { this.physics(dt); }
+  end() { this.g.mounts.dismount("time"); }
+  // Caja de la montura + caja del raptor (las estelas y efectos no cuentan)
+  hitboxes() {
+    const x = this.pl.x, w = this.width * MS, mx = x + 36 - w / 2;
+    return [{ x: mx + 4, y: this.y, w: w - 8, h: this.deck }, { x: x + 24, y: this.y + this.deck, w: 27, h: this.riderH }];
+  }
+  draw(c) {
+    const g = this.g, blink = (this.inv > 0 || g.grace > 0) && Math.floor(g.time * 14) % 2 === 0;
+    drawShadow(c, 36, this.width * MS * 0.8, Math.max(0, this.y));
+    c.save(); if (blink) c.globalAlpha = 0.4;
+    const ox = 36 - this.width * MS / 2;
+    this.drawBehind(c, ox, -this.y);
+    this.drawRiderPart(c);
+    this.drawBody(c, ox, -this.y);
+    c.restore();
+  }
+  drawBehind() {}
+  drawRiderPart(c) { drawRider(c, this.g, this.frame, this.y + this.deck); }
+  drawBody() {}
+}
+
+// ---------- 1. Tabla de arena (Desierto) ----------
+class SandBoard extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 28; this.deck = 12; }
+  jump() { if (this.onGround) { this.doJump(CONFIG.JUMP_VELOCITY * MOUNT_CONFIG.BOARD_JUMP); this.g.sfx.mountFx("board"); } }
+  get crouch() { return this.pl.downHeld; }
+  step(dt) {
+    this.physics(dt, MOUNT_CONFIG.BOARD_GRAVITY);
+    if (this.onGround && Math.random() < dt * 30) this.g.particles.push(new Particle(this.pl.logicalLane, this.pl.x + rand(-6, 10), 2, rand(-200, -80), rand(40, 160), 0.4, "#e9c48a", rand(2, 4)));
+  }
+  land() { super.land(); for (let i = 0; i < 12; i++) this.g.particles.push(new Particle(this.pl.logicalLane, this.pl.x + 36 + rand(-30, 30), 2, rand(-160, 160), rand(60, 220), 0.5, "#e9c48a", rand(3, 5))); }
+  onPass(o) {   // truco: pasar por encima de un cactus en el aire
+    if (!this.onGround && o.kind === "ground") {
+      const n = MOUNT_CONFIG.BOARD_TRICK_COINS; this.g.addRunCoins(n); this.g.sfx.coin();
+      this.g.floatText(this.pl.laneT, this.pl.x + 40, this.y + 110, `¡TRUCO! +${n}`, "#ffd23f", 20); this.g.ach.event("boardTrick");
+    }
+  }
+  hitboxes() { const b = super.hitboxes(); if (this.crouch) b[1].h = 24; return b; }
+  drawRiderPart(c) {
+    if (!this.crouch) return drawRider(c, this.g, this.onGround ? "idle" : "jump", this.y + this.deck, 4);
+    c.save(); c.translate(0, -(this.y + this.deck)); c.scale(1.1, 0.6); c.translate(0, this.y + this.deck); drawRider(c, this.g, "idle", this.y + this.deck, 4); c.restore();
+  }
+  drawBody(c, ox, oy) {
+    ma(c, "#5a2a10", ox, oy, 1, 0, 26, 1); ma(c, "#5a2a10", ox, oy, 0, 1, 28, 2); ma(c, "#5a2a10", ox, oy, 2, 3, 24, 1);
+    ma(c, "#c8783a", ox, oy, 1, 1, 26, 2); ma(c, "#f0b060", ox, oy, 2, 2, 23, 1); ma(c, "#d8402a", ox, oy, 6, 1, 3, 2); ma(c, "#d8402a", ox, oy, 19, 1, 3, 2);
+    ma(c, "#fff0d0", ox, oy, 25, 2, 2, 1);
+  }
+}
+
+// ---------- 2. Tronco por el río (Selva) ----------
+class RiverLog extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 32; this.deck = 24; this.water = "river"; this.crocT = 0; }
+  jump() { this.doJump(CONFIG.JUMP_VELOCITY); }
+  destroys(o) { return (o.kind === "ground" && o.h <= 46) || (o.kind === "rock" && o.size === "small" && !o.falling); }
+  onDestroy() { this.g.addShake(0.12, 3); this.g.sfx.mountFx("log"); for (let i = 0; i < 8; i++) this.g.particles.push(new Particle(this.pl.logicalLane, this.pl.x + 70, rand(5, 30), rand(-100, 300), rand(100, 300), 0.6, choice(["#7a4a24", "#c89a6a"]), rand(3, 5))); }
+  // Entre los patrones normales salen cocodrilos (avisan con burbujas)
+  spawn() {
+    if (Math.random() < 0.4) { this.g.mounts.addHazard({ kind: "croc", lane: randInt(0, 1), x: SPAWN_X, y: 0, w: 66, h: 26, warn: this.warn, name: "Cocodrilo" }); return 380; }
+    return false;
+  }
+  drawBody(c, ox, oy) {
+    const bob = Math.round(Math.sin(this.t * 6)) * MS;
+    ma(c, "#3a2010", ox, oy + bob, 0, 0, 32, 8); ma(c, "#7a4a24", ox, oy + bob, 1, 1, 30, 6); ma(c, "#9a6232", ox, oy + bob, 2, 5, 26, 1);
+    ma(c, "#c89a6a", ox, oy + bob, 28, 1, 3, 6); ma(c, "#7a4a24", ox, oy + bob, 29, 3, 1, 2);
+    for (let i = 4; i < 26; i += 6) ma(c, "#5a3418", ox, oy + bob, i, 2, 3, 1);
+    ma(c, "#4f9a3a", ox, oy + bob, 8, 7, 4, 1); ma(c, "#4f9a3a", ox, oy + bob, 17, 1, 3, 1);
+    if (this.onGround) { ma(c, "#e8fbff", ox, oy, -1 - (Math.floor(this.t * 8) % 3), 0, 2, 1); ma(c, "#e8fbff", ox, oy, 33 + (Math.floor(this.t * 8) % 2), 0, 2, 1); }
+  }
+}
+
+// ---------- 3. Roca flotante sobre la lava (Volcán) ----------
+class LavaRock extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 26; this.deck = 30; this.onGround = false; this.y = 30; }
+  step(dt) {
+    const p = this.pl, target = p.upHeld ? MOUNT_CONFIG.LAVA_SPEED : p.downHeld ? -MOUNT_CONFIG.LAVA_SPEED : -MOUNT_CONFIG.LAVA_SINK;
+    this.vy = lerp(this.vy, target, Math.min(1, dt * 6));
+    this.y = clamp(this.y + this.vy * dt, 0, MOUNT_CONFIG.LAVA_MAX_Y);
+    this.onGround = this.y <= 0;
+    if (Math.random() < dt * 25) this.g.particles.push(new Particle(p.logicalLane, p.x + 36 + rand(-20, 20), this.y, rand(-80, 40), rand(-140, -40), 0.4, choice(["#ff6a1a", "#ffb000"]), rand(2, 4), 0));
+  }
+  jump() {}
+  passesThrough(o) { return this.y > 10 && o.kind !== "flyer" && o.kind !== "stalactite" && o.h <= 70; }   // vuela por encima de lo bajo
+  // Generador propio: chorros de lava desde el suelo y rocas que caen desde arriba, siempre con un hueco
+  spawn() {
+    const M = this.g.mounts, lane = randInt(0, 1), hg = Math.random() < 0.25 ? 0 : Math.round(rand(50, 130));
+    if (hg) M.addHazard({ kind: "geyser", lane, x: SPAWN_X, y: 0, w: 40, h: hg, warn: this.warn + 0.2, name: "Chorro de lava" });
+    const rb = hg + 150;
+    if (rb < 270 && (!hg || Math.random() < 0.7)) M.addHazard({ kind: "lavafall", lane, x: SPAWN_X + 4, y: rb, w: 46, h: 360 - rb, warn: this.warn + 0.1, destructible: true, name: "Roca volcánica" });
+    else if (!hg) M.addHazard({ kind: "geyser", lane, x: SPAWN_X, y: 0, w: 40, h: 110, warn: this.warn + 0.2, name: "Chorro de lava" });
+    return 320 + Math.random() * 120;
+  }
+  drawBody(c, ox, oy) {
+    ma(c, "#1a0e0c", ox, oy, 2, 0, 22, 10); ma(c, "#1a0e0c", ox, oy, 0, 3, 26, 6);
+    ma(c, "#3c2c2a", ox, oy, 1, 4, 24, 4); ma(c, "#3c2c2a", ox, oy, 3, 1, 20, 8); ma(c, "#5a443e", ox, oy, 4, 8, 16, 1);
+    const glow = Math.floor(this.t * 6) % 2 ? "#ff6a1a" : "#ffb000";
+    ma(c, glow, ox, oy, 6, 3, 2, 1); ma(c, glow, ox, oy, 8, 2, 1, 1); ma(c, glow, ox, oy, 17, 4, 2, 1); ma(c, glow, ox, oy, 12, 1, 3, 1);
+  }
+}
+
+// ---------- 4. Trineo (Glaciar) ----------
+class Sled extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 30; this.deck = 12; this.riderH = 42; this.laneTime = MOUNT_CONFIG.SLED_LANE_TIME; this.coinMult = MOUNT_CONFIG.SLED_COIN_MULT; }
+  jump() { this.doJump(CONFIG.JUMP_VELOCITY * MOUNT_CONFIG.SLED_JUMP); }
+  gapMult() { return 1.4; }
+  step(dt) {
+    this.physics(dt);
+    if (this.onGround && Math.random() < dt * 40) for (const dx of [-12, 30]) this.g.particles.push(new Particle(this.pl.logicalLane, this.pl.x + dx, 1, -this.g.effectiveSpeed * 0.9, 0, 0.3, "#ffffff", 2, 0));
+  }
+  drawRiderPart(c) { drawRider(c, this.g, "idle", this.y + this.deck - 6, 4, 0); }
+  drawBody(c, ox, oy) {
+    ma(c, "#3a4a6a", ox, oy, 0, 0, 30, 1); ma(c, "#3a4a6a", ox, oy, 28, 1, 2, 3); ma(c, "#c8d4e8", ox, oy, 1, 0, 27, 1);
+    ma(c, "#1e3a5a", ox, oy, 3, 1, 1, 2); ma(c, "#1e3a5a", ox, oy, 22, 1, 1, 2);
+    ma(c, "#7a1e1e", ox, oy, 1, 3, 25, 5); ma(c, "#c83a2a", ox, oy, 2, 4, 23, 3); ma(c, "#ff7a5a", ox, oy, 2, 6, 23, 1); ma(c, "#ffe14d", ox, oy, 24, 4, 1, 3);
+  }
+}
+
+// ---------- 5. Meteorito domado (Noche) ----------
+class TamedMeteor extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 24; this.deck = 36; this.onGround = false; this.y = 0; this.jumped = false; this.frame = "jump"; }
+  get invulnerable() { return true; }
+  canRoar() { return false; }
+  destroys() { return true; }
+  onDestroy() { this.g.sfx.mountFx("meteor"); this.g.addShake(0.15, 4); this.g.burst(this.pl.logicalLane, this.pl.x + 80, this.y + 40, ["#ff8a2a", "#ffd05a", "#ffffff"], 10); }
+  get falling() { return this.timeLeft < 1.5; }
+  step(dt) {
+    const target = this.falling ? Math.max(0, MOUNT_CONFIG.METEOR_HEIGHT * (this.timeLeft / 1.5)) : MOUNT_CONFIG.METEOR_HEIGHT;
+    this.y = lerp(this.y, target, Math.min(1, dt * 5));
+    this.g.mounts.smashHazards(this.pl.logicalLane, this.pl.x + 90);
+    if (Math.random() < dt * 60) this.g.particles.push(new Particle(this.pl.logicalLane, this.pl.x + rand(-10, 20), this.y + rand(10, 40), rand(-500, -250), rand(-40, 60), 0.35, choice(["#ff8a2a", "#ffd05a", "#ff3b3b"]), rand(3, 6), 0));
+  }
+  jump() {   // salto final: hay que acertar la ventana
+    if (!this.falling || this.jumped) return;
+    this.jumped = true;
+    const [a, b] = MOUNT_CONFIG.METEOR_JUMP_WINDOW, ok = this.timeLeft >= a && this.timeLeft <= b, g = this.g;
+    if (ok) {
+      const n = MOUNT_CONFIG.METEOR_PERFECT_COINS; g.addRunCoins(n); g.fury.add(MOUNT_CONFIG.METEOR_PERFECT_FURY); g.sfx.perfect();
+      g.floatText(this.pl.laneT, this.pl.x + 40, this.y + 120, `¡ATERRIZAJE PERFECTO! +${n}`, "#ffd23f", 20); g.ach.event("meteorPerfectJump");
+      g.mounts.dismount("time");
+    } else { g.floatText(this.pl.laneT, this.pl.x + 40, this.y + 120, "¡DEMASIADO PRONTO!", "#ff6b6b", 20); g.mounts.dismount("hit"); }
+  }
+  end() { this.g.floatText(this.pl.laneT, this.pl.x + 40, 120, "¡TARDE!", "#ff6b6b", 20); this.g.mounts.dismount("hit"); }
+  drawBehind(c, ox, oy) {
+    for (let i = 0; i < 5; i++) { c.globalAlpha = 0.5 - i * 0.08; ma(c, i % 2 ? "#ffd05a" : "#ff6a1a", ox, oy, -4 - i * 4, 4 + (i % 2), 6, 8 - i); }
+    c.globalAlpha = 1;
+  }
+  drawRiderPart(c) { drawRider(c, this.g, "jump", this.y + this.deck - 6, -2); }
+  drawBody(c, ox, oy) {
+    ma(c, "#1e120a", ox, oy, 4, 0, 16, 16); ma(c, "#1e120a", ox, oy, 1, 3, 22, 10);
+    ma(c, "#7a5a40", ox, oy, 5, 1, 14, 14); ma(c, "#7a5a40", ox, oy, 2, 4, 20, 8); ma(c, "#a07a58", ox, oy, 6, 10, 8, 3);
+    const gl = Math.floor(this.t * 10) % 2 ? "#ff8a2a" : "#ffd05a";
+    ma(c, gl, ox, oy, 9, 5, 3, 1); ma(c, gl, ox, oy, 12, 4, 1, 3); ma(c, gl, ox, oy, 16, 8, 2, 1);
+    if (this.falling) {   // indicador de la ventana de salto
+      const [a, b] = MOUNT_CONFIG.METEOR_JUMP_WINDOW, inW = this.timeLeft >= a && this.timeLeft <= b;
+      c.font = '14px "Raptor Pixel Display", monospace'; c.textAlign = "center"; c.fillStyle = inW ? "#5fd15a" : "#ff3b3b";
+      c.fillText(inW ? "¡SALTA! (W)" : "¡PREPÁRATE!", 36, oy - this.deck - 80);
+      c.fillStyle = "#0e0b16"; c.fillRect(-4, oy - this.deck - 74, 80, 8); c.fillStyle = "#3a2f50"; c.fillRect(-2, oy - this.deck - 72, 76, 4);
+      const x0 = -2 + 76 * (1 - b / 1.5), x1 = -2 + 76 * (1 - a / 1.5); c.fillStyle = "#5fd15a"; c.fillRect(x0, oy - this.deck - 72, x1 - x0, 4);
+      c.fillStyle = "#ffffff"; c.fillRect(-2 + 76 * (1 - this.timeLeft / 1.5) - 1, oy - this.deck - 76, 2, 12);
+    }
+  }
+}
+
+// ---------- 6. Tortuga gigante (Playa) ----------
+class GiantTurtle extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 30; this.deck = 36; this.hide = 0; this.hideCd = 0; }
+  jump() { if (!this.hide) this.doJump(CONFIG.JUMP_VELOCITY * MOUNT_CONFIG.TURTLE_JUMP); }
+  down(on) {
+    if (!on || this.hide > 0 || this.hideCd > 0) return;
+    this.hide = MOUNT_CONFIG.TURTLE_HIDE; this.hideCd = MOUNT_CONFIG.TURTLE_HIDE_CD; this.g.sfx.mountFx("turtle");
+  }
+  get invulnerable() { return this.inv > 0 || this.hide > 0; }
+  destroys(o) { return this.onGround && ((o.kind === "ground" && o.h <= 46) || (o.kind === "rock" && o.size === "small")); }
+  onDestroy() { this.g.sfx.stomp(); this.g.addShake(0.1, 3); }
+  spawn() {
+    if (Math.random() < 0.35) { this.g.mounts.addHazard({ kind: "wave", lane: randInt(0, 1), x: SPAWN_X + 80, y: 0, w: 70, h: 60, vx: -140, warn: this.warn, name: "Ola" }); return 420; }
+    return false;
+  }
+  step(dt) { this.hide = Math.max(0, this.hide - dt); this.hideCd = Math.max(0, this.hideCd - dt); this.physics(dt, 1.3); }
+  hitboxes() { const b = super.hitboxes(); return this.hide > 0 ? [b[0]] : b; }
+  drawRiderPart(c) { if (!this.hide) drawRider(c, this.g, "idle", this.y + this.deck, 2); }
+  drawBody(c, ox, oy) {
+    const step = this.onGround ? Math.round(Math.sin(this.t * 8)) : 0, hidden = this.hide > 0;
+    if (!hidden) { ma(c, "#2a5a3a", ox, oy, 4 + step, 0, 4, 4); ma(c, "#2a5a3a", ox, oy, 22 - step, 0, 4, 4); ma(c, "#2a5a3a", ox, oy, 26, 5, 4, 4); ma(c, "#ffffff", ox, oy, 28, 7, 1, 1); ma(c, "#0e0b16", ox, oy, 29, 7, 1, 1); }
+    ma(c, "#1e3a24", ox, oy, 1, 3, 26, 10); ma(c, "#1e3a24", ox, oy, 4, 13, 20, 1);
+    ma(c, "#3aa878", ox, oy, 2, 4, 24, 8); ma(c, "#2a7a58", ox, oy, 2, 4, 24, 2);
+    for (const [x, y] of [[5, 7], [12, 9], [19, 7], [9, 5], [16, 5]]) ma(c, "#7ad8a8", ox, oy, x, y, 3, 2);
+    if (this.hideCd > 0 && !hidden) { ma(c, "#0e0b16", ox, oy, 6, 15, 16, 1); ma(c, "#ffd23f", ox, oy, 6, 15, Math.round(16 * (1 - this.hideCd / MOUNT_CONFIG.TURTLE_HIDE_CD)), 1); }
+  }
+}
+
+// ---------- 7. Seta saltarina (Bosque de setas) ----------
+class BounceMushroom extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 18; this.deck = 54; this.onGround = false; this.vy = MOUNT_CONFIG.SHROOM_BOUNCE * 0.6; }
+  jump() {}
+  down(on) { if (on && !this.onGround) { this.cut = true; this.vy = Math.min(this.vy, -200); } }
+  step(dt) {
+    const p = this.pl, rising = this.vy > 0;
+    const grav = this.cut ? CONFIG.FAST_FALL_MULT : rising && p.upHeld ? MOUNT_CONFIG.SHROOM_HOLD_GRAVITY : 1;
+    this.physics(dt, grav);
+    this.frame = this.vy > 0 ? "jump" : "idle";
+  }
+  land() { this.bounce(); }
+  bounce() {
+    const g = this.g; this.cut = false; this.onGround = false; this.vy = MOUNT_CONFIG.SHROOM_BOUNCE * g.stat("jumpMult");
+    g.sfx.mountFx("shroom");
+    for (let i = 0; i < 8; i++) g.particles.push(new Particle(this.pl.logicalLane, this.pl.x + 36 + rand(-20, 20), 4, rand(-120, 120), rand(60, 200), 0.6, choice(["#ff7ad0", "#7df9ff", "#ffe14d"]), rand(2, 4), 300));
+  }
+  canChangeLane() { return true; }
+  destroys(o) { const hb = o.hitbox(); return this.vy < 0 && this.y >= hb.y + hb.h - 30; }   // cae encima: lo aplasta
+  onDestroy() {
+    const g = this.g, n = MOUNT_CONFIG.SHROOM_STOMP_COINS; g.addRunCoins(n); g.sfx.stomp();
+    g.floatText(this.pl.laneT, this.pl.x + 40, this.y + 120, `¡PLAF! +${n}`, "#ff7ad0", 20); g.ach.event("mushroomStomp"); this.bounce();
+  }
+  hitboxes() { const x = this.pl.x; return [{ x: x + 12, y: this.y, w: 48, h: this.deck }, { x: x + 24, y: this.y + this.deck, w: 27, h: 54 }]; }
+  drawBody(c, ox, oy) {
+    const sq = this.onGround ? 1 : 0;
+    ma(c, "#b4a2c0", ox, oy, 6, 0, 6, 10 - sq); ma(c, "#f2e8f2", ox, oy, 7, 1, 2, 8 - sq);
+    ma(c, "#7a1a4a", ox, oy, 0, 10 - sq, 18, 6); ma(c, "#7a1a4a", ox, oy, 2, 16 - sq, 14, 2);
+    ma(c, "#ff7ad0", ox, oy, 1, 11 - sq, 16, 4); ma(c, "#ff7ad0", ox, oy, 3, 15 - sq, 12, 2); ma(c, "#ffb8e8", ox, oy, 4, 16 - sq, 6, 1);
+    for (const x of [3, 8, 13]) ma(c, "#ffffff", ox, oy, x, 13 - sq, 2, 1);
+    for (let x = 1; x < 17; x += 3) ma(c, Math.floor(this.t * 6) % 2 ? "#7df9ff" : "#ffe14d", ox, oy, x, 10 - sq, 1, 1);
+  }
+}
+
+// ---------- 8. Delfín (Océano) ----------
+class Dolphin extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 32; this.deck = 24; this.water = "sea"; this.dive = 0; this.diveCd = 0; this.onGround = false; this.vy = MOUNT_CONFIG.DOLPHIN_ARC; }
+  get under() { return this.y < -4; }
+  canRoar() { return !this.under; }
+  jump() { if (this.y < 40 && !this.under && this.vy < 600) { this.vy = MOUNT_CONFIG.DOLPHIN_JUMP * this.g.stat("jumpMult"); this.g.sfx.mountFx("dolphin"); this.g.ach.event("jump"); } }
+  step(dt) {
+    const p = this.pl, M = MOUNT_CONFIG;
+    this.diveCd = Math.max(0, this.diveCd - dt);
+    const diving = p.downHeld && this.diveCd <= 0 && this.dive < M.DOLPHIN_DIVE_MAX;
+    if (diving) {
+      this.dive += dt; this.vy = 0; this.y = lerp(this.y, -M.DOLPHIN_DEPTH - 40, Math.min(1, dt * 8));
+      if (this.dive >= M.DOLPHIN_DIVE_MAX) this.diveCd = M.DOLPHIN_DIVE_CD;
+      if (Math.random() < dt * 20) this.g.particles.push(new Particle(p.logicalLane, p.x + rand(10, 70), this.y + rand(10, 60), rand(-60, 20), rand(40, 100), 0.6, "#bfeaff", rand(2, 4), -200));
+    } else {
+      if (this.dive > 0 && !p.downHeld) { if (this.dive >= 0.2) this.diveCd = Math.max(this.diveCd, M.DOLPHIN_DIVE_CD * 0.5); this.dive = 0; }
+      if (this.y < 0 && this.vy <= 0) this.vy = M.DOLPHIN_ARC * 0.8;   // sale del agua
+      this.vy -= CONFIG.GRAVITY * dt; this.y += this.vy * dt;
+      if (this.y <= 0 && this.vy < 0) { this.y = 0; this.vy = M.DOLPHIN_ARC; this.g.sfx.mountFx("splash"); this.g.puff(p.x + 40, 0, p.logicalLane, 6, "#e8fbff"); }   // arcos automáticos
+    }
+    this.onGround = false;
+  }
+  // Bajo el agua solo cuenta lo que está sumergido
+  hitboxes() {
+    const b = super.hitboxes();
+    if (!this.under) return b;
+    return b.filter(r => r.y < 0).map(r => ({ ...r, h: Math.min(r.h, -r.y) }));
+  }
+  spawn() {
+    const M = this.g.mounts, lane = randInt(0, 1), r = Math.random();
+    if (r < 0.38) M.addHazard({ kind: "jelly", lane, x: SPAWN_X, y: 0, w: 34, h: 34, destructible: true, name: "Medusa" });
+    else if (r < 0.66) M.addHazard({ kind: "net", lane, x: SPAWN_X, y: 0, w: 60, h: 50, name: "Red" });
+    else {
+      M.addHazard({ kind: "shark", lane, x: SPAWN_X + 60, y: -84, w: 78, h: 64, vx: -60, warn: this.warn + 0.3, name: "Tiburón" });
+      for (let i = 0; i < 4; i++) this.g.coinsArr.push(new Coin(1 - lane, SPAWN_X + i * 34, -40));   // monedas bajo el agua
+    }
+    return 300 + Math.random() * 120;
+  }
+  draw(c) {
+    if (this.under) { c.save(); c.globalAlpha = 0.65; c.filter = "hue-rotate(180deg) saturate(0.6) brightness(0.9)"; }
+    super.draw(c);
+    if (this.under) c.restore();
+  }
+  drawBody(c, ox, oy) {
+    const fl = Math.floor(this.t * 8) % 2;
+    ma(c, "#1a3a5a", ox, oy, 2, 2, 26, 8); ma(c, "#1a3a5a", ox, oy, 26, 4, 6, 4); ma(c, "#1a3a5a", ox, oy, 0, 3 + fl, 4, 6 - fl);
+    ma(c, "#5ab0e8", ox, oy, 3, 3, 24, 6); ma(c, "#5ab0e8", ox, oy, 27, 5, 4, 2); ma(c, "#dff4ff", ox, oy, 6, 3, 18, 2);
+    ma(c, "#1a3a5a", ox, oy, 12, 10, 5, 2); ma(c, "#0e0b16", ox, oy, 25, 7, 1, 1); ma(c, "#ffffff", ox, oy, 24, 7, 1, 1);
+  }
+}
+
+// ---------- 9. Ataúd con ruedas (Cementerio) ----------
+class CoffinCart extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 30; this.deck = 18; this.riderH = 30; }
+  get speedMult() { return this.baseSpeed * (this.pl.downHeld ? MOUNT_CONFIG.COFFIN_BRAKE : 1); }
+  jump() { this.doJump(CONFIG.JUMP_VELOCITY * MOUNT_CONFIG.COFFIN_JUMP); }
+  passesThrough(o) { return o.kind === "flyer" || (o.kind === "ground" && o.h <= 46); }   // atraviesa fantasmas y lápidas pequeñas
+  spawn() {
+    if (Math.random() < 0.35) { this.g.mounts.addHazard({ kind: "skull", lane: randInt(0, 1), x: SPAWN_X, y: 0, w: 30, h: 30, vx: -160, destructible: true, name: "Calavera rodante" }); return 360; }
+    return false;
+  }
+  step(dt) {
+    this.physics(dt);
+    if (this.pl.downHeld && this.onGround && Math.random() < dt * 30) this.g.particles.push(new Particle(this.pl.logicalLane, this.pl.x - 6, 2, rand(-80, 0), rand(30, 90), 0.3, "#ffd05a", 2));
+  }
+  drawRiderPart(c) { drawRider(c, this.g, "idle", this.y + this.deck - 6, 6, 0); }
+  drawBody(c, ox, oy) {
+    const r = Math.floor(this.t * 12) % 2;
+    for (const wx of [3, 22]) { ma(c, "#0e0b16", ox, oy, wx, 0, 5, 4); ma(c, "#5a5a6a", ox, oy, wx + 1, 1, 3, 2); ma(c, "#b4b8c2", ox, oy, wx + 1 + r, 1, 1, 2); }
+    ma(c, "#1a0e0a", ox, oy, 0, 3, 30, 3); ma(c, "#1a0e0a", ox, oy, 2, 6, 26, 1);
+    ma(c, "#6a4a3a", ox, oy, 1, 4, 28, 2); ma(c, "#8a6a52", ox, oy, 3, 5, 24, 1); ma(c, "#d8c8a0", ox, oy, 13, 4, 1, 2); ma(c, "#d8c8a0", ox, oy, 12, 5, 3, 1);
+  }
+  drawBehind(c, ox, oy) { ma(c, "#3a2418", ox, oy, 0, 6, 4, 4); ma(c, "#6a4a3a", ox, oy, 1, 7, 2, 2); }
+}
+
+// ---------- 10. Cohete (Luna) ----------
+class Rocket extends Mount {
+  constructor(g, cfg, b) { super(g, cfg, b); this.width = 14; this.deck = 0; this.onGround = false; this.y = 40; this.vy = 200; this.stun = 0; this.frame = "jump"; }
+  jump() {
+    if (this.stun > 0) return;
+    this.vy = MOUNT_CONFIG.ROCKET_IMPULSE; this.g.sfx.mountFx("rocket");
+    for (let i = 0; i < 6; i++) this.g.particles.push(new Particle(this.pl.logicalLane, this.pl.x + 60, this.y, rand(-80, 80), rand(-260, -120), 0.35, choice(["#ff8a2a", "#ffd05a", "#ffffff"]), rand(3, 5), 0));
+  }
+  step(dt) {
+    const M = MOUNT_CONFIG; this.stun = Math.max(0, this.stun - dt);
+    this.vy -= CONFIG.GRAVITY * M.ROCKET_GRAVITY * dt; this.y += this.vy * dt;
+    if (this.y > M.ROCKET_CEIL) { this.y = M.ROCKET_CEIL; this.vy = -Math.abs(this.vy) * 0.5; this.stun = M.ROCKET_STUN; this.g.addShake(0.15, 4); this.g.sfx.denied(); }
+    if (this.y < 0) { this.y = 0; this.vy = Math.abs(this.vy) * 0.5 + 120; this.stun = M.ROCKET_STUN; this.g.addShake(0.15, 4); this.g.sfx.denied(); }
+    this.onGround = this.y <= 0;
+  }
+  passesThrough(o) { return this.y > 5 && o.kind === "ground"; }
+  hitboxes() { const x = this.pl.x; return [{ x: x + 40, y: this.y, w: 36, h: 72 }, { x: x + 6, y: this.y + 12, w: 30, h: 50 }]; }
+  // Generador propio: meteoritos arriba y satélites abajo con un hueco vertical
+  spawn() {
+    const M = this.g.mounts, lane = randInt(0, 1), gc = rand(70, 190), gap = 130;
+    if (gc - gap / 2 > 20) M.addHazard({ kind: "satellite", lane, x: SPAWN_X, y: 0, w: 44, h: Math.round(gc - gap / 2), name: "Satélite" });
+    M.addHazard({ kind: "meteors", lane, x: SPAWN_X + 2, y: Math.round(gc + gap / 2), w: 44, h: 420, destructible: true, name: "Meteoritos" });
+    return 300 + Math.random() * 100;
+  }
+  drawRiderPart(c) { drawRider(c, this.g, "jump", this.y + 10, -6); }
+  drawBody(c, ox, oy) {
+    const x0 = ox + 22, fl = Math.floor(this.t * 14) % 2;
+    ma(c, fl ? "#ffd05a" : "#ff6a1a", x0, oy, 4, -4 - fl, 6, 4 + fl); ma(c, "#ffffff", x0, oy, 6, -2, 2, 2);
+    ma(c, "#0e0b16", x0, oy, 2, 0, 10, 20); ma(c, "#0e0b16", x0, oy, 4, 20, 6, 3); ma(c, "#0e0b16", x0, oy, 0, 0, 14, 5);
+    ma(c, "#e8eaf0", x0, oy, 3, 1, 8, 18); ma(c, "#e8eaf0", x0, oy, 5, 19, 4, 3); ma(c, "#ff3b5c", x0, oy, 1, 1, 12, 3); ma(c, "#ff3b5c", x0, oy, 5, 21, 4, 2);
+    ma(c, "#5ae0ff", x0, oy, 5, 12, 4, 4); ma(c, "#c8fcff", x0, oy, 5, 14, 2, 2); ma(c, "#b4b8c2", x0, oy, 9, 2, 1, 16);
+    if (this.stun > 0 && Math.floor(this.t * 10) % 2) ma(c, "#ffe14d", x0, oy, 2, 26, 10, 1);
+  }
+}
+const MOUNT_CLASSES = { board: SandBoard, log: RiverLog, lavarock: LavaRock, sled: Sled, meteor: TamedMeteor, turtle: GiantTurtle, shroom: BounceMushroom, dolphin: Dolphin, coffin: CoffinCart, rocket: Rocket };
+const MOUNT_BIOMES = Object.keys(MOUNT_CONFIG.mounts);
+
+// Obstáculos especiales de las monturas (coordenadas del carril)
+function drawMountHazard(c, h, t) {
+  const warn = h.t < h.warn, x = Math.round(h.x), top = -(h.y + h.h);
+  const R = (col, xx, yy, w, hh) => { c.fillStyle = col; c.fillRect(Math.round(xx), Math.round(yy), Math.round(w), Math.round(hh)); };
+  switch (h.kind) {
+    case "croc":
+      if (warn) { for (let i = 0; i < 4; i++) R("#bfeaff", x + 10 + i * 12 + Math.sin(t * 9 + i) * 3, -6 - ((t * 40 + i * 9) % 20), 5, 5); return; }
+      R("#16301a", x, top, h.w, h.h); R("#3a7a3a", x + 2, top + 2, h.w - 4, h.h - 6); R("#5aa04a", x + 2, top + 2, h.w - 4, 4);
+      R("#ffffff", x + 8, top + 2, 6, 6); R("#0e0b16", x + 10, top + 4, 3, 3); for (let i = 18; i < h.w - 4; i += 8) R("#ffffff", x + i, top + h.h - 6, 4, 4); return;
+    case "geyser":
+      if (warn) { R(`rgba(255,106,26,${0.4 + 0.4 * Math.sin(t * 20)})`, x - 4, -8, h.w + 8, 8); for (let i = 0; i < 3; i++) R("#ffb000", x + 6 + i * 12, -10 - ((t * 60 + i * 7) % 16), 5, 5); return; }
+      R("#7a1a08", x - 2, top, h.w + 4, h.h); R("#ff6a1a", x + 2, top, h.w - 4, h.h); R("#ffd05a", x + 12, top, h.w - 24, h.h);
+      for (let i = 0; i < 3; i++) R("#fff0a0", x + 6 + i * 12, top - 4 - Math.abs(Math.sin(t * 12 + i)) * 10, 6, 6); return;
+    case "lavafall":
+      if (warn) { R(`rgba(255,59,59,${0.3 + 0.3 * Math.sin(t * 18)})`, x - 4, -6, h.w + 8, 6); R("#3a2c2a", x, -(h.y + h.h) + (1 - h.t / h.warn) * -200, h.w, h.h); return; }
+      R("#1a0e0c", x - 2, top, h.w + 4, h.h + 2); R("#3c2c2a", x, top, h.w, h.h); R("#5a443e", x + 4, -h.y - 14, h.w - 8, 4);
+      R(Math.floor(t * 8) % 2 ? "#ff6a1a" : "#ffb000", x + 10, -h.y - 24, 6, 4); return;
+    case "wave":
+      if (warn) { for (let i = 0; i < 6; i++) R("#ffffff", x + i * 12, -4 - (i % 2) * 4, 8, 3); return; }
+      R("#1a6a9a", x, top + 10, h.w, h.h - 10); R("#3ec8d8", x + 4, top + 14, h.w - 8, h.h - 14); R("#ffffff", x, top + 6, h.w, 8); R("#ffffff", x + h.w - 20, top, 20, 8); return;
+    case "jelly":
+      R("#7a3a8a", x, top, h.w, 18); R("#e8a8f0", x + 2, top + 2, h.w - 4, 12); R("#ffffff", x + 6, top + 4, 6, 4);
+      for (let i = 0; i < 4; i++) R("#e8a8f0", x + 4 + i * 8, top + 18 + Math.sin(t * 6 + i) * 2, 3, 14); return;
+    case "net":
+      R("#5a3a1a", x, top, 4, h.h); R("#5a3a1a", x + h.w - 4, top, 4, h.h);
+      for (let yy = top + 4; yy < -2; yy += 8) R("#d8c8a0", x + 2, yy, h.w - 4, 2);
+      for (let xx = x + 8; xx < x + h.w - 4; xx += 10) R("#d8c8a0", xx, top + 2, 2, h.h - 4);
+      R("#c84a2a", x - 4, top - 6, h.w + 8, 6); return;
+    case "shark":
+      if (warn || h.t < h.warn + 0.01) { R("#5a6a7a", x + 30, -14, 10, 14); R("#5a6a7a", x + 26, -6, 18, 6); return; }
+      c.globalAlpha = 0.85; R("#2a3a4a", x, top, h.w, h.h - 20); R("#6a7a8a", x + 4, top + 4, h.w - 8, h.h - 30); R("#e8eef4", x + 8, top + h.h - 34, h.w - 20, 8);
+      R("#2a3a4a", x + 30, top - 14, 14, 14); R("#ffffff", x + 10, top + 10, 5, 5); R("#0e0b16", x + 11, top + 11, 3, 3); c.globalAlpha = 1; return;
+    case "skull": {
+      const r = Math.floor(t * 10) % 2;
+      R("#16161e", x, top, h.w, h.h); R("#e8dcc0", x + 2, top + 2, h.w - 4, h.h - 4); R("#16161e", x + 6 + r * 2, top + 8, 6, 6); R("#16161e", x + 16 + r * 2, top + 8, 6, 6); R("#16161e", x + 8, top + 20, 12, 3); return;
+    }
+    case "satellite":
+      R("#0e0b16", x + 18, top, 8, h.h); R("#b4b8c2", x + 20, top, 4, h.h);
+      R("#0e0b16", x, top, h.w, 16); R("#3a5ad0", x + 2, top + 2, 16, 12); R("#3a5ad0", x + 26, top + 2, 16, 12); R("#e8eaf0", x + 18, top + 2, 8, 12);
+      if (Math.floor(t * 3) % 2) R("#ff3b3b", x + 20, top - 4, 4, 4); return;
+    case "meteors":
+      for (let yy = -h.y - 26, i = 0; yy > -h.y - h.h; yy -= 40, i++) {
+        const dx = (i % 2) * 8; R("#1e120a", x + dx, yy, 34, 30); R("#7a5a40", x + dx + 2, yy + 2, 30, 26); R("#a07a58", x + dx + 4, yy + 4, 12, 8);
+        R(Math.floor(t * 8 + i) % 2 ? "#ff8a2a" : "#ffd05a", x + dx + 18, yy + 14, 6, 4);
+      }
+      return;
+  }
+}
+
+// Icono de montura en el camino (burbuja brillante con la montura en pequeño)
+class MountPickup {
+  constructor(game, biome, lane, x) { this.g = game; this.biome = biome; this.cfg = MOUNT_CONFIG.mounts[biome]; this.lane = lane; this.x = x; this.y = 30; this.t = 0; this.taken = false; }
+  hitbox() { return { x: this.x - 26, y: this.y - 26 + Math.sin(this.t * 4) * 4, w: 52, h: 52 }; }
+  draw(c) {
+    const cy = -(this.y + Math.sin(this.t * 4) * 4), col = this.cfg.icon, a = 0.35 + 0.25 * Math.sin(this.t * 6);
+    c.fillStyle = rgbaHex(col, a); c.beginPath(); c.arc(0, cy, 34, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "rgba(255,255,255,0.85)"; c.strokeStyle = col; c.lineWidth = 3; c.beginPath(); c.arc(0, cy, 26, 0, Math.PI * 2); c.fill(); c.stroke();
+    drawMountIcon(c, this.cfg.id, 0, cy, this.t);
+    c.fillStyle = "#ffffff"; c.fillRect(-14, cy - 18, 5, 5);
+  }
+}
+// Montura en miniatura (icono del camino, del marcador y del manual)
+function drawMountIcon(c, id, cx, cy, t = 0, s = 1) {
+  const fake = { g: { player: { skinState: { tick: 0 } }, skinId: "" }, t, onGround: true, hide: 0, hideCd: 0, y: 0, stun: 0, falling: false, timeLeft: 9 };
+  const cls = MOUNT_CLASSES[id], w = { board: 28, log: 32, lavarock: 26, sled: 30, meteor: 24, turtle: 30, shroom: 18, dolphin: 32, coffin: 30, rocket: 14 }[id];
+  c.save(); c.translate(cx, cy); c.scale(0.5 * s, 0.5 * s);
+  const ox = -w * MS / 2 - (id === "rocket" ? 22 * MS : 0) + (id === "rocket" ? 7 * MS : 0), oy = (id === "shroom" ? 9 : id === "rocket" ? 12 : 5) * MS;
+  cls.prototype.drawBody.call(fake, c, ox, oy);
+  c.restore();
+}
+
+// =====================================================================
+//  MountManager: decide cuándo aparece el icono, monta, baja y gestiona los obstáculos especiales
+// =====================================================================
+class MountManager {
+  constructor(game) { this.g = game; this.reset(); }
+  reset() { this.active = null; this.pickup = null; this.hazards = []; this.plan = {}; this.leaving = null; this.water = 0; this.waterKind = null; this.debugIdx = 0; }
+  // Al empezar un nivel: ¿aparecerá una montura y en qué punto?
+  planLevel(level) {
+    const g = this.g; if (g.versus || g.tutorial) return;
+    if (Math.random() >= g.stat("mountChance")) return;
+    const [a, b] = MOUNT_CONFIG.WINDOW, P = CONFIG.POINTS_PER_LEVEL, bossAt = CONFIG.BOSS_AT_IN_LEVEL;
+    // Si cae en los puntos anteriores al boss, se adelanta al tramo libre de antes; si cae detrás, sale al terminar la pelea
+    let at = rand(a, b) * P;
+    if (at >= bossAt - MOUNT_CONFIG.BOSS_MARGIN && at <= bossAt + 60) at = rand(a * P, Math.max(a * P, bossAt - MOUNT_CONFIG.BOSS_MARGIN));
+    this.plan[level] = { at, done: false };
+  }
+  wantsPickup() {
+    const g = this.g, p = this.plan[g.level.level]; if (!p || p.done) return false;
+    const inLevel = g.distScore - (g.level.level - 1) * CONFIG.POINTS_PER_LEVEL, toBoss = CONFIG.BOSS_AT_IN_LEVEL - inLevel;
+    if (inLevel < p.at || this.active || this.pickup || g.bosses.active || g.level.portal || (g.rogue && g.rogue.altar)) return false;
+    if (toBoss > 0 && toBoss < MOUNT_CONFIG.BOSS_MARGIN) return false;
+    return true;
+  }
+  // Lo llama el generador cuando toca un nuevo tramo. Devuelve los px que ocupa (o 0 si no ha hecho nada)
+  spawnHook() {
+    const g = this.g;
+    if (this.wantsPickup()) {
+      const biome = g.level.biome.id;
+      this.pickup = new MountPickup(g, MOUNT_CONFIG.mounts[biome] ? biome : "desert", randInt(0, 1), SPAWN_X + MOUNT_CONFIG.CLEAR_PX);
+      this.plan[g.level.level].done = true;
+      return MOUNT_CONFIG.CLEAR_PX * 2 + 40;
+    }
+    if (this.active) { const n = this.active.spawn(); if (n) return n; }
+    return 0;
+  }
+  give(biome) {   // montar (también desde el modo prueba)
+    const g = this.g, cfg = MOUNT_CONFIG.mounts[biome]; if (!cfg || this.active) return;
+    const M = new MOUNT_CLASSES[cfg.id](g, cfg, biome), p = g.player;
+    p.slideTime = 0; p.fastFall = false; p.jumps = 0; p.glideT = 0;
+    if (p.y > 0 && M.onGround !== false) { M.y = 0; }
+    this.active = M; this.leaving = null;
+    if (M.water) { this.waterKind = M.water; }
+    g.sfx.mountUp(); g.flashT = Math.max(g.flashT, 0.15); g.sfx.mountFx(cfg.id);
+    g.bossBanner = { t: 1.6, text: cfg.name.toUpperCase(), sub: cfg.control, color: cfg.icon };
+    g.ach.event("mountUsed", { id: cfg.id });
+    if (g.tips) g.tips.show("mount", cfg);
+  }
+  // reason: "time" | "hit" | "boss"
+  dismount(reason) {
+    const g = this.g, M = this.active; if (!M) return;
+    const p = g.player, gm = g.stat("graceMult");
+    this.active = null; this.leaving = { M, t: 0, reason, lane: p.laneT, y: M.y };
+    p.y = Math.max(0, M.y + M.deck * 0.5); p.onGround = false; p.vy = reason === "hit" ? 480 : 650; p.jumps = 1; p.fastFall = false; p.laneTime = CONFIG.LANE_SWITCH_TIME;
+    g.grace = Math.max(g.grace, (reason === "hit" ? MOUNT_CONFIG.HIT_INVULN : MOUNT_CONFIG.END_INVULN) * gm);
+    const sh = g.stat("mountEndShield"); if (sh) { g.effects.shield = g.effectMax.shield = Math.max(g.effects.shield, sh); }
+    if (reason === "hit") { g.sfx.mountLost(); g.addShake(0.3, 6); g.floatText(p.laneT, p.x + 40, p.y + 100, "¡MONTURA PERDIDA!", "#ff6b6b", 20); g.ach.event("mountLost", { id: M.id }); }
+    else { g.sfx.mountDown(); g.ach.event("mountEnd", { id: M.id }); }
+    g.ach.event("mountTime", { id: M.id, t: M.duration - Math.max(0, M.timeLeft) });
+  }
+  onHit() {
+    const g = this.g, M = this.active; if (!M) return;
+    if (M.armor > 0) { M.armor--; M.inv = 1; g.sfx.shieldBreak(); g.floatText(g.player.laneT, g.player.x + 40, M.y + 120, "¡BLINDADA!", "#7df9ff", 20); return; }
+    this.dismount("hit");
+  }
+  addHazard(o) { this.hazards.push(Object.assign({ t: 0, warn: 0, vx: 0, destructible: false, dead: false }, o)); }
+  clearHazards(xMax) { for (const h of this.hazards) if (h.x < xMax && h.destructible !== null) { h.dead = true; this.g.burst(h.lane, h.x + h.w / 2, h.y + Math.min(h.h, 80) / 2, ["#ffffff", "#ffd05a"], 8); } }
+  smashHazards(lane, x) { for (const h of this.hazards) if (!h.dead && h.lane === lane && h.x < x && h.x + h.w > x - 120 && h.t >= h.warn) { h.dead = true; this.g.burst(lane, h.x + h.w / 2, 40, ["#ff8a2a", "#ffd05a"], 10); this.g.sfx.smash(); } }
+  roarHits(w, x0, x1) { for (const h of this.hazards) if (!h.dead && h.destructible && h.t >= h.warn && (w.both || h.lane === w.lane) && h.x < x1 && h.x + h.w > x0) { h.dead = true; this.g.burst(h.lane, h.x + h.w / 2, h.y + 20, ["#ffffff", "#ffd05a"], 8); this.g.sfx.smash(); } }
+  update(gdt, dt) {
+    const g = this.g, sp = g.effectiveSpeed;
+    const wantWater = this.active && this.active.water;
+    this.water = clamp(this.water + (wantWater ? dt : -dt) / 0.5, 0, 1);
+    if (this.water === 0 && !wantWater) this.waterKind = null;
+    if (this.pickup) { const P = this.pickup; P.t += dt; P.x -= sp * gdt; if (P.x < -80 || P.taken) this.pickup = null; }
+    for (const h of this.hazards) { h.t += gdt; h.x += (h.vx - sp) * gdt; }
+    this.hazards = this.hazards.filter(h => !h.dead && h.x + h.w > -200);
+    if (this.leaving && (this.leaving.t += dt) > 0.8) this.leaving = null;
+  }
+  // Recoger el icono y chocar con obstáculos especiales. Devuelve true si el jugador muere.
+  collide(pl, boxes) {
+    const g = this.g, lane = pl.logicalLane, hits = b => boxes.some(a => overlap(a, b));
+    const P = this.pickup;
+    if (P && !P.taken && P.lane === lane && hits(P.hitbox())) { P.taken = true; this.give(P.biome); }
+    for (const h of this.hazards) {
+      if (h.dead || h.t < h.warn || h.lane !== lane || h.hitDone) continue;
+      if (!hits({ x: h.x, y: h.y, w: h.w, h: h.h })) continue;
+      if (this.active && this.active.invulnerable) { if (this.active instanceof TamedMeteor) h.dead = true; continue; }
+      if (g.grace > 0 || g.effects.turbo > 0) continue;
+      h.hitDone = true; g.lastHitBy = h.name || "Obstáculo especial";
+      if (g.hitPlayer(pl)) return true;
+    }
+    return false;
+  }
+  drawLane(c, lane) {
+    const g = this.g;
+    if (this.pickup && this.pickup.lane === lane) { c.save(); applyLane(c, lane); c.translate(this.pickup.x, 0); this.pickup.draw(c); c.restore(); }
+    for (const h of this.hazards) if (h.lane === lane) { c.save(); applyLane(c, lane); drawMountHazard(c, h, g.time); c.restore(); }
+    const L = this.leaving;
+    if (L && Math.round(L.lane) === lane) {   // la montura se va por detrás (o sale despedida)
+      const k = L.t / 0.8;
+      c.save(); applyLane(c, L.lane); c.globalAlpha = 1 - k;
+      c.translate(g.player.x - k * 220, -(L.reason === "hit" ? 140 * k - 260 * k * k : 0) - (L.y || 0) * (1 - k));
+      if (L.reason === "hit") { c.translate(36, -20); c.rotate(-k * 3); c.translate(-36, 20); }
+      L.M.drawBody(c, 36 - L.M.width * MS / 2, 0);
+      c.restore();
+    }
+  }
+  // Río (tronco) o mar (delfín): el suelo se convierte en agua
+  drawWater(c) {
+    if (this.water <= 0) return;
+    const g = this.g, k = this.water, sea = this.waterKind === "sea", t = g.time;
+    c.save(); c.globalAlpha = k * 0.92;
+    c.fillStyle = sea ? "#1a628c" : "#2a7a8a"; c.fillRect(-10, 214, W + 20, H - 204);
+    c.fillStyle = sea ? "#3ec8d8" : "#4aa8a0";
+    for (const [gy, s] of [[236, 0.8], [318, 1]]) c.fillRect(-10, Math.round(gy - 22 * s), W + 20, Math.round(22 * s));
+    c.fillStyle = "#e8fbff";
+    for (const [gy, s] of [[236, 0.8], [318, 1]]) for (let x = -mod(g.scroll * s, 40); x < W; x += 40) c.fillRect(Math.round(x + Math.sin(t * 3 + x) * 3), Math.round(gy - 22 * s + 2), 14, 2);
+    c.globalAlpha = k * 0.5; c.fillStyle = "#ffffff";
+    for (let x = -mod(g.scroll * 0.9, 70); x < W; x += 70) c.fillRect(Math.round(x), 214 + Math.round(Math.sin(t * 2 + x) * 2), 30, 2);
+    c.restore();
+  }
+  // Modo prueba: M da la montura del bioma; Shift + M recorre las 10
+  debugGive(cycle) {
+    if (this.active) this.dismount("time");
+    const biome = cycle ? MOUNT_BIOMES[this.debugIdx++ % MOUNT_BIOMES.length] : this.g.level.biome.id;
+    this.give(MOUNT_CONFIG.mounts[biome] ? biome : "desert");
+  }
 }
 
 // =====================================================================
@@ -2171,7 +3058,12 @@ class Spawner {
   update() {
     const g = this.game;
     if (g.distance + (SPAWN_X - PLAYER_X) > g.level.portalAt() - CONFIG.PORTAL_CLEAR && g.distance < g.level.portalAt()) return;   // camino libre hasta el portal
-    if (g.distance >= this.nextAt) this.spawnPattern();
+    if (g.distance < this.nextAt) return;
+    if (!g.versus && !g.tutorial) {   // montura: icono en el camino o generador propio de la montura
+      const n = g.mounts.spawnHook();
+      if (n > 0) { this.nextAt = g.distance + n; return; }
+    }
+    this.spawnPattern();
   }
   // Plan de huevos de un nivel: uno en cada tramo de CONFIG.EGG_WINDOWS
   plan(lvl = this.game.level.level) {
@@ -2180,6 +3072,8 @@ class Spawner {
   spawnPattern() {
     const g = this.game, L = g.level, biome = L.biome;
     let pool = PATTERNS.filter(p => g.mode.patternLevel(p) <= L.level && (!p.biome || p.biome === (biome.patternBiome || biome.id)) && (!g.versus || soloPattern(p)));
+    const M = g.mounts.active;
+    if (M) { const mp = pool.filter(p => M.allowPattern(p)); if (mp.length) pool = mp; }
     if (pool.length > 1) pool = pool.filter(p => p !== this.last);
     // Los patrones más avanzados pesan más cuando están disponibles
     const weights = pool.map(p => p.w * (1 + 0.35 * (p.lvl - 1)) * (p.biome ? 1.5 : 1));
@@ -2213,7 +3107,7 @@ class Spawner {
       }
     }
     if (!g.versus) this.tryEgg(placed, A, B, sp);
-    const gapS = L.gapSeconds() * g.mode.gapMult;
+    const gapS = L.gapSeconds() * g.mode.gapMult * (M ? M.gapMult() : 1) / (g.versus ? 1 : g.stat("obstacleFreq"));
     const gap = (gapS + Math.random() * CONFIG.GAP_RANDOM * (gapS / CONFIG.GAP_START)) * sp;
     this.nextAt = g.distance + end + gap;
 
@@ -2221,7 +3115,7 @@ class Spawner {
     const midX = SPAWN_X + end + gap * 0.5;
     let puLane = -1;
     if (!g.versus && g.distScore >= CONFIG.POWERUP_MIN_SCORE && Math.random() < Math.min(0.6, L.powerupChance() * g.mode.powerupChanceMult)) {
-      const types = POWERUP_TYPES.filter(t => g.effects[t] <= 0 && !g.powerups.some(pu => pu.type === t));
+      const types = POWERUP_TYPES.filter(t => g.effects[t] <= 0 && !g.powerups.some(pu => pu.type === t) && !(t === "shield" && g.stat("noShieldPowerup")));
       if (types.length) { puLane = randInt(0, 1); g.powerups.push(new PowerUp(choice(types), puLane, midX)); }
     }
     const coinChance = CONFIG.COIN_LINE_CHANCE + (biome.id === "night" ? CONFIG.NIGHT_COIN_BONUS : 0);   // la Noche tiene más monedas
@@ -2288,6 +3182,8 @@ class LevelManager {
       this.warp = CONFIG.PORTAL_WARP_TIME;
       this.banner = CONFIG.LEVEL_BANNER_TIME; this.bannerSub = g.versus ? "¡Más rápido!" : `Huevos del nivel ${this.level - 1}: ${eggs}/${CONFIG.EGGS_PER_LEVEL}`;
       g.sfx.levelUp(); g.sfx.portal(); g.addShake(0.3, 5); g.ach.event("levelReached", { level: this.level });
+      g.mounts.dismount("time"); g.mounts.hazards = [];   // la montura se queda en su bioma
+      g.onLevelStart(this.level);
     }
   }
   // Portal (ocupa los dos carriles) y destello al cruzarlo
@@ -2363,6 +3259,7 @@ class BossManager {
     this.pending = this.info(level);
     do this.nextAt += CONFIG.POINTS_PER_LEVEL; while (this.nextAt <= g.distScore);
     this.phase = "warning"; this.warn = CONFIG.BOSS_WARNING_TIME; g.sfx.bossWarn();
+    g.mounts.dismount("boss");   // si va montado, se baja al llegar el jefe
   }
   // gdt = tiempo de juego (cámara lenta), dt = tiempo real
   update(gdt, dt) {
@@ -2373,6 +3270,8 @@ class BossManager {
       if (this.warn <= 0) {
         this.boss = new BOSS_CLASSES[this.pending.type](g, this.pending.tier);
         this.phase = "fight"; this.hitTaken = false;
+        g.bossHearts = g.stat("bossHearts") + g.pendingHeart; g.pendingHeart = 0;   // corazones extra para este combate
+        g.ach.event("bossStart", { id: BOSS_IDS[this.pending.type], tier: this.pending.tier });
         if (Math.random() < CONFIG.BOSS_POWERUP_CHANCE) {   // ayuda opcional al empezar la pelea
           const types = ["shield", "turbo"].filter(t => g.effects[t] <= 0);
           if (types.length) g.powerups.push(new PowerUp(choice(types), randInt(0, 1), 1050));
@@ -2502,7 +3401,7 @@ class Boss {
   constructor(game, cycle, name, hpMult = 1) {
     this.game = game; this.cycle = cycle; this.name = name;
     this.speedMul = (1 + CONFIG.BOSS_SPEED_PER_CYCLE * cycle) * game.mode.bossSpeedMult;
-    this.maxHp = Math.max(1, Math.round(CONFIG.BOSS_HP * hpMult * (1 + CONFIG.BOSS_HP_PER_CYCLE * cycle) * game.mode.bossHpMult));
+    this.maxHp = Math.max(1, Math.round(CONFIG.BOSS_HP * hpMult * (1 + CONFIG.BOSS_HP_PER_CYCLE * cycle) * game.mode.bossHpMult * game.stat("bossHpMult")));
     this.hp = this.maxHp;
     this.coins = CONFIG.BOSS_COINS + CONFIG.BOSS_COINS_PER_CYCLE * cycle;
     this.state = "enter"; this.stateT = 0; this.fightT = 0; this.t = 0; this.away = 1; this.done = false;
@@ -2520,7 +3419,7 @@ class Boss {
     this.maxTime = CONFIG.BOSS_MAX_TIME;
     this.hint = "";
     // Forma furiosa (al bajar de CONFIG.BOSS_FURY_AT de vida): más rápido, avisos más cortos y una mecánica nueva
-    this.fury = false; this.furyAt = game.mode.bossFuryAt; this.furyHint = ""; this.furyT = 0;
+    this.fury = false; this.furyAt = game.stat("bossFuryAt"); this.furyHint = ""; this.furyT = 0;
   }
   setRules(r, hint) { Object.assign(this.rules, r); if (!this.rules.trap) this.trapTimes = []; if (hint) this.hint = hint; }
   hintText() { return this.hint; }
@@ -2540,7 +3439,7 @@ class Boss {
   say(text, color = "#ffd23f", size = 22, laneT = this.p.logicalLane, x = this.p.x + 40, y = this.p.y + 100) { this.game.floatText(laneT, x, y, text, color, size); }
   get p() { return this.game.player; }
   after(d, fn) { this.timers.push({ t: d, fn }); }
-  tele(d) { const m = this.game.mode.bossTeleMult * (this.fury ? CONFIG.BOSS_FURY_TELEGRAPH : 1); return Math.max(CONFIG.BOSS_TELEGRAPH_MIN * m, d * CONFIG.BOSS_TELEGRAPH * m / this.speedMul); }
+  tele(d) { const m = this.game.mode.bossTeleMult * (this.fury ? CONFIG.BOSS_FURY_TELEGRAPH : 1) * this.game.stat("teleMult"); return Math.max(CONFIG.BOSS_TELEGRAPH_MIN * m, d * CONFIG.BOSS_TELEGRAPH * m / this.speedMul); }
   warn(lane, kind, dur, o = {}) { this.teles.push({ lane, kind, dur, t: 0, x: COL_X, y: 0, w: COL_W, h: 0, ...o }); }
   addHazard(o) { const h = new Hazard(o); this.hazards.push(h); return h; }
   setState(s) { this.state = s; this.stateT = 0; }
@@ -2548,7 +3447,7 @@ class Boss {
   // Deja el punto débil apoyado en la columna del dino y abre la ventana de vulnerabilidad
   rest(lane, box, extra = 0, onEnd) {
     if (this.state !== "fight") return;
-    const vt = this.game.mode.bossVulnTime * this.vulnMult;
+    const vt = this.game.mode.bossVulnTime * this.vulnMult * this.game.stat("bossVulnMult");
     this.limb = { lane, ...box }; this.vuln = vt; this.stomped = false;
     this.after(vt, () => { this.limb = null; this.vuln = 0; if (onEnd) onEnd(); });
     this.after(vt + extra + CONFIG.BOSS_ATTACK_GAP / this.speedMul, () => { if (this.state === "fight") this.attack(); });
@@ -2610,6 +3509,8 @@ class Boss {
   damage(n, kind, at) {
     if (this.state !== "fight" || this.hp <= 0) return false;
     const g = this.game, pt = at || this.target();
+    if (kind !== "test" && Math.random() < g.stat("critChance")) { n *= 2; g.floatText(pt.laneT, pt.x, pt.y + 70, "¡CRÍTICO!", "#ff9a3c", 22); }
+    g.fury.add(FURY_CONFIG.BOSS_HIT); g.ach.event("bossHit", { n, kind });
     this.hp = Math.max(0, this.hp - n); this.flash = 0.3;
     g.sfx.bossHit(); g.addShake(0.2, 5);
     g.floatText(pt.laneT, pt.x, pt.y + 30, `-${n}`, "#ffffff", 28);
@@ -5154,6 +6055,8 @@ class UI {
     if (b.vuln > 0 && Math.floor(this.game.time * 8) % 2 === 0) this.pill(c, "¡VULNERABLE!", W / 2, y + 34, 11, "#16111f", UI_T.weak);
     const hint = b.hudHint();
     if (hint && b.state === "fight") this.pill(c, hint.toUpperCase(), W / 2, H - 18, 10, UI_T.weak);   // abajo, para no tapar los power-ups
+    const hearts = this.game.bossHearts;   // corazones extra del combate (árbol, mejoras y pactos)
+    for (let i = 0; i < hearts; i++) { c.save(); c.translate(x + w - 18 - i * 22, y + 26); c.scale(0.7, 0.7); drawHeart(c, 0, 0, true); c.restore(); }
   }
   drawHud(c) {
     const g = this.game, L = g.level;
@@ -5162,7 +6065,7 @@ class UI {
     this.panel(c, 10, 10, 196, 76);
     c.textBaseline = "middle"; c.textAlign = "left";
     c.font = '10px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.dim; c.fillText("PUNTOS", 20, 24);
-    c.font = '20px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.text; c.fillText(pad(g.distScore), 84, 25);
+    c.font = '20px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.text; c.fillText(pad(g.score), 84, 25);
     c.font = '10px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.dim; c.fillText("RÉCORD", 20, 46);
     c.fillStyle = "#ffe9a8"; c.fillText(pad(g.save.record(g.mode.id)), 84, 46);
     c.fillStyle = UI_T.line; c.fillRect(17, 60, 182, 2);
@@ -5206,8 +6109,34 @@ class UI {
       this.text(c, `${info.name.toUpperCase()} ${rem.toFixed(1)}s`, 160, y, 10, UI_T.text);
       y += 28;
     }
+    const M = g.mounts.active;   // montura: icono y tiempo que le queda (parpadea en los 2 últimos segundos)
+    if (M) {
+      const frac = clamp(M.timeLeft / M.duration, 0, 1), blink = M.timeLeft < 2 && Math.floor(g.time * 8) % 2 === 0;
+      c.fillStyle = UI_T.line; c.beginPath(); c.arc(26, y, 14, 0, Math.PI * 2); c.fill();
+      c.fillStyle = blink ? "#ffffff" : UI_T.panel; c.beginPath(); c.arc(26, y, 12, 0, Math.PI * 2); c.fill();
+      drawMountIcon(c, M.id, 26, y + 2, g.time, 0.55);
+      c.fillStyle = UI_T.line; c.fillRect(44, y - 6, 108, 12);
+      c.fillStyle = "#3a2f50"; c.fillRect(46, y - 4, 104, 8);
+      c.fillStyle = blink ? "#ffffff" : M.cfg.icon; c.fillRect(46, y - 4, Math.round(104 * frac), 8);
+      this.text(c, `${M.name.toUpperCase()} ${Math.max(0, M.timeLeft).toFixed(1)}s${M.armor ? " ♦" + M.armor : ""}`, 160, y, 10, UI_T.text);
+      y += 28;
+    }
+    this.drawFuryBar(c);
 
     this.drawRoarRing(c, W - 48, 46, g.roarCd, g.roarCdMax || g.mode.roarCooldown, "E", "RUGIDO");
+  }
+  // Barra de furia (debajo del rugido). Llena: E lanza el súper rugido
+  drawFuryBar(c) {
+    const g = this.game, F = g.fury, x = W - 170, y = 98, w = 156, full = F.full && !g.bosses.active;
+    c.fillStyle = UI_T.line; c.fillRect(x - 2, y - 2, w + 4, 14);
+    c.fillStyle = "#3a2f50"; c.fillRect(x, y, w, 10);
+    const fw = Math.round(w * (F.full ? 1 : F.v / FURY_CONFIG.MAX));
+    c.fillStyle = full ? (Math.floor(g.time * 8) % 2 ? "#ffd23f" : "#ff3b3b") : F.full ? "#8a6a4a" : "#ff9a3c"; c.fillRect(x, y, fw, 10);
+    c.fillStyle = "rgba(255,255,255,0.35)"; c.fillRect(x, y, fw, 2);
+    for (let i = 1; i < 4; i++) { c.fillStyle = "rgba(14,11,22,0.4)"; c.fillRect(x + Math.round(w * i / 4), y, 2, 10); }
+    const lbl = full ? `¡SÚPER RUGIDO! (E)${F.charges > 1 ? " ×" + F.charges : ""}` : F.full ? "FURIA LLENA (TRAS EL JEFE)" : "FURIA";
+    this.text(c, lbl, x + w, y + 20, 10, full ? "#ffd23f" : UI_T.dim, "right");
+    if (F.flash > 0) { c.globalAlpha = F.flash; c.fillStyle = "#ffffff"; c.fillRect(x - 2, y - 2, w + 4, 14); c.globalAlpha = 1; }
   }
   // Marcador del multijugador: puntos y rugido de cada raptor
   drawVersusHud(c) {
@@ -5889,9 +6818,10 @@ const ACH_ICONS = {   // iconos pixel art 8 × 8 por categoría (o = contorno, a
   coleccion: ["..oooo..", ".oaaaao.", "oaabbaao", "oabaabao", "oabaabao", "oaabbaao", ".oaaaao.", "..oooo.."],
   ruleta:    ["..oooo..", ".oabbao.", "oaaobaao", "obooooao", "oaooooao", "oaabaabo", ".oabaao.", "..oooo.."],
   modos:     [".oo..oo.", "oaaooaao", "oabaaaao", "oaaaaaao", ".oaaaao.", "..oaao..", "...oo...", "........"],
+  monturas:  ["........", "....oo..", "...oaao.", "oooaaaao", "oaaaabao", "oaaaaaao", ".oo..oo.", ".oo..oo."],
   secretos:  ["..oooo..", ".oaaaao.", ".oo..oao", "....oao.", "...oao..", "...oo...", "........", "...oo..."],
 };
-const ACH_COLORS = { carrera: "#9be07a", jefes: "#ff6b6b", habilidad: "#41b8ff", coleccion: "#ffd23f", ruleta: "#c9a6ff", modos: "#ff9de6", secretos: "#ff8a3d" };
+const ACH_COLORS = { carrera: "#9be07a", jefes: "#ff6b6b", habilidad: "#41b8ff", coleccion: "#ffd23f", ruleta: "#c9a6ff", modos: "#ff9de6", monturas: "#7df9ff", secretos: "#ff8a3d" };
 function drawAchIcon(c, cat, sc) {
   const rows = ACH_ICONS[cat], col = ACH_COLORS[cat];
   rows.forEach((r, y) => { for (let x = 0; x < 8; x++) { const ch = r[x]; if (ch === ".") continue;
@@ -5996,6 +6926,14 @@ class AchievementManager {
         break;
       }
       case "closeCall": this.unlock("por-los-pelos"); break;
+      case "mountUsed": {
+        const used = new Set(this.stats.mountsUsed || []); used.add(d.id);
+        this.stats.mountsUsed = [...used]; this.max("mountTypes", used.size);
+        break;
+      }
+      case "mountEnd": this.add("mountsClean"); break;
+      case "meteorPerfectJump": this.add("meteorPerfect"); break;
+      case "boardTrick": this.add("boardTricks"); break;
       case "wallet": this.wallet(); break;
     }
   }
@@ -6065,7 +7003,7 @@ class AchievementManager {
 }
 
 // =====================================================================
-//  Manual: 12 secciones navegables con mini animaciones. Los números salen de CONFIG y de los datos del kit.
+//  Manual: secciones navegables con mini animaciones. Los números salen de CONFIG y de los datos del kit.
 // =====================================================================
 const pct = v => `${Math.round(v * 100)} %`;
 const secs = v => `${fmtNum(Math.round(v * 10) / 10)} s`;
@@ -6243,9 +7181,22 @@ const MANUAL_SECTIONS = [
       <li><b>Habilidad</b>: salta mucho, ruge mucho… o aguanta sin rugir, sin power-ups o sin cambiar de carril.</li>
       <li><b>Colección</b>: ahorra, compra skins, recoge huevos y usa la tienda.</li>
       <li><b>Ruleta</b> y <b>Modos</b>: prueba la ruleta, el giro diario y los tres modos.</li>
+      <li><b>Monturas</b>: prueba las ${MOUNT_BIOMES.length} monturas, aterriza bien del meteorito y haz trucos con la tabla.</li>
       <li><b>Secretos</b>: hay ${ACHIEVEMENTS.filter(a => a.secret).length} logros ocultos. Aparecen como «???» hasta que los consigues.</li>
     </ul>
     <p>Con el modo prueba (DEBUG) activo no se consiguen logros. En la pantalla de logros puedes reiniciar el progreso (pide doble confirmación).</p>` },
+  { title: "Monturas", html: () => `
+    <p>En cada nivel hay un ${pct(MOUNT_CONFIG.CHANCE)} de probabilidad de que aparezca <b>un icono de montura</b> (una burbuja brillante) entre el ${pct(MOUNT_CONFIG.WINDOW[0])} y el ${pct(MOUNT_CONFIG.WINDOW[1])} del nivel.
+    Nunca sale cerca de un boss (${MOUNT_CONFIG.BOSS_MARGIN} puntos antes) ni con otra montura activa. Tócalo para subirte: cambian tus controles y tu física durante unos segundos.</p>
+    <ul>
+      <li><b>Un golpe montado</b> no te elimina: pierdes la montura y tienes ${secs(MOUNT_CONFIG.HIT_INVULN)} de invencibilidad. Si tienes escudo, el escudo lo absorbe primero.</li>
+      <li>Al acabarse el tiempo saltas al suelo con ${secs(MOUNT_CONFIG.END_INVULN)} de invencibilidad. Si llega un boss, te bajas solo.</li>
+      <li>Montado sigues cogiendo monedas, huevos y power-ups, y la furia se sigue llenando. En Fácil duran un ${pct(MOUNT_CONFIG.EASY_DURATION_MULT - 1)} más.</li>
+    </ul>
+    <table><tr><th></th><th>Montura</th><th>Controles</th><th>Destruye / atraviesa</th><th>Cuidado con</th></tr>
+    ${MOUNT_BIOMES.map(b => { const m = MOUNT_CONFIG.mounts[b], G = MOUNT_GUIDE[m.id], bi = BIOMES.find(x => x.id === b);
+      return `<tr><td>${demo("mount", "", m.id)}</td><td><b>${m.name}</b><br><small>${bi ? bi.name : b} · ${m.duration} s · velocidad ×${m.speed}</small></td><td>${G.controls}</td><td>${G.breaks}</td><td>${G.avoid}<br><small>💡 ${G.tip}</small></td></tr>`; }).join("")}
+    </table>` },
   { title: "Guía para ser PRO", html: () => `
     <ul>
       <li><b>Guarda el rugido para los pájaros</b>: las rocas fáciles se saltan; los pájaros rápidos no perdonan.</li>
@@ -6261,6 +7212,19 @@ const MANUAL_SECTIONS = [
     </ul>` },
 ];
 
+// Fichas de las monturas (el resto de datos sale de MOUNT_CONFIG)
+const MOUNT_GUIDE = {
+  board:    { controls: "W salto largo · S agacharse · E ruge", breaks: "—", avoid: "Lo de siempre, pero todo llega antes (velocidad ×1,4)", tip: "Saltar por encima de un cactus es un ¡TRUCO! (+5 monedas)." },
+  log:      { controls: "W salta · E ruge", breaks: "Arrolla cactus y rocas pequeñas", avoid: "Cocodrilos (burbujas antes de asomar), troncos y rocas grandes", tip: "No saltes lo pequeño: el tronco lo rompe." },
+  lavarock: { controls: "W mantenido sube · S mantenido baja · E ruge", breaks: "Vuela por encima de lo bajo", avoid: "Chorros de lava y rocas que caen: busca el hueco", tip: "Sin pulsar nada la roca baja despacio." },
+  sled:     { controls: "W salto bajo · cambio de carril lento", breaks: "—", avoid: "Todo llega al doble de rápido", tip: "Monedas ×2: cambia de carril con antelación." },
+  meteor:   { controls: "A/D carril · W al final: ¡SALTA!", breaks: "TODO (invencible)", avoid: "Saltar tarde o pronto: sales despedido", tip: "Salta cuando el aviso se ponga verde: +monedas y furia." },
+  turtle:   { controls: "W salto pesado · S se esconde (1 s, cada 3 s)", breaks: "Pisa cactus y rocas pequeñas", avoid: "Olas (escóndete o cambia de carril) y pájaros", tip: "Escondido es inmune a todo." },
+  shroom:   { controls: "Rebota sola · W mantenido más alto · S corta el rebote", breaks: "Aplasta lo que pisa al caer (+10)", avoid: "Chocar de lado contra lo alto", tip: "Usa S para caer justo encima de los obstáculos." },
+  dolphin:  { controls: "Arcos solos · W salto alto · S bucea (máx. 2 s)", breaks: "—", avoid: "Medusas (bucea), redes (salta) y tiburones (no bucees cuando veas la aleta)", tip: "Hay monedas bajo el agua. Bajo el agua no puedes rugir." },
+  coffin:   { controls: "W salto bajo · S frena · E ruge", breaks: "Atraviesa fantasmas, pájaros y lápidas pequeñas", avoid: "Tumbas grandes y calaveras rodantes", tip: "Frena para cuadrar el salto con las calaveras." },
+  rocket:   { controls: "W impulso hacia arriba (tipo flappy)", breaks: "Pasa por encima de lo del suelo", avoid: "Meteoritos y satélites: siempre hay un hueco", tip: "Tocar el techo o el suelo te deja 1 s sin control." },
+};
 // Mini animaciones del manual (coordenadas lógicas del canvas)
 function demoGround(c, w, h, gy) {
   const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#2f3658"); g.addColorStop(1, "#4a5282");
@@ -6314,6 +7278,7 @@ const DEMOS = {
     c.globalAlpha = 0.35; c.fillStyle = col; c.beginPath(); c.arc(d.w / 2, y, 30, 0, 7); c.fill(); c.globalAlpha = 1;
     c.fillStyle = "rgba(255,255,255,0.9)"; c.strokeStyle = col; c.lineWidth = 3; c.beginPath(); c.arc(d.w / 2, y, 22, 0, 7); c.fill(); c.stroke();
     drawIcon(c, d.arg, d.w / 2, y, 12); },
+  mount(c, t, d) { demoGround(c, d.w, d.h, 84); drawMountIcon(c, d.arg, d.w / 2, 70 + Math.sin(t * 5) * 2, t, 1.1); },
   biome(c, t, d, g) { c.save(); c.scale(d.w / W, d.h / H); g.level.biomes[+d.arg].draw(c, g, 1); c.restore(); },
   skin(c, t, d) { if (!d.state.st) d.state.st = { tick: 0, speed: 2, trail: null, acc: 0 }; const st = d.state.st;
     tickStates([st], 1 / 60); drawSkinPreview(c, d.arg, st, d.w, d.h, 3); },
@@ -6327,6 +7292,7 @@ const DEMOS = {
     b.drawSky(c); b.drawLayer(c, 0); b.drawLayer(c, 1); c.restore(); },
 };
 
+ACHIEVEMENTS.find(a => a.id === "estudiante").goal = MANUAL_SECTIONS.length;   // el logro sigue al número de secciones
 class Manual {
   constructor(game) {
     this.game = game; this.page = 0; this.returnTo = "menu"; this.demos = [];
@@ -6372,8 +7338,26 @@ class Manual {
   }
 }
 
+// Causa de un golpe (estadística «qué te mata más»)
+function obstacleCause(o) {
+  if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
+  if (o.kind === "rock") return ROCK_NAMES[o.style] || "Roca";
+  if (o.kind === "stalactite") return "Estalactita";
+  return GROUND_NAMES[o.style] || "Obstáculo";
+}
 // Sonido del portal entre niveles
 Sfx.prototype.portal = function () { this.tone(220, 1760, 0.55, "sine", 0.06); this.tone(330, 2640, 0.45, "triangle", 0.04, 0.08); this.noise(0.5, 0.06, 3000, "highpass", 0.1); };
+// Furia y monturas
+Sfx.prototype.furyFull = function () { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, null, 0.12, "square", 0.05, i * 0.06)); };
+Sfx.prototype.superRoar = function () { this.tone(90, 40, 0.8, "sawtooth", 0.12); this.noise(0.7, 0.16, 900, "lowpass", 0.05); this.tone(1200, 300, 0.5, "triangle", 0.05, 0.05); };
+Sfx.prototype.mountUp = function () { [392, 523, 659, 784].forEach((f, i) => this.tone(f, null, 0.1, "triangle", 0.07, i * 0.05)); };
+Sfx.prototype.mountDown = function () { [659, 523, 392].forEach((f, i) => this.tone(f, null, 0.1, "triangle", 0.05, i * 0.06)); };
+Sfx.prototype.mountLost = function () { this.tone(400, 90, 0.4, "square", 0.08); this.noise(0.25, 0.1, 1200, "lowpass"); };
+Sfx.prototype.mountFx = function (id) {
+  const f = { board: [500, 900], log: [140, 90], lavarock: [120, 260], sled: [900, 1300], meteor: [80, 40], turtle: [200, 140], shroom: [300, 700], dolphin: [800, 1400], splash: [1500, 500], coffin: [180, 120], rocket: [300, 900] }[id];
+  if (!f) return;
+  if (id === "splash" || id === "sled") this.noise(0.2, 0.06, 3000, "highpass"); else this.tone(f[0], f[1], 0.18, id === "meteor" ? "sawtooth" : "triangle", 0.06);
+};
 // =====================================================================
 //  Game: estado, bucle, colisiones y dibujo
 //  Estados: menu · play · playing · paused · over · shop · roulette · manual · achievements
@@ -6387,6 +7371,7 @@ class Game {
     this.versus = false; this.p2SkinId = CONFIG.DEFAULT_SKIN;   // multijugador: J1 (WASD, carril de arriba) contra J2 (flechas, carril de abajo)
     this.player = new Player(this); this.p2 = new Player(this, 2); this.spawner = new Spawner(this); this.level = new LevelManager(this);
     this.bosses = new BossManager(this);
+    this.build = new RunBuild(this); this.fury = new FuryMeter(this); this.mounts = new MountManager(this); this.tutorial = null;
     this.checkpoints = new CheckpointManager(this.save);
     this.sfx.muted = this.save.data.muted;
     this.ach = new AchievementManager(this);
@@ -6418,7 +7403,24 @@ class Game {
     this.bossBanner = null; this.runBosses = 0; this.floaters = [];
     this.run = this.newRun();
     this.player.reset(); this.p2.reset(); this.spawner.reset(); this.level.reset(); this.bosses.reset();
+    // Roguelike, furia y monturas
+    this.build.reset(); this.fury.reset(this.versus ? 0 : this.stat("furyStart")); this.mounts.reset();
+    this.bossHearts = 0; this.pendingHeart = 0; this.bonusScore = 0; this.timeCd = 0; this.echoT = 0; this.echoWave = null; this.superWave = null;
+    this.ghosts = [{ x: 120, cd: 0 }, { x: 200, cd: 0 }]; this.pendingChoice = null; this.pendingPicks = 0;
   }
+  stat(k) { return this.build.stat(k); }
+  // Avisos del roguelike (RunBuild)
+  onUpgradeAdded(u) { this.ach.event("upgrade", { id: u.id, rarity: u.rarity }); if (this.rogue) this.rogue.onUpgradeAdded(u); }
+  onPactAdded(p) { this.ach.event("pact", { id: p.id }); }
+  onSynergy(s) {
+    this.bossBanner = { t: 2.4, text: `¡SINERGIA! ${s.name.toUpperCase()}`, sub: s.desc, color: "#ff7ad0" };
+    this.sfx.jackpot(); this.ach.event("synergy", { id: s.id });
+  }
+  // Puntuación: distancia + bonus (el Pacto de la prisa da ×1,5)
+  get score() { return this.distScore + Math.floor(this.bonusScore); }
+  // Valor de una moneda (modo, mejoras, montura)
+  get coinValue() { return this.mode.coinValue * (this.versus ? 1 : this.stat("coinMult")) * (this.mounts.active ? this.mounts.active.coinMult : 1); }
+  addRunCoins(n) { this.runCoins += n; }
   // Skin equipado (si el guardado apunta a uno que ya no existe, se usa el de por defecto)
   get skinId() { const id = this.save.data.equipped; return SkinCatalog.exists(id) && this.save.owns(id) ? id : CONFIG.DEFAULT_SKIN; }
   onSkinChanged() { this.player.skinState.trail = null; }
@@ -6429,7 +7431,10 @@ class Game {
     return own ? own.id : (SkinCatalog.shop.find(k => k.id !== this.skinId) || { id: CONFIG.DEFAULT_SKIN }).id;
   }
   get distScore() { return Math.floor(this.distance / CONFIG.PX_PER_POINT); }
-  get effectiveSpeed() { return this.speed * (this.effects.turbo > 0 ? CONFIG.TURBO_MULT : 1); }
+  get effectiveSpeed() {
+    const M = this.mounts && this.mounts.active, mods = this.versus ? 1 : this.stat("speedMult") * (M ? M.speedMult : this.stat("unmountedSpeed"));
+    return this.speed * (this.effects.turbo > 0 ? CONFIG.TURBO_MULT : 1) * mods;
+  }
   get runCoinsInt() { return Math.floor(this.runCoins + 1e-6); }
   eggsInLevel(l) { return this.run.eggs[l] || 0; }
 
@@ -6457,6 +7462,7 @@ class Game {
     this.run.lastPowerup = this.run.lastRoar = this.run.lastLane = this.distScore;
     this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = "";
     this.ach.event("runStart");
+    this.onLevelStart(this.level.level);
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
   // Multijugador local sin jefes: J1 en el carril de arriba (WASD) y J2 en el de abajo (flechas)
@@ -6500,10 +7506,16 @@ class Game {
     else this.jump();
   }
   roar() {
-    if (this.state !== "playing" || this.roarCd > 0) return;
-    const boss = this.bosses.boss;
-    this.roarCd = this.roarCdMax = this.mode.roarCooldown * (boss && boss.state === "fight" ? boss.roarCdMult : 1);   // algunos bosses se vencen a rugidos
-    this.roarWave = { t: 0, lane: this.player.logicalLane, style: roarStyle(this.skinId) };
+    if (this.state !== "playing") return;
+    const boss = this.bosses.boss, M = this.mounts.active;
+    if (this.fury.full && !this.bosses.active) return this.superRoar();   // con la furia llena: súper rugido
+    if (this.roarCd > 0) return;
+    if (this.stat("noRoar")) { this.sfx.denied(); this.floatText(this.player.laneT, this.player.x + 40, this.player.y + 100, "SOLO SÚPER RUGIDO", "#cccccc", 16); return; }
+    if (M && !M.canRoar()) { this.sfx.denied(); return; }
+    const cd = this.stat("roarNoCd") ? 0.35 : this.stat("roarCooldown");
+    this.roarCd = this.roarCdMax = cd * (boss && boss.state === "fight" ? boss.roarCdMult : 1);   // algunos bosses se vencen a rugidos
+    this.roarWave = { t: 0, lane: this.player.logicalLane, style: roarStyle(this.skinId), range: this.stat("roarRange"), both: !!this.stat("roarBothLanes"), back: !!this.stat("roarBack") };
+    if (this.stat("roarEcho")) this.echoT = 0.5;
     this.roarAnim = 0.6; this.addShake(0.35, 7); this.sfx.roar();
     const st = this.roarWave.style, pl = this.player;
     if (st) {   // rugido especial: chispas con los colores del skin
@@ -6514,6 +7526,39 @@ class Game {
     }
     this.run.lastRoar = this.distScore; this.ach.event("roar");
     if (this.bosses.boss) this.bosses.boss.onRoar(this.player.logicalLane);
+  }
+  // Súper rugido: destruye todos los obstáculos de la pantalla en los dos carriles (también cactus)
+  superRoar() {
+    if (!this.fury.use()) return;
+    const pl = this.player;
+    for (const o of this.obstacles) if (!o.dead && o.x < W + 60) this.destroy(o, true);
+    this.mounts.clearHazards(W + 60);
+    this.superWave = { t: 0 }; this.flashT = 0.35; this.addShake(0.6, 12); this.roarAnim = 0.6;
+    this.sfx.roar(); this.sfx.superRoar();
+    for (let i = 0; i < 40; i++) this.particles.push(new Particle(randInt(0, 1), pl.x + 60, pl.y + rand(10, 80), rand(200, 900), rand(-200, 400), rand(0.5, 1), choice(["#ff9a3c", "#ffd23f", "#ffffff", "#ff3b3b"]), rand(4, 8)));
+    const tb = this.stat("superRoarTurbo"); if (tb) { this.effects.turbo = this.effectMax.turbo = tb; }
+    this.floatText(pl.laneT, pl.x + 60, pl.y + 120, "¡SÚPER RUGIDO!", "#ff9a3c", 30);
+    this.ach.event("superRoar");
+  }
+  // Onda de rugido (principal o eco): destruye en su carril (o en los dos) por delante y, con Rugido doble, por detrás
+  roarHits(w, dt) {
+    const pl = this.player; w.t += dt;
+    const k = Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME), reach = pl.x + 70 + w.range * k, back = pl.x - w.range * 0.6 * k;
+    for (const o of this.obstacles) {
+      if (o.dead || (!w.both && o.lane !== w.lane)) continue;
+      if (!(o.destructible || (this.stat("roarCactus") && o.kind === "ground"))) continue;
+      if ((o.x < reach && o.x + o.w > pl.x) || (w.back && o.x + o.w > back && o.x < pl.x)) { this.destroy(o, true); this.fury.add(FURY_CONFIG.ROAR_KILL); }
+    }
+    this.mounts.roarHits(w, pl.x, reach);
+    if (this.bosses.boss) this.bosses.boss.roarWave(w, pl.x, reach);
+    return w.t <= CONFIG.ROAR_WAVE_TIME + 0.2;
+  }
+  // Aterrizar con caída rápida (Pisotón sísmico)
+  onStompLand(p) {
+    this.ach.event("stomp");
+    if (!this.stat("stompWave")) return;
+    for (const o of this.obstacles) if (!o.dead && o.lane === p.logicalLane && o.x < p.x + 200 && o.x + o.w > p.x - 40 && o.kind !== "flyer" && o.kind !== "stalactite" && o.h <= 70) this.destroy(o, true);
+    this.addShake(0.2, 6); this.puff(p.x + 40, 0, p.logicalLane, 20, "#ffe9a8"); this.sfx.stomp();
   }
   // Rugido de un raptor en multijugador (cada uno con su recarga)
   roarP(p) {
@@ -6561,14 +7606,34 @@ class Game {
       return true;
     }
     if (this.state !== "playing" || this.effects.turbo > 0 || this.grace > 0) return false;
+    if (this.tutorial) return this.tutorial.onHit();                                  // tutorial: los golpes solo hacen retroceder
+    if (this.stat("laneGhost") && pl.laneProgress < 1) return false;                  // Cambio fantasma
+    const M = this.mounts.active;
+    if (M && M.invulnerable) return false;
     this.bosses.hitTaken = true;
-    if (this.effects.shield > 0) { this.effects.shield = 0; this.grace = CONFIG.HIT_GRACE; this.sfx.shieldBreak(); this.addShake(0.2, 5); return false; }
+    if (this.effects.shield > 0) { this.effects.shield = 0; this.grace = CONFIG.HIT_GRACE * this.stat("graceMult"); this.sfx.shieldBreak(); this.addShake(0.2, 5); return false; }
+    if (M) { this.mounts.onHit(); return false; }                                     // montado: se pierde la montura, no la partida
+    if (this.bosses.phase === "fight" && this.bossHearts > 0) {                      // corazones extra en los combates
+      this.bossHearts--; this.grace = 1.5 * this.stat("graceMult"); this.sfx.lifeLost(); this.addShake(0.3, 6);
+      this.floatText(pl.laneT, pl.x + 30, pl.y + 90, "-1 ♥", "#ff6b6b", 24); this.ach.event("heartLost", { boss: true });
+      return false;
+    }
     if (this.lives > 1) {   // modo Fácil: se pierde una vida y hay unos segundos de invencibilidad
       this.lives--; this.grace = this.mode.hitInvuln; this.sfx.lifeLost(); this.addShake(0.3, 6);
       this.floatText(this.player.laneT, this.player.x + 30, this.player.y + 90, "-1 VIDA", "#ff6b6b", 22);
       this.ach.event("heartLost");
       return false;
     }
+    const b = this.build, second = this.stat("secondChance") > b.used.secondChance, resu = this.stat("resurrection") && !b.used.resurrection;
+    if (second || resu) {   // Segunda oportunidad / Resurrección (si tienes las dos, la segunda da +1 corazón en el siguiente jefe)
+      if (second) { b.used.secondChance++; if (resu) { b.used.resurrection = 1; this.pendingHeart++; } }
+      else b.used.resurrection = 1;
+      this.grace = 2 * this.stat("graceMult"); this.sfx.perfect(); this.addShake(0.4, 8); this.flashT = 0.3;
+      this.floatText(pl.laneT, pl.x + 30, pl.y + 100, second ? "¡SEGUNDA OPORTUNIDAD!" : "¡RESURRECCIÓN!", "#ffd23f", 22);
+      this.ach.event("revive");
+      return false;
+    }
+    this.deathCause = this.bosses.phase === "fight" ? BOSS_NAMES[this.bosses.pending.type] : (this.lastHitBy || "Obstáculo");
     this.lives = 0; this.gameOver(); return true;
   }
   floatText(laneT, x, y, text, color = "#ffffff", size = 22) { this.floaters.push({ laneT, x, y, text, color, size, t: 0 }); }
@@ -6581,11 +7646,20 @@ class Game {
       this.bossBanner = { t: 4, text: `¡HAS COMPLETADO LOS ${CONFIG.LEVELS.length} NIVELES!`, sub: "El viaje vuelve a empezar, más difícil", color: "#ffd23f" };
       this.sfx.jackpot();
     }
+    const it = this.versus ? 0 : this.stat("interest");   // mejora Interés
+    if (it > 0) { const n = Math.min(this.stat("interestCap"), Math.floor(this.runCoins * it)); if (n > 0) { this.addRunCoins(n); this.floatText(this.player.laneT, this.player.x + 40, this.player.y + 130, `INTERÉS +${n}`, "#ffd23f", 20); } }
     return this.eggsInLevel(level);
+  }
+  // Al empezar cada nivel (y la partida)
+  onLevelStart(level) {
+    const sh = this.versus ? 0 : this.stat("startShield");   // Escudo inicial
+    if (sh > 0) { this.effects.shield = this.effectMax.shield = sh; }
+    this.mounts.planLevel(level);
+    if (this.rogue) this.rogue.onLevelStart(level);
   }
   // Llamados por la clase Boss
   onBossDefeated(b) {
-    const B = this.bosses, id = BOSS_IDS[B.pending.type], coins = b.coins * this.mode.coinValue;
+    const B = this.bosses, id = BOSS_IDS[B.pending.type], coins = Math.round(b.coins * this.mode.coinValue * this.stat("bossCoinMult"));
     this.runCoins += coins; this.runBosses++;
     this.distance += CONFIG.BOSS_POINTS * CONFIG.PX_PER_POINT;
     const s = this.save.data;
@@ -6593,9 +7667,11 @@ class Game {
     B.defeatedRun.add(id); this.save.save();
     this.sfx.bossDefeat(); this.addShake(0.6, 10);
     this.bossBanner = { t: 2.5, text: "¡BOSS DERROTADO!", sub: `+${fmtNum(coins)} monedas · +${CONFIG.BOSS_POINTS} puntos`, color: "#ffd23f" };
-    this.ach.event("bossDefeated", { id, flawless: !B.hitTaken });
+    this.ach.event("bossDefeated", { id, flawless: !B.hitTaken, fury: b.fury, tier: B.pending.tier, time: b.fightT });
+    this.build.bossesBeaten++;
+    if (this.rogue) this.rogue.queue("boss", 2.6);   // tras la animación de victoria: ELIGE UNA MEJORA
   }
-  onBossRetreat() { this.bossBanner = { t: 2, text: "El boss se retira", sub: "Sin premio… ¡la próxima vez!", color: "#cccccc" }; }
+  onBossRetreat(b) { this.ach.event("bossLost", { id: BOSS_IDS[this.bosses.pending.type], time: b ? b.fightT : 0 }); this.bossBanner = { t: 2, text: "El boss se retira", sub: "Sin premio… ¡la próxima vez!", color: "#cccccc" }; }
   burst(lane, x, y, colors, n) {
     for (let i = 0; i < n; i++) this.particles.push(new Particle(Math.round(clamp(lane, 0, 1)), x + rand(-12, 12), y + rand(-12, 12), rand(-260, 260), rand(100, 460), rand(0.4, 0.8), choice(colors), rand(3, 6)));
   }
@@ -6604,6 +7680,7 @@ class Game {
     this.start(this.mode.id, 1);
     this.jumpToLevel(i + 1, 5);
     this.bosses.syncTo(i + 1);
+    this.mounts.reset(); this.onLevelStart(i + 1);
     this.run.biomes.add(this.level.biome.id);
     this.level.banner = CONFIG.LEVEL_BANNER_TIME;
   }
@@ -6620,14 +7697,16 @@ class Game {
     if (byRoar) this.ach.event("roarKill");
   }
   activate(pu) {
-    pu.taken = true; this.effects[pu.type] = this.effectMax[pu.type] = this.mode.powerupDur(pu.type); this.sfx.powerup();
+    const dur = this.mode.powerupDur(pu.type) * (this.versus ? 1 : this.stat("powerupDurMult") * (pu.type === "shield" ? this.stat("graceMult") : 1));
+    pu.taken = true; this.effects[pu.type] = this.effectMax[pu.type] = dur; this.sfx.powerup();
     this.puff(pu.x, pu.y, pu.lane, 14, POWERUPS[pu.type].color);
     this.run.lastPowerup = this.distScore; this.run.powerupTypes.add(pu.type);
     this.ach.event("powerup", { type: pu.type });
   }
   takeEgg(e, lane) {
     e.taken = true;
-    const value = CONFIG.EGG_VALUE * this.mode.coinValue, lvl = e.level || this.level.level;
+    const value = Math.round(CONFIG.EGG_VALUE * this.mode.coinValue * this.stat("eggMult")), lvl = e.level || this.level.level;
+    if (this.stat("eggFullFury")) this.fury.add(FURY_CONFIG.MAX); else this.fury.add(FURY_CONFIG.EGG);
     this.runCoins += value; this.runEggs++;
     this.run.eggs[lvl] = (this.run.eggs[lvl] || 0) + 1;
     this.sfx.egg();
@@ -6643,9 +7722,11 @@ class Game {
     const s = this.save.data, earned = this.runCoinsInt;
     s.coins += earned; s.eggWallet += this.runEggs;   // los huevos recogidos se gastan en la tienda de huevos
     if (this.versus) { this.save.save(); return; }   // en multijugador no hay récords ni logros
-    if (this.distScore > s.records[this.mode.id]) { s.records[this.mode.id] = this.distScore; this.newRecord = true; }
+    if (this.tutorial) { this.save.save(); return; }
+    if (this.score > s.records[this.mode.id]) { s.records[this.mode.id] = this.score; this.newRecord = true; }
     this.save.save();
-    this.ach.event("score", { score: this.distScore });
+    this.ach.event("score", { score: this.score });
+    this.ach.event("runEnd", { score: this.score });
     this.ach.event("coinsEarned", { n: earned });
     this.save.save();
   }
@@ -6695,19 +7776,24 @@ class Game {
     }
     this.grace = Math.max(0, this.grace - dt);
     this.roarCd = Math.max(0, this.roarCd - dt);
+    this.fury.update(dt);
+    if (this.superWave && (this.superWave.t += dt) > 0.7) this.superWave = null;
     this.roarAnim = Math.max(0, this.roarAnim - dt); this.flashT = Math.max(0, this.flashT - dt);
 
     const gdt = dt * (this.effects.slowmo > 0 ? CONFIG.SLOWMO_FACTOR : 1);   // tiempo de juego
     this.speed += (this.level.targetSpeed() - this.speed) * Math.min(1, gdt * CONFIG.SPEED_SMOOTHING);
     const sp = this.effectiveSpeed;
     this.distance += sp * gdt; this.scroll = this.distance;
+    const sm = this.versus ? 1 : this.stat("scoreMult"); if (sm !== 1) this.bonusScore += (sm - 1) * sp * gdt / CONFIG.PX_PER_POINT;
     for (const p of this.players) p.tickSkin(dt, sp * (gdt / Math.max(dt, 1e-6)));   // px nativos por tick (con cámara lenta y turbo)
 
     for (const p of this.players) {
       if (!p.dead) p.update(gdt);
       else { p.deadT += dt; p.x -= sp * gdt; }   // el raptor eliminado se queda atrás
     }
-    if (this.versus) { this.level.check(); this.spawner.update(); }   // multijugador: sin jefes
+    if (!this.versus) this.mounts.update(gdt, dt);
+    if (this.tutorial) { this.tutorial.update(gdt, dt); }
+    else if (this.versus) { this.level.check(); this.spawner.update(); }   // multijugador: sin jefes
     else if (!this.bosses.active) {
       this.level.check();                                    // durante un boss el cambio de nivel espera
       this.bosses.update(gdt, dt);                           // a mitad de nivel: "¡PELIGRO!" y llega el boss
@@ -6735,14 +7821,14 @@ class Game {
       if (w.t > CONFIG.ROAR_WAVE_TIME + 0.2) p.roarWave = null;
     }
     // Onda del rugido: destruye rocas y pájaros delante del raptor en su carril (no cactus ni estalactitas)
-    if (this.roarWave) {
-      const w = this.roarWave; w.t += dt;
-      const reach = this.player.x + 70 + CONFIG.ROAR_RANGE * Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME);
-      for (const o of this.obstacles)
-        if (!o.dead && o.destructible && o.lane === w.lane && o.x < reach && o.x + o.w > this.player.x) this.destroy(o, true);
-      if (this.bosses.boss) this.bosses.boss.roarWave(w, this.player.x, reach);
-      if (w.t > CONFIG.ROAR_WAVE_TIME + 0.2) this.roarWave = null;
+    if (this.roarWave && !this.roarHits(this.roarWave, dt)) this.roarWave = null;
+    if (this.echoT > 0 && (this.echoT -= dt) <= 0 && this.state === "playing") {   // Eco: se repite con la mitad de alcance
+      const w0 = this.roarWave || {};
+      this.echoWave = { t: 0, lane: this.player.logicalLane, style: roarStyle(this.skinId), range: this.stat("roarRange") / 2, both: !!this.stat("roarBothLanes"), back: !!this.stat("roarEchoBack"), echo: true };
+      this.sfx.roar();
     }
+    if (this.echoWave && !this.roarHits(this.echoWave, dt)) this.echoWave = null;
+    if (!this.versus) this.updatePerks(dt, gdt);
 
     if (this.versus) { for (const p of this.players) if (!p.dead && this.state === "playing") this.checkCollisions(p); }
     else this.checkCollisions();
@@ -6751,7 +7837,30 @@ class Game {
     this.coinsArr = this.coinsArr.filter(c => !c.taken && c.x > DESPAWN_X);
     this.powerups = this.powerups.filter(p => !p.taken && p.x > DESPAWN_X);
     this.eggs = this.eggs.filter(e => !e.taken && e.x > DESPAWN_X);
-    if ((this.scoreT -= dt) <= 0) { this.scoreT = 0.25; this.ach.event("score", { score: this.distScore }); }
+    if ((this.scoreT -= dt) <= 0) { this.scoreT = 0.25; this.ach.event("score", { score: this.score }); }
+  }
+  // Efectos de mejoras con estado propio: Raptor del tiempo, Manada fantasma, Nido seguro
+  updatePerks(dt, gdt) {
+    const pl = this.player;
+    if (this.stat("timeRaptor")) {
+      this.timeCd = Math.max(0, this.timeCd - dt);
+      if (this.timeCd <= 0 && this.effects.slowmo <= 0 && this.grace <= 0) {
+        const boxes = pl.hitboxes(), ahead = this.effectiveSpeed * 0.16;
+        for (const o of this.obstacles) {
+          if (o.dead || o.lane !== pl.logicalLane) continue;
+          const hb = o.hitbox(), moved = { x: hb.x - ahead, y: hb.y, w: hb.w + ahead, h: hb.h };
+          if (hb.x > pl.x + 10 && boxes.some(a => overlap(a, moved))) { this.effects.slowmo = this.effectMax.slowmo = 1; this.timeCd = 10; this.floatText(pl.laneT, pl.x + 40, pl.y + 110, "¡RAPTOR DEL TIEMPO!", "#9b5cff", 18); break; }
+        }
+      }
+    }
+    if (this.stat("ghostPack")) for (const gh of this.ghosts) {
+      gh.cd = Math.max(0, gh.cd - dt);
+      if (gh.cd > 0) continue;
+      const gx = pl.x + gh.x;
+      for (const o of this.obstacles) if (!o.dead && o.lane === pl.logicalLane && o.x < gx + 40 && o.x + o.w > gx) { this.destroy(o, true); gh.cd = 5; break; }
+    }
+    if (this.stat("eggSafe")) for (const e of this.eggs) if (!e.taken && !e.returned && e.x < pl.x - 40) { e.returned = true; e.x = pl.x + this.effectiveSpeed * 2; }   // Nido seguro: el huevo vuelve 2 s después
+    if (this.rogue) this.rogue.update(dt);
   }
   updateParticles(dt) {
     for (const p of this.particles) p.update(dt);
@@ -6786,23 +7895,38 @@ class Game {
           const gap = Math.max(a.y - (hb.y + hb.h), hb.y - (a.y + a.h));
           o.minGap = Math.min(o.minGap == null ? Infinity : o.minGap, gap);
         }
-        if (!o.passed && hb.x + hb.w < boxes[0].x) { o.passed = true; if (o.minGap != null && o.minGap >= 0 && o.minGap < 5) this.ach.event("closeCall"); }
+        if (!o.passed && hb.x + hb.w < boxes[0].x) {
+          o.passed = true;
+          if (pl.mount) pl.mount.onPass(o);
+          if (o.minGap != null && o.minGap >= 0 && o.minGap < FURY_CONFIG.NEAR_MISS_PX) {   // esquiva por los pelos
+            this.fury.add(FURY_CONFIG.NEAR_MISS); this.ach.event("nearMiss");
+            const inv = this.versus ? 0 : this.stat("nearMissInvuln"); if (inv) this.grace = Math.max(this.grace, inv);
+            if (o.minGap < 5) this.ach.event("closeCall");
+          }
+        }
         continue;
       }
       o.passed = true; o.minGap = null;
       if (this.effects.turbo > 0) { this.destroy(o); this.addShake(0.15, 4); continue; }
+      const M = pl.mount;
+      if (M && M.passesThrough(o)) { o.ghosted = true; continue; }
+      if (M && M.destroys(o)) { M.onDestroy(o); this.destroy(o); continue; }
       if (this.grace > 0) continue;
+      this.lastHitBy = obstacleCause(o);
       if (this.hitPlayer(pl)) return;
       this.destroy(o);   // el escudo o la vida perdida rompen el obstáculo
     }
     if (!this.versus && this.bosses.boss && this.bosses.boss.collide(pl)) return;
+    if (!this.versus && this.mounts.collide(pl, boxes)) return;
     const c0 = pl.center;
     for (const c of this.coinsArr) {
       if (c.taken) continue;
-      if (this.effects.magnet > 0 && !c.magnet && Math.hypot(c.x - c0.x, c.y - c0.y) < CONFIG.MAGNET_RADIUS && c.x > pl.x - 20) c.magnet = true;
+      const mr = this.versus ? (this.effects.magnet > 0 ? CONFIG.MAGNET_RADIUS : 0) : this.stat("midas") ? 0 : this.effects.magnet > 0 ? CONFIG.MAGNET_RADIUS : this.stat("naturalMagnet");
+      if (mr > 0 && !c.magnet && Math.hypot(c.x - c0.x, c.y - c0.y) < mr && c.x > pl.x - 20) c.magnet = true;
       const got = c.magnet ? Math.hypot(c.x - c0.x, c.y - c0.y) < 26 : (c.lane === lane && hits(c.hitbox()));
       if (got) {
-        c.taken = true; this.runCoins += this.mode.coinValue; pl.coins += this.mode.coinValue; this.sfx.coin();
+        const v = this.versus ? this.mode.coinValue : this.coinValue;
+        c.taken = true; this.runCoins += v; pl.coins += v; this.sfx.coin();
         for (let i = 0; i < 6; i++) this.particles.push(new Particle(lane, c.x, c.y, rand(-120, 120), rand(60, 260), 0.4, choice(["#ffe27a", "#fff3b0", "#f7c948"]), rand(2, 4), 900));
         this.ach.event("coinCollected");
       }
@@ -6819,6 +7943,7 @@ class Game {
     c.save();
     if (this.shake > 0) { const m = this.shakeMag * clamp(this.shake / (this.shakeDur || 1), 0, 1); c.translate(rand(-m, m), rand(-m, m)); }
     this.level.drawBackground(c);
+    this.mounts.drawWater(c);   // río o mar de las monturas de agua
     const boss = this.bosses.boss;
     if (boss) boss.drawSky(c);
     this.drawLane(c, 0);
@@ -6874,6 +7999,10 @@ class Game {
     for (const e of this.eggs) if (e.lane === lane) this.drawEntity(c, lane, e.x, () => e.draw(c));
     for (const h of this.hatches) if (h.lane === lane) this.drawEntity(c, lane, h.x, () => drawEggHalves(c, 0, -h.y, h.t / 0.8, 3));
     if (boss) boss.drawLayer(c, lane);
+    if (!this.versus) this.mounts.drawLane(c, lane);
+    if (!this.versus && lane === this.player.logicalLane && this.stat("ghostPack")) for (const gh of this.ghosts) {   // Manada fantasma
+      const pl = this.player; SE.drawSprite(c, this.skinId, "run", Math.round((pl.x + gh.x) / 3), Math.round(-SE.H), 3, this.player.skinState.tick, { tint: "#bfe8ff", alpha: gh.cd > 0 ? 0.12 : 0.35, });
+    }
     for (const p of this.players) if ((p.laneT < 0.5 ? 0 : 1) === lane) this.drawEntity(c, p.laneT, p.x, () => p.draw(c));
     const pl = this.player;
     c.save(); applyLane(c, lane);
@@ -6884,13 +8013,20 @@ class Game {
       const prog = Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME), alpha = 1 - clamp((w.t - CONFIG.ROAR_WAVE_TIME * 0.6) / 0.35, 0, 1);
       drawRoarFx(c, w.style, p.x + 66, -(p.y + (p.sliding ? 18 : 42)), (CONFIG.ROAR_RANGE + 20) * prog, alpha, this.time);
     }
-    const w = this.versus ? null : this.roarWave;
-    if (w && w.lane === lane) {
+    for (const w of this.versus ? [] : [this.roarWave, this.echoWave]) if (w && (w.lane === lane || w.both)) {
       const prog = Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME), alpha = 1 - clamp((w.t - CONFIG.ROAR_WAVE_TIME * 0.6) / 0.35, 0, 1);
       const ox = pl.x + 66, oy = -(pl.y + (pl.sliding ? 18 : 42));
       if (w.style && w.style.type === "ghost")   // rugido espectral: ecos del raptor avanzan con la onda
         for (let k = 1; k <= 3; k++) SE.drawSprite(c, this.skinId, "jump", Math.round((pl.x + prog * 90 * k) / 3), Math.round(-SE.H - pl.y / 3), 3, 0, { tint: w.style.colors[k % 3], alpha: alpha * 0.35 });
-      drawRoarFx(c, w.style, ox, oy, (CONFIG.ROAR_RANGE + 20) * prog, alpha, this.time);
+      drawRoarFx(c, w.style, ox, oy, ((w.range || CONFIG.ROAR_RANGE) + 20) * prog, alpha * (w.echo ? 0.6 : 1), this.time);
+      if (w.back) { c.save(); c.translate(pl.x + 10, oy); c.scale(-1, 1); drawRoarFx(c, null, 0, 0, (w.range || CONFIG.ROAR_RANGE) * 0.6 * prog, alpha * 0.5, this.time); c.restore(); }
+    }
+    if (this.superWave) {   // súper rugido: onda que barre toda la pantalla
+      const k = this.superWave.t / 0.7, r = k * (W + 200);
+      c.strokeStyle = `rgba(255,154,60,${1 - k})`; c.lineWidth = 14 * (1 - k) + 2;
+      c.beginPath(); c.arc(pl.x + 60, -(pl.y + 40), r, -Math.PI / 2, Math.PI / 2); c.stroke();
+      c.strokeStyle = `rgba(255,255,255,${(1 - k) * 0.7})`; c.lineWidth = 3;
+      c.beginPath(); c.arc(pl.x + 60, -(pl.y + 40), r * 0.85, -Math.PI / 2, Math.PI / 2); c.stroke();
     }
     c.restore();
   }
@@ -6915,8 +8051,10 @@ addEventListener("keydown", e => {
   if ("wasde".includes(k) && k.length === 1) e.preventDefault();
   if (k.startsWith("Arrow") && ["playing", "paused"].includes(st)) e.preventDefault();   // las flechas no mueven la página
   if (k === "s") game.player.downHeld = true;
+  if (k === "w") game.player.upHeld = true;   // planeo y monturas (roca de lava, seta)
   if (k === "ArrowDown") game.p2.downHeld = true;
   if (e.repeat) return;
+  if (DEBUG && k === "m" && st === "playing" && !game.versus) { game.mounts.debugGive(e.shiftKey); return; }   // M: montura del bioma · Mayús+M: recorre las 10
   if (k === "m") { game.toggleMute(); return; }
   if (game.manual.visible) {
     if (k === "Escape") game.manual.close();
@@ -6967,7 +8105,7 @@ addEventListener("keydown", e => {
     }
   }
 });
-addEventListener("keyup", e => { const k = keyOf(e); if (k === "s") game.player.downHeld = false; if (k === "ArrowDown") game.p2.downHeld = false; });
+addEventListener("keyup", e => { const k = keyOf(e); if (k === "s") game.player.downHeld = false; if (k === "w") game.player.upHeld = false; if (k === "ArrowDown") game.p2.downHeld = false; });
 
 // Gestos: tocar = saltar, deslizar ↓ = deslizarse / caída rápida
 let touch = null;
@@ -6978,7 +8116,7 @@ document.addEventListener("touchstart", e => {
   if (inUI(e)) return;
   if (game.state !== "playing" && game.state !== "paused") return;
   e.preventDefault(); game.sfx.unlock();
-  touch = { y: e.touches[0].clientY, done: false };
+  touch = { y: e.touches[0].clientY, done: false }; game.player.upHeld = true;
 }, { passive: false });
 document.addEventListener("touchmove", e => {
   if (!touch || touch.done || inUI(e)) return;
@@ -6991,7 +8129,7 @@ document.addEventListener("touchend", e => {
   if (!touch) return;
   if (e.touches.length === 0) {
     if (!touch.done) game.primary();   // toque simple = saltar
-    touch = null; game.player.downHeld = false;
+    touch = null; game.player.downHeld = false; game.player.upHeld = false;
   }
 });
 document.getElementById("stage").addEventListener("mousedown", () => { if (!game.touchMode) game.primary(); });
