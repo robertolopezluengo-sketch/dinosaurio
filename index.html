@@ -442,6 +442,27 @@
   .st-skin { display: flex; gap: 14px; align-items: center; } .st-skin canvas { image-rendering: pixelated; border: 2px solid var(--line); }
   .st-skin b { font-family: var(--f-title); font-weight: 400; font-size: 20px; color: var(--weak); display: block; } .st-skin small { color: var(--text-dim); }
   #stBody { overflow-x: auto; }
+  /* Árbol de mejoras */
+  .card.tree { max-width: 960px; }
+  .tree-box { position: relative; height: 480px; margin: 10px 0; background: #14101f; border: 2px solid var(--line); overflow: hidden; }
+  #treeLines { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .tnode { --bc: var(--go); position: absolute; transform: translateX(-50%); width: 190px; max-width: 23%; height: 62px; display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto; column-gap: 6px; align-items: center; text-align: left;
+    background: var(--surface-2); border: 3px solid #3d3160; box-shadow: 0 0 0 2px var(--line), 3px 3px 0 2px var(--line); padding: 4px 6px; cursor: pointer; color: var(--text); }
+  .tnode canvas { grid-row: span 2; width: 24px; height: 24px; image-rendering: pixelated; }
+  .tnode b { font-family: var(--f-title); font-weight: 400; font-size: 10px; line-height: 13px; overflow: hidden; }
+  .tnode small { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+  .tnode.some { border-color: var(--bc); } .tnode.max { border-color: var(--bc); background: var(--surface-3); }
+  .tnode.max small { color: var(--bc); }
+  .tnode.locked { opacity: .55; } .tnode.afford { animation: synpulse 1.2s ease-in-out infinite; }
+  .tnode.sel { outline: 2px solid var(--weak); outline-offset: 3px; }
+  .tree-info { text-align: left; min-height: 96px; background: var(--surface-2); border: 2px solid var(--line); padding: 8px 12px; }
+  .tree-info h3 { margin: 0 0 4px; } .tree-info h3 small { color: var(--text-dim); font-family: var(--f-text); }
+  .tree-info p { margin: 0; font-size: 15px; line-height: 20px; }
+  .tree-info .actions { justify-content: flex-start; align-items: center; margin: 8px 0 0; }
+  .tree-info .btn { font-size: 10px; line-height: 10px; padding: 10px 12px 12px; min-width: 0; }
+  .fossil-ico { width: 16px; height: 16px; image-rendering: pixelated; vertical-align: -2px; }
+  .over-fossils { font-family: var(--f-title); font-size: 10px; color: #ffb02e; margin: 0 0 8px; } .over-fossils small { font-family: var(--f-text); color: var(--text-dim); }
+  @media (max-width: 640px) { .tnode { width: 23%; grid-template-columns: 1fr; height: 70px; } .tnode canvas { display: none; } .tnode small { white-space: normal; } }
 </style>
 </head>
 <body>
@@ -472,6 +493,7 @@
       <div><small>HUEVOS</small><b><span class="egg-ico"></span> <span id="menuEggs">0</span></b></div>
       <div><small>SKIN</small><b id="menuSkin">—</b></div>
       <div><small>LOGROS</small><b id="menuAch">0</b></div>
+      <div><small>FÓSILES</small><b id="menuFossils">0</b></div>
     </div>
     <div class="actions">
       <button class="btn primary" id="btnPlay">► Jugar</button>
@@ -480,6 +502,7 @@
       <button class="btn" id="btnAch">🏆 Logros</button>
       <button class="btn" id="btnAlbum">📖 Álbum</button>
       <button class="btn" id="btnMenuHistory">Historial</button>
+      <button class="btn gold" id="btnTree">🌳 Árbol</button>
       <button class="btn" id="btnStats">📊 Estadísticas</button>
       <button class="btn" id="btnBackup">💾 Guardar / Cargar</button>
       <button class="btn" id="btnManual">Manual</button>
@@ -608,6 +631,7 @@
     </div>
     </div>
     <div class="over-ach" id="overAchList"></div>
+    <div id="overFossils" class="over-fossils"></div>
     <div id="overBuild" class="build-box"></div>
     <div class="actions">
       <button class="btn primary" id="btnRetry">↻ Reintentar</button>
@@ -648,6 +672,17 @@
       <div class="actions"><button class="btn primary" id="bkConfirm">Sí, cargar este progreso</button><button class="btn" id="bkCancel">Cancelar</button></div></div>
     <p id="bkMsg" class="bk-msg"></p>
     <div class="actions"><button class="btn ghost hidden" id="bkUndo">↶ Restaurar el guardado anterior</button></div>
+  </div>
+</div>
+
+<!-- Árbol de mejoras permanentes -->
+<div id="tree" class="overlay hidden">
+  <div class="card achs tree">
+    <div class="shop-head"><h2>Árbol de mejoras</h2><div class="wallet" id="treeFossils">0</div><button class="btn" id="treeBack">← Volver</button></div>
+    <p class="touch-hint">Mejoras permanentes que se aplican al empezar cada partida (no en el multijugador). Se pagan con <b>fósiles</b>: los ganas al acabar cada partida completando niveles, derrotando jefes, activando sinergias y batiendo tu récord. Un nodo se desbloquea cuando el anterior de su rama tiene nivel 1.</p>
+    <div id="treeBox" class="tree-box"><canvas id="treeLines"></canvas></div>
+    <div id="treeInfo" class="tree-info"></div>
+    <div class="actions"><button class="btn ghost" id="treeReset">Reiniciar árbol</button></div>
   </div>
 </div>
 
@@ -1143,13 +1178,17 @@ const ACHIEVEMENTS = [
   { id: "alma-vendida", cat: "roguelike", name: "Alma vendida", desc: "Llega al nivel 5 con 2 pactos activos", reward: 400 },
   { id: "leyenda-viviente", cat: "roguelike", name: "Leyenda viviente", desc: "Ten 3 mejoras Legendarias a la vez", reward: 800 },
   { id: "asceta", cat: "roguelike", name: "Asceta", desc: "Derrota a 3 jefes saltando todas las elecciones", reward: 300 },
+  // Árbol
+  { id: "primera-raiz", cat: "arbol", name: "Primera raíz", desc: "Compra tu primer nodo del árbol", reward: 50 },
+  { id: "rama-completa", cat: "arbol", name: "Rama completa", desc: "Completa una rama entera del árbol", reward: 300 },
+  { id: "arbol-milenario", cat: "arbol", name: "Árbol milenario", desc: "Completa el árbol", reward: 1500 },
   // Secretos
   { id: "por-los-pelos", cat: "secretos", secret: true, name: "Por los pelos", desc: "Esquiva un obstáculo a menos de 5 px", reward: 100 },
   { id: "todo-o-nada", cat: "secretos", secret: true, name: "Todo o nada", desc: "Apuesta el máximo en la ruleta y gana", reward: 150 },
   { id: "constancia", cat: "secretos", secret: true, name: "Constancia", desc: "Juega 100 partidas", reward: 300, goal: 100, stat: "games" },
   { id: "raptor-completo", cat: "secretos", secret: true, name: "Raptor completo", desc: "Consigue todos los demás logros", reward: 5000, skin: "fosil-legendario" },
 ];
-const ACH_CATS = { carrera: "Carrera", jefes: "Jefes", habilidad: "Habilidad", coleccion: "Colección", ruleta: "Ruleta", modos: "Modos", monturas: "Monturas", roguelike: "Roguelike", secretos: "Secretos" };
+const ACH_CATS = { carrera: "Carrera", jefes: "Jefes", habilidad: "Habilidad", coleccion: "Colección", ruleta: "Ruleta", modos: "Modos", monturas: "Monturas", roguelike: "Roguelike", arbol: "Árbol", secretos: "Secretos" };
 
 // Skins exclusivos de logros (mismo formato que SKINS_DATA, reutilizando sprites del kit)
 const EXCLUSIVE_SKINS = [
@@ -6070,6 +6109,7 @@ class UI {
     bind("btnAlbum", () => game.openAlbum());
     bind("btnBackup", () => game.openBackup());
     bind("btnStats", () => game.openStats());
+    bind("btnTree", () => game.openTree());
     bind("btnHistory", () => game.openHistory("over"));
     bind("btnMenuHistory", () => game.openHistory("menu"));
     bind("btnManual", () => game.openManual("menu"));
@@ -6099,6 +6139,7 @@ class UI {
     this.$("menuHiN").textContent = s.records.normal; this.$("menuHiE").textContent = s.records.easy; this.$("menuHiH").textContent = s.records.hard;
     this.$("menuCoins").textContent = s.coins; this.$("menuEggs").textContent = s.eggWallet; this.$("menuSkin").textContent = sk ? sk.name : "—";
     this.$("menuAch").textContent = `${g.ach.unlockedCount}/${ACHIEVEMENTS.length}`;
+    this.$("menuFossils").textContent = s.fossils;
     this.$("debugHint").classList.toggle("hidden", !DEBUG);
     this.$("bkRemind").classList.toggle("hidden", !g.backup.needsReminder());
     this.hideAll(); this.menu.classList.remove("hidden");
@@ -6138,7 +6179,7 @@ class UI {
     const g = this.game, s = g.save.data;
     this.$("overSolo").classList.toggle("hidden", g.versus); this.$("overVs").classList.toggle("hidden", !g.versus);
     this.$("overAchList").classList.toggle("hidden", g.versus);
-    this.$("overBuild").classList.toggle("hidden", g.versus); this.$("btnHistory").classList.toggle("hidden", g.versus);
+    this.$("overBuild").classList.toggle("hidden", g.versus); this.$("overFossils").classList.toggle("hidden", g.versus); this.$("btnHistory").classList.toggle("hidden", g.versus);
     if (g.versus) {   // resultado del multijugador
       const [a, b] = [g.player, g.p2], win = a.score === b.score ? 0 : a.score > b.score ? 1 : 2;
       this.$("overTitle").textContent = win ? `¡GANA EL JUGADOR ${win}!` : "¡EMPATE!";
@@ -6150,6 +6191,9 @@ class UI {
     }
     this.$("overTitle").textContent = "GAME OVER"; this.$("overTitle").style.color = "";
     this.$("overScore").textContent = g.score;
+    const F = g.runFossils, of = this.$("overFossils");
+    of.innerHTML = F && F.total ? `${fossilHtml()} +${F.total} fósiles <small>(${F.lines.map(([t, n]) => `${t} ${n >= 0 ? "+" : ""}${n}`).join(" · ")})</small>` : `${fossilHtml()} Sin fósiles esta vez <small>(completa niveles y derrota jefes)</small>`;
+    paintFossils(of);
     const ob = this.$("overBuild"); ob.innerHTML = `<h3>Build final</h3><div class="build-row">${buildIconsHtml(g.build)}</div>`; paintBuildIcons(ob); this.$("overLevel").textContent = g.level.level;
     this.$("overCoins").textContent = g.runCoinsInt; this.$("overWallet").textContent = s.coins; this.$("overHi").textContent = s.records[g.mode.id];
     this.$("overRecord").classList.toggle("hidden", !g.newRecord);
@@ -6857,7 +6901,10 @@ class Roulette {
     this.refresh();
   }
   today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-  get freeAvailable() { return this.game.save.data.lastFreeSpin !== this.today(); }
+  get dailyAvailable() { return this.game.save.data.lastFreeSpin !== this.today(); }
+  // Árbol (Racha de suerte): un giro gratis extra cada semana
+  get weeklyAvailable() { const w = this.game.save.data.lastWeeklySpin; return !!this.game.stat("weeklySpin") && (!w || Date.now() - new Date(w).getTime() >= 7 * 864e5); }
+  get freeAvailable() { return this.dailyAvailable || this.weeklyAvailable; }
   refresh() {
     const d = this.game.save.data, MIN = CONFIG.ROULETTE_MIN_BET;
     this.bet = clamp(this.bet, MIN, Math.max(MIN, this.maxBet()));
@@ -6870,7 +6917,8 @@ class Roulette {
     this.updateFreeInfo();
   }
   updateFreeInfo() {
-    if (this.freeAvailable) { this.freeInfo.textContent = "¡Tienes un giro gratis disponible hoy!"; return; }
+    if (this.dailyAvailable) { this.freeInfo.textContent = "¡Tienes un giro gratis disponible hoy!" + (this.weeklyAvailable ? " (y el semanal de Racha de suerte)" : ""); return; }
+    if (this.weeklyAvailable) { this.freeInfo.textContent = "¡Giro gratis semanal de Racha de suerte disponible!"; return; }
     const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), sec = Math.max(0, Math.floor((next - now) / 1000));
     const hh = String(Math.floor(sec / 3600)).padStart(2, "0"), mm = String(Math.floor(sec / 60) % 60).padStart(2, "0"), ss = String(sec % 60).padStart(2, "0");
     this.freeInfo.textContent = `Próximo giro gratis en ${hh}:${mm}:${ss}`;
@@ -6892,7 +6940,8 @@ class Roulette {
   freeSpin() {
     const g = this.game;
     if (this.spinning || !this.freeAvailable) return;
-    g.sfx.unlock(); g.save.data.lastFreeSpin = this.today(); g.save.save(); this.wheel = "free";
+    if (this.dailyAvailable) g.save.data.lastFreeSpin = this.today(); else g.save.data.lastWeeklySpin = new Date().toISOString();
+    g.sfx.unlock(); g.save.save(); this.wheel = "free";
     g.ach.event("freeSpin");
     const prize = this.pick(CONFIG.FREE_SPIN_PRIZES), value = prize.skin ? "skin" : prize.coins;
     this.msg.textContent = "Giro gratis…"; this.msg.className = "r-msg";
@@ -6993,9 +7042,10 @@ const ACH_ICONS = {   // iconos pixel art 8 × 8 por categoría (o = contorno, a
   modos:     [".oo..oo.", "oaaooaao", "oabaaaao", "oaaaaaao", ".oaaaao.", "..oaao..", "...oo...", "........"],
   monturas:  ["........", "....oo..", "...oaao.", "oooaaaao", "oaaaabao", "oaaaaaao", ".oo..oo.", ".oo..oo."],
   roguelike: ["..oooo..", ".oaaaao.", "oaoaaoao", "oaaaaaao", "oaobboao", ".oaaaao.", "..oaao..", "...oo..."],
+  arbol:     ["...oo...", "..oaao..", ".oaaaao.", "oaabaaao", ".oaaaao.", "...oo...", "...oo...", "..oooo.."],
   secretos:  ["..oooo..", ".oaaaao.", ".oo..oao", "....oao.", "...oao..", "...oo...", "........", "...oo..."],
 };
-const ACH_COLORS = { carrera: "#9be07a", jefes: "#ff6b6b", habilidad: "#41b8ff", coleccion: "#ffd23f", ruleta: "#c9a6ff", modos: "#ff9de6", monturas: "#7df9ff", roguelike: "#ffb938", secretos: "#ff8a3d" };
+const ACH_COLORS = { carrera: "#9be07a", jefes: "#ff6b6b", habilidad: "#41b8ff", coleccion: "#ffd23f", ruleta: "#c9a6ff", modos: "#ff9de6", monturas: "#7df9ff", roguelike: "#ffb938", arbol: "#5fd15a", secretos: "#ff8a3d" };
 function drawAchIcon(c, cat, sc) {
   const rows = ACH_ICONS[cat], col = ACH_COLORS[cat];
   rows.forEach((r, y) => { for (let x = 0; x < 8; x++) { const ch = r[x]; if (ch === ".") continue;
@@ -7111,6 +7161,7 @@ class AchievementManager {
       case "mountEnd": this.add("mountsClean"); break;
       case "meteorPerfectJump": this.add("meteorPerfect"); break;
       case "boardTrick": this.add("boardTricks"); break;
+      case "treeBuy": this.unlock("primera-raiz"); if (d.complete >= 1) this.unlock("rama-completa"); if (d.all) this.unlock("arbol-milenario"); break;
       case "upgradePicked":
         this.add("upgradesPicked"); this.max("upgradeTypes", d.distinct);
         if (d.legends >= 3) this.unlock("leyenda-viviente");
@@ -8208,6 +8259,126 @@ class StatsManager {
 }
 function SK0(st) { const e = Object.entries(st.o("skins")).sort((a, b) => b[1] - a[1])[0]; return e && SkinCatalog.exists(e[0]) ? e[0] : null; }
 
+// =====================================================================
+//  SkillTree: árbol de mejoras permanentes pagado con fósiles (save.data.tree / save.data.fossils).
+//  Sus efectos entran en la partida por el mismo game.stat() del roguelike (RunBuild.sources), sin código aparte.
+// =====================================================================
+const TREE_ICON = { superv: "def", poder: "roar", fortuna: "eco", destino: "legend" };
+// Hueso de ámbar (icono de los fósiles) en pixel art
+const FOSSIL_ICON = ["oo....oo", "oaooooao", ".oaaaao.", "..obao..", "..oaao..", ".oaaaao.", "oaooooao", "oo....oo"];
+function drawFossil(c, x, y, sc) { FOSSIL_ICON.forEach((r, j) => { for (let i = 0; i < 8; i++) { const ch = r[i]; if (ch === ".") continue; c.fillStyle = ch === "o" ? "#16111f" : ch === "b" ? "#fff3c4" : "#ffb02e"; c.fillRect(x + i * sc, y + j * sc, sc, sc); } }); }
+const fossilHtml = () => `<canvas class="fossil-ico" width="16" height="16" data-fossil="1"></canvas>`;
+function paintFossils(root) { root.querySelectorAll("canvas[data-fossil]").forEach(cv => drawFossil(cv.getContext("2d"), 0, 0, 2)); }
+
+class SkillTree {
+  constructor(game) {
+    this.g = game; this.resetArm = 0;
+    const $ = id => document.getElementById(id);
+    this.el = $("tree"); this.box = $("treeBox"); this.lines = $("treeLines"); this.info = $("treeInfo"); this.walletEl = $("treeFossils"); this.resetBtn = $("treeReset");
+    $("treeBack").addEventListener("click", e => { e.currentTarget.blur(); game.sfx.click(); this.close(); });
+    this.resetBtn.addEventListener("click", e => { e.currentTarget.blur(); this.resetClick(); });
+  }
+  get d() { return this.g.save.data; }
+  level(id) { return this.d.tree[id] || 0; }
+  node(id) { return TREE_NODES.find(n => n.id === id); }
+  // Un nodo se puede comprar si el anterior de su rama tiene al menos nivel 1 (el primero cuelga de la Raíz, gratis)
+  reachable(n) { const br = TREE_CONFIG.branches.find(b => b.id === n.branch); return n.index === 0 || this.level(br.nodes[n.index - 1].id) >= 1; }
+  cost(n) { const l = this.level(n.id); return l >= n.max ? null : n.cost[l]; }
+  spent() { let s = 0; for (const n of TREE_NODES) for (let i = 0; i < this.level(n.id); i++) s += n.cost[i]; return s; }
+  get total() { return TREE_NODES.reduce((s, n) => s + n.cost.reduce((a, b) => a + b, 0), 0); }
+  buy(id) {
+    const g = this.g, n = this.node(id), c = this.cost(n);
+    if (c == null || !this.reachable(n) || this.d.fossils < c) { g.sfx.denied(); return false; }
+    this.d.fossils -= c; this.d.tree[id] = this.level(id) + 1; g.save.save(); g.sfx.buy();
+    g.build.cache = {};   // los stats del árbol cambian
+    g.ach.event("treeBuy", { complete: this.completeBranches(), all: TREE_NODES.every(x => this.level(x.id) >= x.max) });
+    this.render(id); return true;
+  }
+  completeBranches() { return TREE_CONFIG.branches.filter(b => b.nodes.every(n => this.level(n.id) >= n.max)).length; }
+  resetCost() { return this.d.treeResets ? TREE_CONFIG.RESET_COST : 0; }
+  resetClick() {
+    const g = this.g, spent = this.spent(), cost = this.resetCost();
+    if (!spent) { g.sfx.denied(); return; }
+    if (this.d.coins < cost) { g.sfx.denied(); this.say(`Necesitas ${cost} monedas para reiniciar el árbol.`); return; }
+    if (++this.resetArm < 2) { this.resetBtn.textContent = `¿Seguro? Recuperas ${spent} fósiles${cost ? ` por ${cost} monedas` : " (gratis)"}`; g.sfx.denied(); return; }
+    this.d.coins -= cost; this.d.fossils += spent; this.d.tree = {}; this.d.treeResets++; this.resetArm = 0;
+    if (cost) g.ach.event("coinsSpent", { n: cost, on: "shop" });
+    g.save.save(); g.build.cache = {}; g.sfx.shieldBreak(); this.render(); this.say(`Árbol reiniciado: +${spent} fósiles.`);
+  }
+  say(t) { this.info.innerHTML = `<p>${t}</p>`; }
+  open() { this.resetArm = 0; this.el.classList.remove("hidden"); this.render(); }
+  close() { this.el.classList.add("hidden"); this.g.showMenu(); }
+  get visible() { return !this.el.classList.contains("hidden"); }
+  // Raíz abajo en el centro y 4 ramas hacia arriba; las líneas se dibujan en un canvas detrás de los nodos
+  render(focus) {
+    const d = this.d;
+    this.walletEl.innerHTML = `${fossilHtml()} ${d.fossils} fósiles`;
+    this.resetBtn.textContent = this.resetCost() ? `Reiniciar árbol (${TREE_CONFIG.RESET_COST} monedas)` : "Reiniciar árbol (gratis la primera vez)";
+    this.box.querySelectorAll(".tnode").forEach(e => e.remove());
+    const cols = TREE_CONFIG.branches.length;
+    TREE_CONFIG.branches.forEach((br, bi) => {
+      br.nodes.forEach((n, i) => {
+        const l = this.level(n.id), c = this.cost(n), ok = this.reachable(n), max = l >= n.max;
+        const el = document.createElement("button");
+        el.className = "tnode" + (max ? " max" : l ? " some" : "") + (ok ? "" : " locked") + (c != null && ok && d.fossils >= c ? " afford" : "");
+        el.style.setProperty("--bc", br.color); el.style.left = `${(bi + 0.5) / cols * 100}%`; el.style.bottom = `${88 + i * 92}px`;
+        el.innerHTML = `<canvas width="24" height="24"></canvas><b>${n.name}</b><small>Nv ${l}/${n.max}${max ? " · MÁX" : ` · ${fossilHtml()} ${c}`}</small>`;
+        el.title = n.desc(Math.max(1, l));
+        drawUpIcon(el.querySelector("canvas").getContext("2d"), TREE_ICON[br.id], ok ? br.color : "#4a4560", 3);
+        el.addEventListener("click", () => { this.g.sfx.click(); this.select(n.id); });
+        el.addEventListener("dblclick", () => this.buy(n.id));
+        el.dataset.id = n.id; this.box.appendChild(el);
+      });
+    });
+    paintFossils(this.el);
+    this.drawLines();
+    this.select(focus || this.sel || TREE_NODES[0].id, true);
+  }
+  select(id, quiet) {
+    this.sel = id; const n = this.node(id), l = this.level(id), c = this.cost(n), ok = this.reachable(n), d = this.d;
+    this.box.querySelectorAll(".tnode").forEach(e => e.classList.toggle("sel", e.dataset.id === id));
+    const br = TREE_CONFIG.branches.find(b => b.id === n.branch);
+    const why = c == null ? "Nivel máximo" : !ok ? `Necesitas «${br.nodes[n.index - 1].name}» a nivel 1` : d.fossils < c ? `Te faltan ${c - d.fossils} fósiles` : "";
+    this.info.innerHTML = `<h3 style="color:${br.color}">${br.name} · ${n.name} <small>(nivel ${l}/${n.max})</small></h3>
+      <p>${l ? `Ahora: ${n.desc(l)}` : "Sin comprar."}${c != null ? `<br>Siguiente nivel: ${n.desc(l + 1)}` : ""}</p>
+      <div class="actions"><button class="btn primary" id="treeBuy" ${why ? "disabled" : ""}>${c == null ? "Completado" : `Comprar · ${fossilHtml()} ${c}`}</button><small class="touch-hint">${why}</small></div>`;
+    paintFossils(this.info);
+    const b = document.getElementById("treeBuy"); if (b) b.addEventListener("click", e => { e.currentTarget.blur(); this.buy(id); });
+  }
+  drawLines() {
+    const cv = this.lines, rect = this.box.getBoundingClientRect(), w = Math.max(320, Math.round(rect.width || 860)), h = this.box.offsetHeight || 480;
+    cv.width = w; cv.height = h; const c = cv.getContext("2d"), cols = TREE_CONFIG.branches.length;
+    c.clearRect(0, 0, w, h); c.lineWidth = 6; c.lineCap = "square";
+    const rootX = w / 2, rootY = h - 40;
+    TREE_CONFIG.branches.forEach((br, bi) => {
+      const x = (bi + 0.5) / cols * w;
+      br.nodes.forEach((n, i) => {
+        const y = h - (88 + i * 92) - 30, py = i === 0 ? rootY : h - (88 + (i - 1) * 92) - 30, px = i === 0 ? rootX : x, on = this.level(n.id) > 0;
+        c.strokeStyle = "#0e0b16"; c.lineWidth = 10; c.beginPath(); c.moveTo(px, py); if (i === 0) c.lineTo(x, py - 20); c.lineTo(x, y); c.stroke();
+        c.strokeStyle = on ? br.color : "#3d3160"; c.lineWidth = 5; c.beginPath(); c.moveTo(px, py); if (i === 0) c.lineTo(x, py - 20); c.lineTo(x, y); c.stroke();
+      });
+    });
+    // Raíz (gratis)
+    c.fillStyle = "#0e0b16"; c.fillRect(rootX - 46, rootY - 20, 92, 40); c.fillStyle = "#5fd15a"; c.fillRect(rootX - 43, rootY - 17, 86, 34);
+    c.font = '10px "Raptor Pixel Display", monospace'; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#16111f"; c.fillText("RAÍZ", rootX, rootY + 1);
+  }
+}
+// Fósiles de una partida (los llama Game.bankRun). Devuelve { total, lines } para el Game Over
+function fossilsForRun(g) {
+  const F = TREE_CONFIG.FOSSILS, lines = [];
+  const levels = Math.max(0, g.level.level - g.startLevel), tiers = g.runBossTiers || [];
+  if (levels) lines.push([`${levels} nivel${levels > 1 ? "es" : ""} completado${levels > 1 ? "s" : ""}`, levels * F.LEVEL]);
+  const nb = tiers.filter(t => !t).length, nc = tiers.filter(t => t === 1).length, ng = tiers.filter(t => t >= 2).length;
+  if (nb) lines.push([`${nb} jefe${nb > 1 ? "s" : ""}`, nb * F.BOSS]);
+  if (nc) lines.push([`${nc} jefe${nc > 1 ? "s" : ""} Corrupto${nc > 1 ? "s" : ""}`, nc * F.BOSS_CORRUPT]);
+  if (ng) lines.push([`${ng} jefe${ng > 1 ? "s" : ""} Dorado${ng > 1 ? "s" : ""}`, ng * F.BOSS_GOLD]);
+  const ns = g.build.synergies.length; if (ns) lines.push([`${ns} sinergia${ns > 1 ? "s" : ""}`, ns * F.SYNERGY]);
+  if (g.newRecord) lines.push(["nuevo récord", F.RECORD]);
+  let total = lines.reduce((s, l) => s + l[1], 0);
+  if (g.mode.id === "easy" && total) { const t2 = Math.ceil(total * F.EASY_MULT); lines.push(["modo Fácil: la mitad", t2 - total]); total = t2; }
+  return { total, lines };
+}
+
 // Causa de un golpe (estadística «qué te mata más»)
 function obstacleCause(o) {
   if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
@@ -8247,7 +8418,7 @@ class Game {
     this.ach = new AchievementManager(this);
     this.ui = new UI(this); this.shop = new Shop(this); this.roulette = new Roulette(this); this.manual = new Manual(this);
     this.rogue = new RogueManager(this); this.history = new BuildHistory(this); this.album = new UpgradeAlbum(this);
-    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this);
+    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this);
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
     this.clouds = Array.from({ length: 6 }, () => ({ x: rand(0, W), y: rand(20, 120), w: rand(50, 110) }));
     this.stars = Array.from({ length: 50 }, () => ({ x: rand(0, W), y: rand(0, 190), s: Math.random() < 0.2 ? 3 : 2, tw: rand(1, 4), ph: rand(0, 6) }));
@@ -8272,7 +8443,7 @@ class Game {
     this.effects = { shield: 0, magnet: 0, slowmo: 0, turbo: 0 };
     this.grace = 0; this.roarCd = 0; this.roarWave = null; this.roarAnim = 0; this.flashT = 0; this.shake = 0; this.shakeMag = 0; this.shakeDur = 1;
     this.overTime = 0; this.overShown = false; this.newRecord = false; this.banked = false;
-    this.bossBanner = null; this.runBosses = 0; this.floaters = [];
+    this.bossBanner = null; this.runBosses = 0; this.floaters = []; this.runBossTiers = []; this.runFossils = null;
     this.run = this.newRun();
     this.player.reset(); this.p2.reset(); this.spawner.reset(); this.level.reset(); this.bosses.reset();
     // Roguelike, furia y monturas
@@ -8315,7 +8486,7 @@ class Game {
   // ----- Estados -----
   closeScreens() {
     this.ui.hideAll();
-    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el]) el.classList.add("hidden");
+    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el]) el.classList.add("hidden");
   }
   showMenu() {
     if (["playing", "paused", "choice"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
@@ -8363,6 +8534,7 @@ class Game {
   openRoulette(from) { this.state = "roulette"; this.closeScreens(); this.roulette.open(from); }
   openManual(from) { if (from !== "pause") this.state = "manual"; this.closeScreens(); this.manual.open(from); }
   openHistory(from) { this.closeScreens(); this.history.open(from); }
+  openTree() { this.state = "tree"; this.closeScreens(); this.tree.open(); }
   openStats() { this.state = "stats"; this.closeScreens(); this.statsMgr.open(); }
   openBackup() { this.state = "backup"; this.closeScreens(); this.backup.open(); }
   openAlbum() { this.state = "album"; this.closeScreens(); this.album.open(); }
@@ -8539,7 +8711,7 @@ class Game {
   // Llamados por la clase Boss
   onBossDefeated(b) {
     const B = this.bosses, id = BOSS_IDS[B.pending.type], coins = Math.round(b.coins * this.mode.coinValue * this.stat("bossCoinMult"));
-    this.runCoins += coins; this.runBosses++;
+    this.runCoins += coins; this.runBosses++; this.runBossTiers.push(B.pending.tier || 0);
     this.distance += CONFIG.BOSS_POINTS * CONFIG.PX_PER_POINT;
     const s = this.save.data;
     if (!s.bossesDefeated.includes(id)) s.bossesDefeated.push(id);
@@ -8605,6 +8777,7 @@ class Game {
     if (this.tutorial) { this.save.save(); return; }
     this.rogue.recordRun();
     if (this.score > s.records[this.mode.id]) { s.records[this.mode.id] = this.score; this.newRecord = true; }
+    this.runFossils = fossilsForRun(this); s.fossils += this.runFossils.total;   // árbol de mejoras
     this.save.save();
     this.ach.event("score", { score: this.score });
     this.ach.event("runEnd", { score: this.score });
@@ -8641,7 +8814,7 @@ class Game {
     if (this.shake > 0) { this.shake -= dt; if (this.shake <= 0) this.shakeMag = 0; }
     this.updateAmbient(this.state === "paused" ? 0 : dt);
 
-    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup", "stats"].includes(this.state)) {
+    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup", "stats", "tree"].includes(this.state)) {
       this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt); return;
     }
     if (this.state === "over") {
@@ -8946,6 +9119,7 @@ addEventListener("keydown", e => {
   if (game.roulette.visible) { if (k === "Escape") game.roulette.close(); return; }
   if (game.history.visible) { if (k === "Escape") game.history.close(); return; }
   if (game.album.visible) { if (k === "Escape") game.album.close(); return; }
+  if (game.tree.visible) { if (k === "Escape") game.tree.close(); return; }
   if (game.statsMgr.visible) { if (k === "Escape") game.statsMgr.close(); return; }
   if (game.backup.visible) { if (k === "Escape") game.backup.close(); return; }
   if (st === "choice") {   // elección de mejora o pacto: A/D o flechas + W/Intro, R barajar, Q saltar, 1–4 directa
