@@ -346,6 +346,23 @@
   #mPage { font-family: var(--f-title); font-size: 10px; color: var(--text-dim); }
   .boss-sheet { background: var(--surface); }
   .stars, .roar-label { color: var(--weak); }
+  /* Tienda de huevos */
+  .egg-ico { display: inline-block; width: 12px; height: 15px; border-radius: 50% 50% 46% 46% / 60% 60% 40% 40%; background: #f3e2b8; border: 2px solid var(--line); box-shadow: inset -2px -2px 0 #c8a06a; vertical-align: -2px; }
+  .egg-head { font-family: var(--f-title); font-size: 20px; line-height: 30px; margin: 4px 0 12px; text-align: left; }
+  .egg-head b { font-weight: 400; color: var(--weak); }
+  .egg-head small { font-family: var(--f-text); font-size: 10px; color: var(--text-dim); }
+  .egg-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .egg-card { background: var(--surface-2); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel); padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .egg-card canvas { image-rendering: pixelated; }
+  .egg-card.locked canvas { filter: grayscale(.6) brightness(.8); }
+  .egg-price { font-family: var(--f-title); font-size: 10px; color: var(--weak); }
+  .egg-hatch { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(14,11,22,.75); }
+  .egg-hatch-box { background: var(--surface); border: 2px solid var(--line); box-shadow: var(--panel); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 320px; }
+  .egg-hatch-box canvas { width: 300px; height: 200px; image-rendering: pixelated; border: 2px solid var(--line); }
+  .egg-result { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 2em; }
+  .egg-result b { font-family: var(--f-title); font-weight: 400; font-size: 20px; color: var(--weak); }
+  .egg-result small { font-size: 10px; color: var(--text-dim); }
+  @media (max-width: 640px) { .egg-types { grid-template-columns: 1fr; } }
   /* Resultado del multijugador */
   .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 14px; }
   .vs > div { background: var(--surface-2); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel); padding: 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -381,12 +398,13 @@
   <div class="card">
     <h1>DINO RUNNER</h1>
     <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus bosses</p>
-    <p class="touch-hint" style="margin:-8px 0 10px">Versión 9 · Multijugador con 3 dificultades</p>
+    <p class="touch-hint" style="margin:-8px 0 10px">Versión 10 · Portales, huevos de la tienda y trampas</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
       <div><small>RÉCORD DIFÍCIL</small><b id="menuHiH">0</b></div>
       <div><small>MONEDAS</small><b><span class="coin"></span> <span id="menuCoins">0</span></b></div>
+      <div><small>HUEVOS</small><b><span class="egg-ico"></span> <span id="menuEggs">0</span></b></div>
       <div><small>SKIN</small><b id="menuSkin">—</b></div>
       <div><small>LOGROS</small><b id="menuAch">0</b></div>
     </div>
@@ -403,7 +421,7 @@
       <span><kbd>A</kbd> carril de arriba</span><span><kbd>D</kbd> carril de abajo</span>
       <span><kbd>E</kbd> rugido</span><span><kbd>P</kbd> pausa</span>
     </div>
-    <p class="touch-hint">Multijugador (2 jugadores, mismo teclado, sin jefes): J1 corre arriba con <kbd>W</kbd> saltar, <kbd>S</kbd> deslizarse y <kbd>E</kbd> rugido · J2 corre abajo con <kbd>↑</kbd> saltar, <kbd>↓</kbd> deslizarse y <kbd>→</kbd> rugido. Gana quien aguante más.</p>
+    <p class="touch-hint">Multijugador (2 jugadores, mismo teclado, sin jefes): J1 corre arriba con <kbd>W</kbd> saltar, <kbd>S</kbd> deslizarse y <kbd>E</kbd> rugido y <kbd>A</kbd> trampa · J2 corre abajo con <kbd>↑</kbd> saltar, <kbd>↓</kbd> deslizarse, <kbd>→</kbd> rugido y <kbd>←</kbd> trampa. Gana quien aguante más.</p>
     <p class="touch-hint">Bosses: cada uno se vence de una forma distinta (la verás abajo en la pantalla). Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
     <div class="actions" style="margin:10px 0 0"><button class="btn ghost" id="btnMute">Sonido: SÍ</button></div>
     <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–9 y 0 = nivel 1–10 · B = boss del nivel actual</p>
@@ -414,7 +432,7 @@
 <div id="play" class="overlay hidden">
   <div class="card">
     <h2 id="playTitle">Elige modo</h2>
-    <p class="touch-hint hidden" id="vsHint" style="margin:-4px 0 12px">J1 (carril de arriba): <kbd>W</kbd> saltar · <kbd>S</kbd> deslizarse · <kbd>E</kbd> rugido — J2 (carril de abajo): <kbd>↑</kbd> saltar · <kbd>↓</kbd> deslizarse · <kbd>→</kbd> rugido. Sin jefes; gana quien aguante más.</p>
+    <p class="touch-hint hidden" id="vsHint" style="margin:-4px 0 12px">J1 (carril de arriba): <kbd>W</kbd> saltar · <kbd>S</kbd> deslizarse · <kbd>E</kbd> rugido · <kbd>A</kbd> trampa — J2 (carril de abajo): <kbd>↑</kbd> saltar · <kbd>↓</kbd> deslizarse · <kbd>→</kbd> rugido · <kbd>←</kbd> trampa. Cada 6 s ganas una trampa para el rival. Sin jefes; gana quien aguante más.</p>
     <div class="modes">
       <button class="mode" data-mode="normal"><b>NORMAL</b><small id="descNormal"></small></button>
       <button class="mode" data-mode="easy"><b>FÁCIL</b><small id="descEasy"></small></button>
@@ -536,7 +554,7 @@
       <button class="btn purple ghost" id="shopRoulette">Ruleta</button>
       <button class="btn" id="shopBack">← Volver</button>
     </div>
-    <div class="tabs"><button class="tab active" data-tab="skins">Skins</button><button class="tab" data-tab="checkpoints">Checkpoints</button><button class="tab" data-tab="editor">Editor</button></div>
+    <div class="tabs"><button class="tab active" data-tab="skins">Skins</button><button class="tab" data-tab="checkpoints">Checkpoints</button><button class="tab" data-tab="editor">Editor</button><button class="tab" data-tab="eggs">🥚 Huevos</button></div>
     <div id="skinsPane">
       <div id="skinGrid" class="grid"></div>
       <h3 class="shop-sec">🔒 Exclusivas de logros</h3>
@@ -547,6 +565,19 @@
     <div id="cpPane" class="hidden">
       <div id="cpGrid" class="grid"></div>
       <p class="touch-hint">Un checkpoint te deja empezar la partida al inicio de ese nivel (en todos los modos). Se desbloquea al completar el nivel anterior.</p>
+    </div>
+    <div id="eggPane" class="hidden">
+      <div class="egg-head"><span class="egg-ico"></span> Tienes <b id="eggWallet">0</b> huevos <small>· los consigues recogiendo los huevos bonus de los mapas (2 por nivel)</small></div>
+      <div id="eggTypes" class="egg-types"></div>
+      <h3 class="shop-sec">Skins que solo salen de los huevos</h3>
+      <div id="eggSkinGrid" class="grid"></div>
+      <div id="eggHatch" class="egg-hatch hidden">
+        <div class="egg-hatch-box">
+          <canvas id="eggCanvas" width="300" height="200"></canvas>
+          <div id="eggResult" class="egg-result"></div>
+          <button class="btn primary hidden" id="eggOk">¡Genial!</button>
+        </div>
+      </div>
     </div>
     <div id="editorPane" class="hidden">
       <div id="edLocked" class="ed-lock">
@@ -813,6 +844,15 @@ const CONFIG = {
   BOSS_TELEGRAPH: 1,         // multiplicador de los avisos de ataque (más alto = más tiempo para reaccionar)
   BOSS_TELEGRAPH_MIN: 0.45,  // s mínimos de aviso de un ataque
   BOSS_VULN_TIME: 1.5,       // s de ventana de vulnerabilidad tras cada ataque
+  PORTAL_SHOW_DISTANCE: 900, // px antes del final del nivel en los que aparece el portal
+  PORTAL_MIN_AHEAD: 500,     // si el nivel ya ha terminado (tras un boss largo), el portal sale a esta distancia
+  PORTAL_CLEAR: 260,         // px libres de obstáculos antes del portal
+  PORTAL_WARP_TIME: 0.8,     // s del destello al cruzarlo
+  EGG_REPEAT_COINS: 20,      // si ya tienes todas las skins de un huevo: monedas por cada huevo gastado
+  TRAP_RECHARGE: 6,          // multijugador: s para ganar una trampa
+  TRAP_MAX: 2,               // trampas acumulables
+  TRAP_INK_TIME: 3,          // s que la tinta oscurece el carril del rival
+  TRAP_DISTANCE: 780,        // x de pantalla donde aparece la trampa en el carril del rival
   VERSUS_MODE: "normal",    // multijugador: velocidad y dificultad de este modo (sin jefes, power-ups ni huevos)
   BOSS_FURY_AT: 0.5,         // forma furiosa al bajar a este % de vida: añade la mecánica nueva de cada boss
   BOSS_FURY_SPEED: 1.25,     // en furia ataca un 25 % más rápido
@@ -978,7 +1018,48 @@ const EXCLUSIVE_SKINS = [
     bg: "#2a1a0e", ground: "#d9a441",
     fx: { anim: { type: "pulse", key: "x", colors: ["#ffb627", "#ffe8a0", "#ff8c00", "#ffe8a0"] }, trail: { type: "sparkle", colors: ["#ffb627", "#ffe8a0", "#fff6e0", "#ff8c00"] }, label: "Ámbar que brilla" } },
 ];
-const RARITY_COLORS = { "Común": "#d6d3cb", "Raro": "#9cc9ff", "Épico": "#c9a6ff", "Legendario": "#ffd23f", "Supremo": "#ff9de6", "Exclusiva": "#ff8a8a", "Diseño": "#9be07a" };
+// Trampas del multijugador (A el J1, ← el J2): aparecen en el carril del rival
+const TRAP_TYPES = [
+  { id: "wall", name: "Doble obstáculo", tip: "salto largo" },
+  { id: "bird", name: "Pájaro", tip: "deslízate" },
+  { id: "rock", name: "Roca gigante", tip: "doble salto o rugido" },
+  { id: "ink",  name: "Tinta", tip: "le deja el carril a oscuras" },
+];
+// Huevos de la tienda: se pagan con huevos bonus recogidos en los mapas y dan skins que solo salen de ellos.
+// odds = probabilidad de cada nivel de skin (1 = común, 2 = rara, 3 = legendaria)
+const EGG_TYPES = [
+  { id: "arena",    name: "Huevo de arena",   price: 15, odds: [0.7, 0.25, 0.05], pal: { o: "#5a3a1a", c: "#e9c48a", w: "#fff1d0", m: "#b07a3a" } },
+  { id: "cristal",  name: "Huevo de cristal", price: 40, odds: [0.3, 0.5, 0.2],   pal: { o: "#1e2a5a", c: "#8fd3ff", w: "#ffffff", m: "#b07cf0" } },
+  { id: "dorado",   name: "Huevo dorado",     price: 80, odds: [0, 0.4, 0.6],     pal: { o: "#5a3a00", c: "#ffc629", w: "#fff6c0", m: "#ff8c00" } },
+];
+const EGG_TIER_NAMES = ["", "Huevo común", "Huevo raro", "Huevo legendario"];
+const EGG_SKINS = [
+  { id: "cascaron", name: "Cascarón", tier: 1, sprite: "raptor-spots",
+    pal: { o: "#3a2412", b: "#f3e2b8", s: "#d8c090", l: "#fffdf2", a: "#fff6e0", x: "#8a5a2a", y: "#e6dcc0", e: "#ffffff", p: "#3a2412" }, bg: "#fff6e0", ground: "#c8a06a" },
+  { id: "musgo-pantano", name: "Musgo de pantano", tier: 1, sprite: "raptor",
+    pal: { o: "#0e1a14", b: "#2f6a5a", s: "#1f4a3e", l: "#6ac0a0", a: "#a8c890", x: "#1f4a3e", y: "#d8e0b0", e: "#ffe14d", p: "#0e1a14" }, bg: "#e0f0e0", ground: "#2f6a5a" },
+  { id: "coral-rosado", name: "Coral rosado", tier: 1, sprite: "raptor-spots",
+    pal: { o: "#3a0e1e", b: "#ff8aa8", s: "#d85a80", l: "#ffd0dc", a: "#fff0d8", x: "#2aa8a8", y: "#ffe8c0", e: "#ffffff", p: "#3a0e1e" }, bg: "#fff0f4", ground: "#2aa8a8" },
+  { id: "opalo", name: "Ópalo", tier: 2, sprite: "raptor-crystal",
+    pal: { o: "#2a2440", b: "#e8e0ff", s: "#b8b0e0", l: "#ffffff", a: "#fff0f8", x: "#9ad8ff", y: "#ffe0f0", e: "#ff8fd8", p: "#2a2440" }, bg: "#2a2440", ground: "#9ad8ff",
+    fx: { anim: { type: "twinkle", key: "x", colors: ["#9ad8ff", "#ffd0f0", "#fff6b0", "#c8ffd8"] }, label: "Brillos de ópalo" } },
+  { id: "medusa", name: "Medusa", tier: 2, sprite: "raptor-stars",
+    pal: { o: "#0a1a3a", b: "#7df9ff", s: "#3ac0e0", l: "#e0ffff", a: "#c8f8ff", x: "#ff7ad0", y: "#e0ffff", e: "#ffffff", p: "#0a1a3a" }, bg: "#04203a", ground: "#7df9ff",
+    fx: { anim: { type: "ghost" }, label: "Flota como una medusa" } },
+  { id: "magma-negro", name: "Magma negro", tier: 2, sprite: "raptor-cracks",
+    pal: { o: "#050308", b: "#1e1428", s: "#120a18", l: "#3a2a4a", a: "#2a1a30", x: "#ff3b8a", y: "#ffb0d8", e: "#ff3b8a", p: "#050308" }, bg: "#120a18", ground: "#ff3b8a",
+    fx: { anim: { type: "pulse", key: "x", colors: ["#ff3b8a", "#c04bff", "#ff8ac0", "#c04bff"] }, label: "Grietas de magma morado" } },
+  { id: "dragon-jade", name: "Dragón de jade", tier: 3, sprite: "raptor-flame",
+    pal: { o: "#04140c", b: "#2ac07a", s: "#1a8a54", l: "#a0ffd0", a: "#e0ffe8", x: "#ffe14d", y: "#e0ffe8", e: "#ffe14d", p: "#04140c" }, bg: "#04140c", ground: "#2ac07a",
+    fx: { anim: { type: "pulse", key: "x", colors: ["#ffe14d", "#a0ffd0", "#2ac07a", "#a0ffd0"] }, trail: { type: "fire", colors: ["#e0ffe8", "#a0ffd0", "#2ac07a", "#1a8a54"] }, label: "Estela de fuego de jade" } },
+  { id: "aurora", name: "Aurora", tier: 3, sprite: "raptor-frost",
+    pal: { o: "#08142c", b: "#3ddc84", s: "#2aa86a", l: "#c8ffe0", a: "#e0f8ff", x: "#8a5cff", y: "#e0f8ff", e: "#41e1ff", p: "#08142c" }, bg: "#08142c", ground: "#3ddc84",
+    fx: { anim: { type: "twinkle", key: "x", colors: ["#3ddc84", "#41e1ff", "#8a5cff", "#ffffff"] }, trail: { type: "snow", colors: ["#3ddc84", "#41e1ff", "#8a5cff"] }, label: "Estela de aurora boreal" } },
+  { id: "nebulosa", name: "Nebulosa", tier: 3, sprite: "raptor-stars",
+    pal: { o: "#0a0420", b: "#5a2a9a", s: "#3a1a6a", l: "#ff8fd8", a: "#c8a0ff", x: "#ffffff", y: "#ffd0f0", e: "#ffffff", p: "#0a0420" }, bg: "#0a0420", ground: "#ff8fd8",
+    fx: { anim: { type: "twinkle", key: "x", colors: ["#ffffff", "#ff8fd8", "#5ce1ff", "#ffe14d"] }, trail: { type: "stars", colors: ["#ffffff", "#ff8fd8", "#5ce1ff", "#c8a0ff"] }, label: "Estela de estrellas" } },
+].map(k => Object.assign(k, { rarity: EGG_TIER_NAMES[k.tier], price: 0, exclusive: true, egg: true }));
+const RARITY_COLORS = { "Huevo común": "#f3e2b8", "Huevo raro": "#8fd3ff", "Huevo legendario": "#ffc629", "Común": "#d6d3cb", "Raro": "#9cc9ff", "Épico": "#c9a6ff", "Legendario": "#ffd23f", "Supremo": "#ff9de6", "Exclusiva": "#ff8a8a", "Diseño": "#9be07a" };
 
 // =====================================================================
 //  DifficultyMode: valores de cada modo (Normal / Fácil / Difícil) leídos de CONFIG
@@ -1184,7 +1265,7 @@ const SkinCatalog = {
   rebuild() {
     const extra = this.designs.filter(Boolean);
     if (this.preview) extra.push(this.preview);
-    SE.init({ sprites: SKINS_DATA.sprites, skins: [...this.base, ...EXCLUSIVE_SKINS, ...extra] });
+    SE.init({ sprites: SKINS_DATA.sprites, skins: [...this.base, ...EXCLUSIVE_SKINS, ...EGG_SKINS, ...extra] });
   },
   get shop() { return this.base; },                 // los 16 skins de la tienda, en orden
   get(id) { return SE.get(id); },
@@ -1226,6 +1307,12 @@ const ROAR_STYLES = {
   "corona-campeon":   { name: "Rugido del campeón",  type: "sun",     colors: ["#fff3c4", "#ffc629", "#ff3b3b"], flash: true },
   "rey-jefes":        { name: "Rugido del tirano",   type: "bolt",    colors: ["#e6b8ff", "#c04bff", "#ff5cf0"] },
   "fosil-legendario": { name: "Rugido de ámbar",     type: "shards",  colors: ["#ffe8a0", "#ffb627", "#ff8c00"] },
+  "opalo":            { name: "Rugido de ópalo",     type: "shards",  colors: ["#9ad8ff", "#ffd0f0", "#fff6b0"] },
+  "medusa":           { name: "Rugido abisal",       type: "ghost",   colors: ["#7df9ff", "#ff7ad0", "#e0ffff"] },
+  "magma-negro":      { name: "Rugido de magma negro", type: "fire",  colors: ["#ff8ac0", "#ff3b8a", "#c04bff"] },
+  "dragon-jade":      { name: "Rugido del dragón",   type: "fire",    colors: ["#e0ffe8", "#a0ffd0", "#2ac07a", "#ffe14d"], wings: true },
+  "aurora":           { name: "Rugido boreal",       type: "ice",     colors: ["#3ddc84", "#41e1ff", "#8a5cff"] },
+  "nebulosa":         { name: "Rugido de nebulosa",  type: "stars",   colors: ["#ffffff", "#ff8fd8", "#5ce1ff", "#c8a0ff"], flash: true },
 };
 function roarStyle(id) {
   const s = SE.get(id); if (!s) return null;
@@ -1466,12 +1553,12 @@ class SaveManager {
     this.data = {
       records: { normal: 0, easy: 0, hard: 0 }, coins: 0, owned: [CONFIG.DEFAULT_SKIN], equipped: CONFIG.DEFAULT_SKIN,
       completed: 0, checkpoints: [], lastFreeSpin: "", muted: false, lastMode: "normal",
-      bossesDefeated: [], editor: false, designs: Array(CONFIG.EDITOR_SLOTS).fill(null),
+      bossesDefeated: [], editor: false, eggWallet: 0, eggsMigrated: true, designs: Array(CONFIG.EDITOR_SLOTS).fill(null),
       ach: { unlocked: {}, stats: {} },
     };
     this.load();
     if (DEBUG) {
-      this.data.coins = Math.max(this.data.coins, CONFIG.DEBUG_COINS);
+      this.data.coins = Math.max(this.data.coins, CONFIG.DEBUG_COINS); this.data.eggWallet = Math.max(this.data.eggWallet, 200);
       this.data.completed = Math.max(this.data.completed, CONFIG.CHECKPOINT_LEVELS);
       this.save();
     }
@@ -1496,6 +1583,9 @@ class SaveManager {
           if (x && x.sprite && SKINS_DATA.sprites[x.sprite] && x.pal) this.data.designs[i] = x;
         }
         if (d.ach && typeof d.ach === "object") this.data.ach = { unlocked: d.ach.unlocked || {}, stats: d.ach.stats || {} };
+        this.data.eggWallet = num(d.eggWallet); this.data.eggsMigrated = !!d.eggsMigrated;
+        // Partidas anteriores a la tienda de huevos: los huevos ya recogidos pasan al monedero de huevos
+        if (!this.data.eggsMigrated) { this.data.eggWallet += num(this.data.ach.stats.eggs); this.data.eggsMigrated = true; }
         SkinCatalog.designs = this.data.designs.map((x, i) => x && designSkin(x, i));
         SkinCatalog.rebuild();
         // Skins: se descartan los ids que ya no existen (catálogo antiguo) sin tocar las monedas
@@ -1583,6 +1673,7 @@ class Player {
     // Multijugador: cada raptor tiene su rugido, sus monedas y su puntuación
     this.dead = false; this.deadT = 0; this.lives = 1; this.grace = 0; this.score = 0; this.coins = 0; this.downHeld = false;
     this.roarCd = 0; this.roarCdMax = 1; this.roarWave = null; this.roarAnim = 0;
+    this.traps = 0; this.trapT = 0; this.nextTrap = randInt(0, TRAP_TYPES.length - 1); this.ink = 0;
   }
   setLane(l) { this.lane = this.laneFrom = this.laneT = l; this.laneProgress = 1; }
   get skinId() { return this.num === 2 ? this.game.p2SkinId : this.game.skinId; }
@@ -1690,6 +1781,13 @@ class Player {
       ctx.fillStyle = UI_T.line; ctx.fillRect(22, ty - 9, 32, 18); ctx.fillStyle = this.dead ? "#5a5468" : col; ctx.fillRect(24, ty - 7, 28, 14);
       ctx.font = '10px "Raptor Pixel Display", monospace'; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#16111f";
       ctx.fillText(this.dead ? "K.O." : "J" + this.num, 38, ty + 1);
+      if (!this.dead) {   // trampa preparada (o carga) junto a la etiqueta
+        ctx.fillStyle = UI_T.line; ctx.fillRect(56, ty - 9, 44, 18); ctx.fillStyle = UI_T.panel; ctx.fillRect(58, ty - 7, 40, 14);
+        if (this.traps > 0) {
+          drawTrapIcon(ctx, TRAP_TYPES[this.nextTrap].id, 66, ty);
+          ctx.fillStyle = UI_T.weak; ctx.textAlign = "left"; ctx.fillText("×" + this.traps, 76, ty + 1);
+        } else { ctx.fillStyle = "#3a2f50"; ctx.fillRect(60, ty - 2, 36, 4); ctx.fillStyle = UI_T.roar; ctx.fillRect(60, ty - 2, Math.round(36 * this.trapT / CONFIG.TRAP_RECHARGE), 4); }
+      }
     }
     if (g.effects.magnet > 0) drawIcon(ctx, "magnet", 38, -(this.y + (this.sliding ? 44 : 84)) + Math.sin(g.time * 5) * 2, 7);
   }
@@ -1732,6 +1830,15 @@ function drawEggHalves(ctx, x, y, u, s) {
   ctx.fillStyle = "#ffe27a";
   for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2, r = 6 + u * 22; ctx.fillRect(x + Math.cos(a) * r - 1.5, y - 4 + Math.sin(a) * r - 1.5, 3, 3); }
   ctx.restore();
+}
+
+// Icono pequeño de cada trampa del multijugador (centro en x, y)
+function drawTrapIcon(c, id, x, y) {
+  const R = (col, dx, dy, w, h) => { c.fillStyle = col; c.fillRect(Math.round(x + dx), Math.round(y + dy), w, h); };
+  if (id === "wall") { R("#1f6b2c", -6, -6, 4, 12); R("#3f9a3c", -5, -5, 2, 10); R("#1f6b2c", 1, -6, 4, 12); R("#3f9a3c", 2, -5, 2, 10); }
+  else if (id === "bird") { R("#5e2d73", -6, -2, 12, 4); R("#9b59b6", -4, -1, 8, 2); R("#5e2d73", -2, -6, 4, 4); R("#f5b041", -8, -1, 2, 2); }
+  else if (id === "rock") { R("#2a2830", -5, -6, 10, 12); R("#8b9099", -4, -5, 8, 10); R("#b9bec7", -3, -4, 3, 3); }
+  else { R("#0e0b16", -6, -4, 12, 8); R("#2a1a4a", -5, -3, 10, 6); R("#6a4aa0", -3, -2, 3, 2); }
 }
 
 // =====================================================================
@@ -2061,7 +2168,11 @@ function soloPattern(p) {
 class Spawner {
   constructor(game) { this.game = game; this.reset(); }
   reset() { this.nextAt = CONFIG.FIRST_SPAWN_DISTANCE; this.last = null; this.plans = {}; }
-  update() { if (this.game.distance >= this.nextAt) this.spawnPattern(); }
+  update() {
+    const g = this.game;
+    if (g.distance + (SPAWN_X - PLAYER_X) > g.level.portalAt() - CONFIG.PORTAL_CLEAR && g.distance < g.level.portalAt()) return;   // camino libre hasta el portal
+    if (g.distance >= this.nextAt) this.spawnPattern();
+  }
   // Plan de huevos de un nivel: uno en cada tramo de CONFIG.EGG_WINDOWS
   plan(lvl = this.game.level.level) {
     return this.plans[lvl] || (this.plans[lvl] = { level: lvl, spawned: 0, at: CONFIG.EGG_WINDOWS.slice(0, CONFIG.EGGS_PER_LEVEL).map(([a, b]) => rand(a, b) * CONFIG.POINTS_PER_LEVEL) });
@@ -2155,21 +2266,68 @@ class LevelManager {
     this.cur = 0; this.prev = 0; this.fade = 1;
     this.reset();
   }
-  reset() { this.level = 1; this.banner = 0; this.bannerSub = ""; this.setBiome(0); }
+  reset() { this.level = 1; this.banner = 0; this.bannerSub = ""; this.portal = null; this.warp = 0; this.setBiome(0); }
   get biome() { return this.biomes[this.cur]; }
   setBiome(i) { if (i === this.cur) return; this.prev = this.cur; this.cur = i; this.fade = 0; }
-  jumpTo(level) { this.level = level; this.setBiome((level - 1) % this.biomes.length); this.fade = 1; }   // checkpoints
+  jumpTo(level) { this.portal = null; this.warp = 0; this.level = level; this.setBiome((level - 1) % this.biomes.length); this.fade = 1; }   // checkpoints
+  // Final del nivel en px de recorrido
+  get boundary() { return this.level * CONFIG.POINTS_PER_LEVEL * CONFIG.PX_PER_POINT; }
+  // Dónde está (o estará) el portal: el generador deja libre el tramo anterior
+  portalAt() { return this.portal ? this.portal.at : this.boundary; }
+  // Al acercarse el final del nivel aparece un portal; el nivel cambia cuando el raptor lo cruza.
+  // (Si un boss largo ha pasado del límite, el portal sale delante en cuanto termina la pelea.)
   check() {
-    const g = this.game, target = Math.floor(g.distScore / CONFIG.POINTS_PER_LEVEL) + 1;
-    while (this.level < target) {
+    const g = this.game;
+    if (!this.portal && g.distance + CONFIG.PORTAL_SHOW_DISTANCE >= this.boundary)
+      this.portal = { at: Math.max(this.boundary, g.distance + CONFIG.PORTAL_MIN_AHEAD), next: this.level % this.biomes.length };
+    if (this.portal && g.distance >= this.portal.at) {
+      this.portal = null;
       const eggs = g.onLevelComplete(this.level);
       this.level++;
       this.setBiome((this.level - 1) % this.biomes.length);   // tras el último bioma vuelve a empezar el ciclo
+      this.warp = CONFIG.PORTAL_WARP_TIME;
       this.banner = CONFIG.LEVEL_BANNER_TIME; this.bannerSub = g.versus ? "¡Más rápido!" : `Huevos del nivel ${this.level - 1}: ${eggs}/${CONFIG.EGGS_PER_LEVEL}`;
-      g.sfx.levelUp(); g.ach.event("levelReached", { level: this.level });
+      g.sfx.levelUp(); g.sfx.portal(); g.addShake(0.3, 5); g.ach.event("levelReached", { level: this.level });
+    }
+  }
+  // Portal (ocupa los dos carriles) y destello al cruzarlo
+  drawPortal(c) {
+    const g = this.game, P = this.portal;
+    if (P) {
+      const wx = PLAYER_X + 40 + (P.at - g.distance), b = this.biomes[P.next], acc = b.accent, t = g.time;
+      const p0 = toScreen(0, wx, 0), p1 = toScreen(1, wx, 0), cx = (p0.x + p1.x) / 2, top = p0.y - 120, bot = p1.y + 4, cy = (top + bot) / 2, ry = (bot - top) / 2, rx = 46;
+      if (cx < W + 120) {
+        c.save();
+        c.globalAlpha = 0.35; c.fillStyle = acc; c.beginPath(); c.ellipse(cx, cy, rx + 26, ry + 18, 0, 0, Math.PI * 2); c.fill();
+        c.globalAlpha = 1; c.fillStyle = "#0e0b16"; c.beginPath(); c.ellipse(cx, cy, rx + 6, ry + 6, 0, 0, Math.PI * 2); c.fill();
+        // interior: anillos que giran hacia el centro con los colores del bioma siguiente
+        const cols = [b.pal.skyTop, b.pal.skyBot, acc, "#ffffff"];
+        for (let i = 0; i < 6; i++) {
+          const k = ((t * 0.9 + i / 6) % 1), s = 1 - k;
+          c.fillStyle = cols[i % cols.length]; c.globalAlpha = 0.25 + 0.6 * k;
+          c.beginPath(); c.ellipse(cx, cy, rx * s, ry * s, 0, 0, Math.PI * 2); c.fill();
+        }
+        c.globalAlpha = 1;
+        for (let i = 0; i < 14; i++) {   // chispas en espiral
+          const a = t * 3 + i * 0.45, r = (i / 14);
+          c.fillStyle = i % 2 ? acc : "#ffffff"; c.fillRect(Math.round(cx + Math.cos(a) * rx * r) - 2, Math.round(cy + Math.sin(a) * ry * r) - 2, 4, 4);
+        }
+        c.strokeStyle = acc; c.lineWidth = 4; c.beginPath(); c.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); c.stroke();
+        c.strokeStyle = "#ffffff"; c.lineWidth = 2; c.setLineDash([8, 8]); c.lineDashOffset = -t * 60; c.beginPath(); c.ellipse(cx, cy, rx + 3, ry + 3, 0, 0, Math.PI * 2); c.stroke(); c.setLineDash([]);
+        g.ui.text(c, b.name.toUpperCase(), cx, top - 18, 12, acc, "center");
+        c.restore();
+      }
+    }
+    if (this.warp > 0) {   // destello en espiral al cruzar
+      const k = this.warp / CONFIG.PORTAL_WARP_TIME, acc = this.biome.accent;
+      c.save(); c.globalAlpha = k * 0.85; c.fillStyle = acc; c.fillRect(0, 0, W, H);
+      c.globalAlpha = k; c.fillStyle = "#ffffff";
+      for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2 + g.time * 4, r = (1 - k) * 520; c.fillRect(Math.round(PLAYER_X + 40 + Math.cos(a) * r) - 4, Math.round(250 + Math.sin(a) * r * 0.5) - 4, 8, 8); }
+      c.restore();
     }
   }
   tick(dt) {
+    if (this.warp > 0) this.warp = Math.max(0, this.warp - dt);
     if (this.fade < 1) this.fade = Math.min(1, this.fade + dt / CONFIG.BIOME_FADE_TIME);
     if (this.banner > 0) this.banner -= dt;
   }
@@ -4875,7 +5033,7 @@ class UI {
   showMenu() {
     const g = this.game, s = g.save.data, sk = SkinCatalog.get(g.skinId);
     this.$("menuHiN").textContent = s.records.normal; this.$("menuHiE").textContent = s.records.easy; this.$("menuHiH").textContent = s.records.hard;
-    this.$("menuCoins").textContent = s.coins; this.$("menuSkin").textContent = sk ? sk.name : "—";
+    this.$("menuCoins").textContent = s.coins; this.$("menuEggs").textContent = s.eggWallet; this.$("menuSkin").textContent = sk ? sk.name : "—";
     this.$("menuAch").textContent = `${g.ach.unlockedCount}/${ACHIEVEMENTS.length}`;
     this.$("debugHint").classList.toggle("hidden", !DEBUG);
     this.hideAll(); this.menu.classList.remove("hidden");
@@ -5129,6 +5287,8 @@ class Shop {
     // Skins de la tienda, en el orden del kit (DinoSkinsEngine.skins)
     for (const skin of SkinCatalog.shop) this.makeCard($("skinGrid"), skin.id, "shop");
     for (const skin of EXCLUSIVE_SKINS) this.makeCard($("exclGrid"), skin.id, "exclusive");
+    for (const skin of EGG_SKINS) this.makeCard($("eggSkinGrid"), skin.id, "egg");
+    this.eggs = new EggShop(game, this);
     this.designGrid = $("designGrid");
     this.editor = new SkinEditor(game, this);
   }
@@ -5144,6 +5304,7 @@ class Shop {
       ${roarStyle(id) ? `<div class="fx-label roar-label">🔊 ${roarStyle(id).name}</div>` : ""}
       ${kind === "shop" ? `<div class="skin-price">${skin.price ? `<span class="coin"></span> ${skin.price}` : "Gratis"}</div>` : ""}
       ${ach ? `<div class="skin-lock">🔒 Consíguela con el logro «${ach.name}»</div>` : ""}
+      ${kind === "egg" ? `<div class="skin-lock">🥚 Sale de: ${EGG_TYPES.filter(t => t.odds[skin.tier - 1] > 0).map(t => t.name.replace(/^Huevo (de )?/, "")).join(", ")}</div>` : ""}
       <button class="btn small"></button><div class="toast">¡Comprada!</div>`;
     const canvas = card.querySelector("canvas"), btn = card.querySelector("button"), ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
@@ -5172,7 +5333,7 @@ class Shop {
   setTab(tab) {
     this.tab = tab;
     this.el.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
-    for (const [id, t] of [["skinsPane", "skins"], ["cpPane", "checkpoints"], ["editorPane", "editor"]]) document.getElementById(id).classList.toggle("hidden", tab !== t);
+    for (const [id, t] of [["skinsPane", "skins"], ["cpPane", "checkpoints"], ["editorPane", "editor"], ["eggPane", "eggs"]]) document.getElementById(id).classList.toggle("hidden", tab !== t);
     if (tab === "editor") this.editor.open();
     this.refresh();
   }
@@ -5195,7 +5356,7 @@ class Shop {
     this.walletNum.textContent = s.data.coins;
     for (const e of this.cards) {
       const skin = SkinCatalog.get(e.id); if (!skin) continue;
-      const owned = s.owns(e.id), equipped = eq === e.id, affordable = s.data.coins >= skin.price, excl = e.kind === "exclusive";
+      const owned = s.owns(e.id), equipped = eq === e.id, affordable = s.data.coins >= skin.price, excl = e.kind === "exclusive" || e.kind === "egg";
       e.card.classList.toggle("equipped", equipped);
       e.card.classList.toggle("locked", !owned && (excl || !affordable));
       e.btn.classList.toggle("primary", owned && !equipped);
@@ -5217,6 +5378,7 @@ class Shop {
       e.info.textContent = owned ? "Elígelo en «Jugar»." : !unlocked ? `Completa el nivel ${e.level - 1} para desbloquear` : `Empieza con ${(e.level - 1) * CONFIG.POINTS_PER_LEVEL} puntos.`;
     }
     this.editor.refresh();
+    this.eggs.refresh();
   }
   action(e) {
     const g = this.game, s = g.save, skin = SkinCatalog.get(e.id);
@@ -5230,9 +5392,11 @@ class Shop {
   }
   // Vistas previas animadas: solo mientras la tienda está abierta y solo se repintan en cada tick del motor
   update(dt) {
-    if (this.tab === "skins") {
-      tickStates(this.cards.map(e => e.st), dt);
-      for (const e of this.cards) if (e.st.advance) drawSkinPreview(e.ctx, e.id, e.st, e.w, 84, 3);
+    if (this.tab === "skins" || this.tab === "eggs") {
+      const list = this.cards.filter(e => (e.kind === "egg") === (this.tab === "eggs"));
+      tickStates(list.map(e => e.st), dt);
+      for (const e of list) if (e.st.advance) drawSkinPreview(e.ctx, e.id, e.st, e.w, 84, 3);
+      if (this.tab === "eggs") this.eggs.update(dt);
     } else if (this.tab === "editor") this.editor.update(dt);
   }
 }
@@ -5426,6 +5590,104 @@ class SkinEditor {
     const k = this.jumpT - 2, jumpY = k > 0 && k < 0.8 ? Math.round(Math.sin(k / 0.8 * Math.PI) * 7) : 0;
     tickStates([this.st], dt);
     if (this.st.advance) drawSkinPreview(this.ctx, "editor-preview", this.st, 240, 150, 5, jumpY);
+  }
+}
+
+// =====================================================================
+//  EggShop: pestaña «Huevos» de la tienda. Los huevos se compran con huevos bonus recogidos
+//  en los mapas y, al abrirse, dan una skin que solo sale de ellos (EGG_SKINS).
+// =====================================================================
+// Huevo grande con la paleta de su tipo; crack = 0…1 grietas
+function drawBigEgg(c, x, y, s, pal, crack = 0) {
+  const ox = x - EGG_ROWS[0].length * s / 2, oy = y - EGG_ROWS.length * s / 2;
+  EGG_ROWS.forEach((row, r) => { for (let i = 0; i < row.length; i++) { const col = pal[row[i]]; if (col) { c.fillStyle = col; c.fillRect(Math.round(ox + i * s), Math.round(oy + r * s), Math.ceil(s), Math.ceil(s)); } } });
+  if (crack > 0) {
+    c.fillStyle = pal.o; const n = Math.ceil(crack * 7);
+    for (let i = 0; i < n; i++) c.fillRect(Math.round(ox + (2 + i) * s), Math.round(oy + (4 + (i % 2)) * s), Math.ceil(s), Math.ceil(s * 0.6));
+  }
+}
+const eggPct = v => `${Math.round(v * 100)} %`;
+class EggShop {
+  constructor(game, shop) {
+    this.game = game; this.shop = shop; this.hatch = null; this.t = 0;
+    const $ = id => document.getElementById(id);
+    this.walletEl = $("eggWallet"); this.box = $("eggHatch"); this.canvas = $("eggCanvas"); this.ctx = this.canvas.getContext("2d");
+    this.result = $("eggResult"); this.ok = $("eggOk");
+    this.ok.addEventListener("click", e => { e.currentTarget.blur(); game.sfx.click(); this.box.classList.add("hidden"); this.hatch = null; shop.refresh(); });
+    this.cards = EGG_TYPES.map(type => {
+      const card = document.createElement("div"); card.className = "egg-card";
+      const odds = type.odds.map((p, i) => p > 0 ? `${["Común", "Rara", "Legendaria"][i]} ${eggPct(p)}` : "").filter(Boolean).join(" · ");
+      card.innerHTML = `<canvas width="90" height="96"></canvas><div class="skin-name">${type.name}</div>
+        <div class="egg-price"><span class="egg-ico"></span> ${type.price} huevos</div><div class="fx-label">${odds}</div><button class="btn small"></button>`;
+      const entry = { type, card, ctx: card.querySelector("canvas").getContext("2d"), btn: card.querySelector("button") };
+      entry.btn.addEventListener("click", e => { e.currentTarget.blur(); this.buy(entry); });
+      $("eggTypes").appendChild(card);
+      return entry;
+    });
+  }
+  get wallet() { return this.game.save.data.eggWallet; }
+  refresh() {
+    this.walletEl.textContent = this.wallet;
+    for (const e of this.cards) {
+      const ok = this.wallet >= e.type.price;
+      e.btn.disabled = !ok || !!this.hatch; e.btn.classList.toggle("gold", ok);
+      e.btn.textContent = ok ? "Abrir" : `Te faltan ${e.type.price - this.wallet}`;
+      e.card.classList.toggle("locked", !ok);
+    }
+  }
+  // Elige la skin: nivel según las probabilidades del huevo; si ya tienes todas las de ese nivel, otra que no tengas
+  roll(type) {
+    const s = this.game.save, r = Math.random();
+    let tier = 1, acc = 0;
+    for (let i = 0; i < 3; i++) { acc += type.odds[i]; if (r < acc) { tier = i + 1; break; } }
+    const free = k => !s.owns(k.id);
+    let pool = EGG_SKINS.filter(k => k.tier === tier && free(k));
+    if (!pool.length) pool = EGG_SKINS.filter(k => type.odds[k.tier - 1] > 0 && free(k)).sort((a, b) => b.tier - a.tier);
+    return pool.length ? choice(pool) : null;
+  }
+  buy(e) {
+    const g = this.game, s = g.save;
+    g.sfx.unlock();
+    if (this.hatch || s.data.eggWallet < e.type.price) { g.sfx.denied(); return; }
+    s.data.eggWallet -= e.type.price;
+    const skin = this.roll(e.type), refund = skin ? 0 : e.type.price * CONFIG.EGG_REPEAT_COINS;
+    if (skin) s.give(skin.id); else s.data.coins += refund;
+    s.save(); g.sfx.buy();
+    this.hatch = { t: 0, type: e.type, skin, refund, st: { tick: 0, speed: 2, trail: null, advance: true }, shown: false };
+    this.result.innerHTML = ""; this.ok.classList.add("hidden"); this.box.classList.remove("hidden");
+    this.refresh(); this.shop.flashWallet();
+  }
+  update(dt) {
+    this.t += dt;
+    for (const e of this.cards) {   // huevos de la tienda balanceándose
+      const c = e.ctx; c.clearRect(0, 0, 90, 96); c.save(); c.translate(45, 52); c.rotate(Math.sin(this.t * 2 + e.type.price) * 0.08);
+      drawBigEgg(c, 0, 0, 6, e.type.pal); c.restore();
+    }
+    const h = this.hatch; if (!h) return;
+    h.t += dt;
+    const c = this.ctx, W2 = 300, H2 = 200;
+    c.imageSmoothingEnabled = false;
+    if (h.t < 1.6) {   // se agita y se agrieta
+      c.fillStyle = "#171225"; c.fillRect(0, 0, W2, H2);
+      const k = h.t / 1.6, wob = Math.sin(h.t * (10 + k * 30)) * 0.08 * (0.4 + k);
+      c.save(); c.translate(W2 / 2, H2 / 2 + 8); c.rotate(wob); drawBigEgg(c, 0, 0, 10, h.type.pal, k); c.restore();
+      if (Math.floor(h.t * 8) % 4 === 0 && !h.tick) { h.tick = true; this.game.sfx.tick(); } else if (Math.floor(h.t * 8) % 4) h.tick = false;
+    } else {
+      if (!h.shown) {
+        h.shown = true; this.game.sfx.egg();
+        const sk = h.skin;
+        this.result.innerHTML = sk
+          ? `<b>¡${sk.name}!</b>${rarityTag(sk.rarity)}${sk.fx && sk.fx.label ? `<small>✦ ${sk.fx.label}</small>` : ""}${roarStyle(sk.id) ? `<small>🔊 ${roarStyle(sk.id).name}</small>` : ""}<small>Ya es tuya: equípala en la lista de abajo.</small>`
+          : `<b>Ya tienes todas sus skins</b><small>Te devolvemos ${h.refund} monedas.</small>`;
+        this.ok.classList.remove("hidden"); this.shop.refresh();
+      }
+      if (h.skin) {
+        tickStates([h.st], dt);
+        drawSkinPreview(c, h.skin.id, h.st, W2, H2, 5);
+        const k = Math.max(0, 1 - (h.t - 1.6) / 0.5);   // destello al abrirse
+        if (k > 0) { c.fillStyle = `rgba(255,255,255,${k})`; c.fillRect(0, 0, W2, H2); }
+      } else { c.fillStyle = "#171225"; c.fillRect(0, 0, W2, H2); drawEggHalves(c, W2 / 2, H2 / 2, Math.min(1, (h.t - 1.6) / 0.8), 10); }
+    }
   }
 }
 
@@ -5908,6 +6170,7 @@ const MANUAL_SECTIONS = [
     <p>Cada ${CONFIG.POINTS_PER_LEVEL} puntos subes de nivel: +${pct(CONFIG.SPEED_PER_LEVEL)} de velocidad (máx. ${CONFIG.MAX_SPEED} px/s),
     obstáculos más seguidos, ambos carriles ocupados desde el nivel ${CONFIG.BOTH_LANES_LEVEL}, pájaros rápidos desde el ${CONFIG.FAST_BIRD_LEVEL} y algo menos de power-ups.
     Hay ${CONFIG.LEVELS.length} niveles, cada uno con su bioma y su boss. Al completar el nivel ${CONFIG.LEVELS.length} (${CONFIG.LEVELS.length * CONFIG.POINTS_PER_LEVEL} puntos) el viaje vuelve a empezar con la dificultad acumulada y bosses aún más fuertes.</p>
+    <p><b>Portal:</b> al final de cada nivel aparece un portal con el nombre del bioma siguiente. El camino hasta él queda libre de obstáculos: crúzalo y llegarás al nuevo mapa.</p>
     <div class="m-demos">${BIOMES.map((b, i) => { const L = CONFIG.LEVELS[i]; return demo("biome", `${i + 1}. ${b.name} (${i * CONFIG.POINTS_PER_LEVEL}–${(i + 1) * CONFIG.POINTS_PER_LEVEL - 1})<br>Boss: ${BOSS_NAMES[L.boss]}${L.tier ? " (reforzado)" : ""}`, i); }).join("")}</div>
     <p>La Noche estrellada tiene más filas de monedas.</p>` },
   { title: "Bosses", html: () => `
@@ -5945,7 +6208,12 @@ const MANUAL_SECTIONS = [
       <tr><td>Saltar / doble salto</td><td>${kbd("W")}</td><td>${kbd("↑")}</td></tr>
       <tr><td>Deslizarse / caída rápida</td><td>${kbd("S")}</td><td>${kbd("↓")}</td></tr>
       <tr><td>Rugido</td><td>${kbd("E")} o ${kbd("D")}</td><td>${kbd("→")} o ${kbd("Intro")}</td></tr>
-    </table>`; } },
+      <tr><td>Lanzar trampa al rival</td><td>${kbd("A")}</td><td>${kbd("←")}</td></tr>
+    </table>
+    <h4>Trampas</h4>
+    <p>Cada ${secs(CONFIG.TRAP_RECHARGE)} ganas una trampa (máximo ${CONFIG.TRAP_MAX}); la que tienes preparada se ve junto a tu etiqueta J1/J2. Al lanzarla aparece en el carril del rival con una banderita de quién la puso:</p>
+    <ul>${TRAP_TYPES.map(t => `<li><b>${t.name}</b>: ${t.id === "ink" ? `le deja el carril a oscuras ${secs(CONFIG.TRAP_INK_TIME)}` : `obliga a ${t.tip}`}.</li>`).join("")}</ul>
+    <p>No se pueden lanzar mientras se ve el portal de cambio de nivel.</p>`; } },
   { title: "Tienda", html: () => { const R = ["Común", "Raro", "Épico", "Legendario", "Supremo"]; return `
     <h4>Skins</h4><p>${SkinCatalog.shop.length} velociraptores, solo estéticos:</p>
     <table><tr><th>Rareza</th><th>Precios</th><th>Qué tienen</th></tr>
@@ -5953,6 +6221,9 @@ const MANUAL_SECTIONS = [
       return `<tr><td>${rarityTag(r)}</td><td>${Math.min(...p)}–${Math.max(...p)}</td><td>${{ "Común": "Colores nuevos", "Raro": "Patrones nuevos", "Épico": "Animación propia", "Legendario": "Animación + estela", "Supremo": "Todo a la vez" }[r]} (${l.length})</td></tr>`; }).join("")}</table>
     <div class="m-demos">${R.map(r => { const k = SkinCatalog.shop.find(s => s.rarity === r); return demo("skin", k.name, k.id); }).join("")}</div>
     <p>Hay además ${EXCLUSIVE_SKINS.length} skins exclusivos que solo se consiguen con logros.</p>
+    <h4>Huevos</h4><p>Los huevos bonus que recoges en los mapas se guardan en tu monedero de huevos. En la pestaña «Huevos» de la tienda los gastas en huevos que, al abrirse, te dan una de las ${EGG_SKINS.length} skins que solo salen de ellos:</p>
+    <ul>${EGG_TYPES.map(t => `<li><b>${t.name}</b> (${t.price} huevos): ${t.odds.map((p, i) => p > 0 ? `${["común", "rara", "legendaria"][i]} ${Math.round(p * 100)} %` : "").filter(Boolean).join(", ")}.</li>`).join("")}</ul>
+    <p>Nunca te sale una skin repetida mientras queden otras de ese huevo; si ya las tienes todas, te devuelve ${CONFIG.EGG_REPEAT_COINS} monedas por cada huevo gastado.</p>
     <h4>Rugidos especiales</h4><p>Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un <b>rugido propio</b> y una pose animada al rugir: ${Object.entries(ROAR_STYLES).filter(([id]) => SkinCatalog.get(id)).map(([id, r]) => `${SkinCatalog.get(id).name}: ${r.name.toLowerCase()}`).join(" · ")}. Los diseños del editor heredan el rugido del efecto que elijas. Es solo estético: el alcance y el daño no cambian.</p>
     <h4>Checkpoints</h4><p>Empieza al inicio de un nivel. Precio: ${CONFIG.CHECKPOINT_PRICE_STEP} × (nivel − 1). Se desbloquean al completar el nivel anterior y sirven en todos los modos.</p>
     <h4>Editor de skins</h4><p>Cuesta ${CONFIG.EDITOR_PRICE} monedas una sola vez. Elige patrón, colores, fondo y efecto y guárdalo en una de sus ${CONFIG.EDITOR_SLOTS} ranuras. Los patrones y efectos de skins Épicos o superiores solo están disponibles si tienes esos skins.</p>`; } },
@@ -6101,6 +6372,8 @@ class Manual {
   }
 }
 
+// Sonido del portal entre niveles
+Sfx.prototype.portal = function () { this.tone(220, 1760, 0.55, "sine", 0.06); this.tone(330, 2640, 0.45, "triangle", 0.04, 0.08); this.noise(0.5, 0.06, 3000, "highpass", 0.1); };
 // =====================================================================
 //  Game: estado, bucle, colisiones y dibujo
 //  Estados: menu · play · playing · paused · over · shop · roulette · manual · achievements
@@ -6195,7 +6468,7 @@ class Game {
     this.reset(); this.player.setLane(0); this.p2.setLane(1);
     for (const p of this.players) p.lives = this.mode.lives;   // Fácil: 3 vidas por raptor
     this.state = "playing"; this.closeScreens();
-    this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = "J1: W · S · E      J2: ↑ · ↓ · →";
+    this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = "J1: W · S · E · A trampa      J2: ↑ · ↓ · → · ← trampa";
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
   retry() { if (this.versus) this.startVersus(); else this.start(); }
@@ -6250,6 +6523,26 @@ class Game {
     p.roarAnim = 0.6; this.addShake(0.25, 5); this.sfx.roar();
     const st = p.roarWave.style;
     if (st) { for (let i = 0; i < 24; i++) this.particles.push(new Particle(p.logicalLane, p.x + 66, p.y + rand(20, 60), rand(150, 650), rand(-150, 350), rand(0.4, 0.9), choice(st.colors), rand(3, 7))); this.sfx.roarSpecial(st.type); }
+  }
+  // Multijugador: lanza la trampa preparada al carril del rival
+  throwTrap(p) {
+    if (this.state !== "playing" || !this.versus || p.dead) return;
+    const rival = p === this.player ? this.p2 : this.player;
+    if (rival.dead || p.traps <= 0 || this.level.portal) { this.sfx.denied(); return; }
+    const type = TRAP_TYPES[p.nextTrap], lane = rival.lane, biome = this.level.biome;
+    if (type.id === "ink") rival.ink = CONFIG.TRAP_INK_TIME;
+    else {
+      let x = CONFIG.TRAP_DISTANCE;   // sin solaparse con otros obstáculos de ese carril
+      for (const o of this.obstacles) if (o.lane === lane && !o.dead && o.x < x + 200 && o.x + o.w > x - 200) x = Math.max(x, o.x + o.w + 200);
+      const o = type.id === "wall" ? new Obstacle("ground", lane, x, { size: "small", count: 2 }, biome)
+        : type.id === "bird" ? new Obstacle("flyer", lane, x, { h: "mid" }, biome)
+        : new Obstacle("rock", lane, x, { size: "tall" }, biome);
+      if (o.kind === "flyer") o.extra = this.level.flyerExtra(false);
+      o.trapBy = p.num; this.obstacles.push(o);
+    }
+    p.traps--; p.nextTrap = (p.nextTrap + randInt(1, TRAP_TYPES.length - 1)) % TRAP_TYPES.length;
+    this.sfx.toss(); this.sfx.trap();
+    this.floatText(rival.laneT, rival.x + 40, rival.y + 110, `¡TRAMPA DE J${p.num}! ${type.name.toUpperCase()}`, p.num === 1 ? UI_T.go : UI_T.info, 18);
   }
   // Recibir un golpe: el turbo y la invulnerabilidad lo ignoran y el escudo lo absorbe. Devuelve true si muere.
   hitPlayer(pl = this.player) {
@@ -6348,7 +6641,7 @@ class Game {
     if (this.banked) return;
     this.banked = true;
     const s = this.save.data, earned = this.runCoinsInt;
-    s.coins += earned;
+    s.coins += earned; s.eggWallet += this.runEggs;   // los huevos recogidos se gastan en la tienda de huevos
     if (this.versus) { this.save.save(); return; }   // en multijugador no hay récords ni logros
     if (this.distScore > s.records[this.mode.id]) { s.records[this.mode.id] = this.distScore; this.newRecord = true; }
     this.save.save();
@@ -6433,6 +6726,8 @@ class Game {
 
     if (this.versus) for (const p of this.players) {   // rugidos de los dos raptores
       p.roarCd = Math.max(0, p.roarCd - dt); p.roarAnim = Math.max(0, p.roarAnim - dt); p.grace = Math.max(0, p.grace - dt);
+      p.ink = Math.max(0, p.ink - dt);
+      if (!p.dead && p.traps < CONFIG.TRAP_MAX && (p.trapT += dt) >= CONFIG.TRAP_RECHARGE) { p.traps++; p.trapT = 0; this.sfx.tick(); }
       const w = p.roarWave; if (!w) continue;
       w.t += dt;
       const reach = p.x + 70 + CONFIG.ROAR_RANGE * Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME);
@@ -6528,9 +6823,16 @@ class Game {
     if (boss) boss.drawSky(c);
     this.drawLane(c, 0);
     this.drawLane(c, 1);
+    if (this.versus) for (const p of this.players) if (p.ink > 0) {   // trampa de tinta: oscurece el carril de ese raptor por delante
+      const a = Math.min(1, p.ink / 0.4) * 0.92, y0 = p.lane === 0 ? 150 : 246, y1 = p.lane === 0 ? 246 : 352;
+      c.fillStyle = `rgba(10,6,24,${a})`; c.fillRect(300, y0, W - 300, y1 - y0);
+      c.fillStyle = `rgba(10,6,24,${a * 0.5})`; c.fillRect(250, y0, 50, y1 - y0);
+      for (let i = 0; i < 6; i++) { c.fillStyle = `rgba(90,60,160,${a * 0.6})`; c.fillRect(300 + ((i * 97 + this.time * 40) % (W - 300)), y0 + 10 + (i * 23) % (y1 - y0 - 20), 10, 6); }
+    }
     for (const a of this.ambient) { c.fillStyle = a.color; c.globalAlpha = a.kind === "ash" ? 0.8 : 0.9; c.fillRect(Math.round(a.x), Math.round(a.y), a.size, a.size); }
     c.globalAlpha = 1;
     if (boss) boss.drawFx(c);
+    if (["playing", "paused", "over"].includes(this.state)) this.level.drawPortal(c);
     for (const f of this.floaters) {
       const p = toScreen(f.laneT, f.x, f.y);
       c.globalAlpha = clamp(1 - (f.t - 0.7) / 0.4, 0, 1);
@@ -6560,7 +6862,14 @@ class Game {
     const boss = this.bosses.boss;
     if (boss) boss.drawGround(c, lane);
     for (const p of this.powerups) if (p.lane === lane) this.drawEntity(c, lane, p.x, () => p.draw(c));
-    for (const o of this.obstacles) if (o.lane === lane) this.drawEntity(c, lane, o.x, () => o.draw(c));
+    for (const o of this.obstacles) if (o.lane === lane) this.drawEntity(c, lane, o.x, () => {
+      o.draw(c);
+      if (o.trapBy) {   // banderita de quién puso la trampa
+        const top = -(o.kind === "flyer" ? o.y + o.h : o.h) - 22, cx = o.w / 2, col = o.trapBy === 1 ? UI_T.go : UI_T.info;
+        c.fillStyle = UI_T.line; c.fillRect(cx - 15, top - 9, 30, 18); c.fillStyle = col; c.fillRect(cx - 13, top - 7, 26, 14);
+        c.font = '10px "Raptor Pixel Display", monospace'; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#16111f"; c.fillText("J" + o.trapBy, cx, top + 1);
+      }
+    });
     for (const k of this.coinsArr) if ((k.laneT < 0.5 ? 0 : 1) === lane) this.drawEntity(c, k.laneT, k.x, () => k.draw(c));
     for (const e of this.eggs) if (e.lane === lane) this.drawEntity(c, lane, e.x, () => e.draw(c));
     for (const h of this.hatches) if (h.lane === lane) this.drawEntity(c, lane, h.x, () => drawEggHalves(c, 0, -h.y, h.t / 0.8, 3));
@@ -6640,6 +6949,8 @@ addEventListener("keydown", e => {
       case "w": game.player.jump(); break;
       case "s": game.player.slide(); break;
       case "e": case "d": game.roarP(game.player); break;
+      case "a": game.throwTrap(game.player); break;
+      case "ArrowLeft": game.throwTrap(game.p2); break;
       case "ArrowUp": game.p2.jump(); break;
       case "ArrowDown": game.p2.slide(); break;
       case "ArrowRight": case "Enter": case "ShiftRight": game.roarP(game.p2); break;
