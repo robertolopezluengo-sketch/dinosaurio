@@ -420,6 +420,15 @@
   .alb small { font-size: 11px; line-height: 15px; color: var(--text-dim); }
   .alb.locked b { color: #7d7393; }
   @media (max-width: 640px) { .up-card { width: 100%; min-height: 0; } }
+  /* Copia de seguridad */
+  .card.bk { max-width: 760px; text-align: left; }
+  .card.bk .actions { justify-content: flex-start; margin: 8px 0; }
+  .card.bk .btn { font-size: 10px; line-height: 10px; padding: 10px 12px 12px; min-width: 0; }
+  #bkCode { width: 100%; box-sizing: border-box; height: 90px; resize: vertical; background: #14101f; color: var(--text); border: 2px solid var(--line); font: 11px/1.4 monospace; padding: 8px; word-break: break-all; }
+  .bk-sum { background: var(--surface-2); border: 2px solid var(--weak); padding: 8px 12px; margin: 8px 0; }
+  .bk-sum p { margin: 4px 0; font-size: 15px; }
+  .bk-msg { min-height: 1.2em; font-size: 12px; margin: 6px 0; } .bk-msg.ok { color: var(--go); } .bk-msg.err { color: #ff8a8a; }
+  .bk-remind { font-family: var(--f-title); font-size: 10px; color: var(--weak); margin: 10px 0 0; animation: synpulse 1.6s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -458,6 +467,7 @@
       <button class="btn" id="btnAch">🏆 Logros</button>
       <button class="btn" id="btnAlbum">📖 Álbum</button>
       <button class="btn" id="btnMenuHistory">Historial</button>
+      <button class="btn" id="btnBackup">💾 Guardar / Cargar</button>
       <button class="btn" id="btnManual">Manual</button>
       <button class="btn purple" id="btnVersus">👥 Multijugador</button>
     </div>
@@ -469,6 +479,7 @@
     <p class="touch-hint">Multijugador (2 jugadores, mismo teclado, sin jefes): J1 corre arriba con <kbd>W</kbd> saltar, <kbd>S</kbd> deslizarse y <kbd>E</kbd> rugido y <kbd>A</kbd> trampa · J2 corre abajo con <kbd>↑</kbd> saltar, <kbd>↓</kbd> deslizarse, <kbd>→</kbd> rugido y <kbd>←</kbd> trampa. Gana quien aguante más.</p>
     <p class="touch-hint">Bosses: cada uno se vence de una forma distinta (la verás abajo en la pantalla). Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
     <div class="actions" style="margin:10px 0 0"><button class="btn ghost" id="btnMute">Sonido: SÍ</button></div>
+    <p class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso (Guardar / Cargar)</p>
     <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–9 y 0 = nivel 1–10 · B = boss del nivel actual</p>
   </div>
 </div>
@@ -606,6 +617,23 @@
     </div>
     <p class="touch-hint" style="margin:0"><kbd>A</kbd>/<kbd>D</kbd> elegir carta · <kbd>W</kbd> coger</p>
     <div id="upBuild" class="build-row"></div>
+  </div>
+</div>
+
+<!-- Copia de seguridad -->
+<div id="backup" class="overlay hidden">
+  <div class="card bk">
+    <div class="shop-head"><h2>Guardar / Cargar</h2><button class="btn" id="bkBack">← Volver</button></div>
+    <p class="touch-hint">Guarda TODO tu progreso (monedas, skins, diseños, checkpoints, logros, estadísticas, árbol, historial, álbum y opciones) en un código de texto o en un archivo, y cárgalo en otro navegador u ordenador.</p>
+    <h3>Exportar</h3>
+    <div class="actions"><button class="btn primary" id="bkExport">Crear código</button><button class="btn" id="bkCopy">Copiar código</button><button class="btn gold" id="bkDownload">Descargar archivo</button></div>
+    <textarea id="bkCode" spellcheck="false" placeholder="Pulsa «Crear código»… o pega aquí un código para importarlo"></textarea>
+    <h3>Importar</h3>
+    <div class="actions"><button class="btn purple" id="bkImport">Importar el código pegado</button><button class="btn" id="bkFileBtn">Elegir archivo…</button><input type="file" id="bkFile" accept=".txt,text/plain" hidden></div>
+    <div id="bkSummary" class="bk-sum hidden"><p id="bkSumText"></p><p class="touch-hint">Se sustituirá tu progreso actual (antes se guarda una copia para poder deshacerlo).</p>
+      <div class="actions"><button class="btn primary" id="bkConfirm">Sí, cargar este progreso</button><button class="btn" id="bkCancel">Cancelar</button></div></div>
+    <p id="bkMsg" class="bk-msg"></p>
+    <div class="actions"><button class="btn ghost hidden" id="bkUndo">↶ Restaurar el guardado anterior</button></div>
   </div>
 </div>
 
@@ -1826,6 +1854,10 @@ class SaveManager {
       bossesDefeated: [], editor: false, eggWallet: 0, eggsMigrated: true, designs: Array(CONFIG.EDITOR_SLOTS).fill(null),
       ach: { unlocked: {}, stats: {} },
       buildHistory: [], album: { ups: {}, syn: {}, pacts: {} },
+      // Update: copia de seguridad, estadísticas, árbol (fósiles) y tutorial/consejos
+      version: 1, firstPlay: new Date().toISOString(), lastExport: "",
+      stats: {}, tree: {}, fossils: 0, treeResets: 0, lastWeeklySpin: "",
+      tips: { seen: {}, off: false }, tutorialDone: false, tutorialRewarded: false,
     };
     this.load();
     if (DEBUG) {
@@ -1854,6 +1886,15 @@ class SaveManager {
           if (x && x.sprite && SKINS_DATA.sprites[x.sprite] && x.pal) this.data.designs[i] = x;
         }
         if (d.ach && typeof d.ach === "object") this.data.ach = { unlocked: d.ach.unlocked || {}, stats: d.ach.stats || {} };
+        const obj = v => v && typeof v === "object" && !Array.isArray(v);
+        if (typeof d.firstPlay === "string") this.data.firstPlay = d.firstPlay;
+        if (typeof d.lastExport === "string") this.data.lastExport = d.lastExport;
+        if (typeof d.lastWeeklySpin === "string") this.data.lastWeeklySpin = d.lastWeeklySpin;
+        if (obj(d.stats)) this.data.stats = d.stats;
+        if (obj(d.tree)) for (const n of TREE_NODES) if (Number.isInteger(d.tree[n.id])) this.data.tree[n.id] = clamp(d.tree[n.id], 0, n.max);
+        this.data.fossils = num(d.fossils); this.data.treeResets = num(d.treeResets);
+        if (obj(d.tips)) this.data.tips = { seen: obj(d.tips.seen) ? d.tips.seen : {}, off: !!d.tips.off };
+        this.data.tutorialDone = !!d.tutorialDone; this.data.tutorialRewarded = !!d.tutorialRewarded;
         if (Array.isArray(d.buildHistory)) this.data.buildHistory = d.buildHistory.filter(r => r && typeof r === "object").slice(0, 20);
         if (d.album && typeof d.album === "object") for (const k of ["ups", "syn", "pacts"]) if (d.album[k] && typeof d.album[k] === "object") this.data.album[k] = d.album[k];
         this.data.eggWallet = num(d.eggWallet); this.data.eggsMigrated = !!d.eggsMigrated;
@@ -6003,6 +6044,7 @@ class UI {
     bind("btnRoulette", () => game.openRoulette("menu"));
     bind("btnAch", () => game.openAchievements("menu"));
     bind("btnAlbum", () => game.openAlbum());
+    bind("btnBackup", () => game.openBackup());
     bind("btnHistory", () => game.openHistory("over"));
     bind("btnMenuHistory", () => game.openHistory("menu"));
     bind("btnManual", () => game.openManual("menu"));
@@ -6033,6 +6075,7 @@ class UI {
     this.$("menuCoins").textContent = s.coins; this.$("menuEggs").textContent = s.eggWallet; this.$("menuSkin").textContent = sk ? sk.name : "—";
     this.$("menuAch").textContent = `${g.ach.unlockedCount}/${ACHIEVEMENTS.length}`;
     this.$("debugHint").classList.toggle("hidden", !DEBUG);
+    this.$("bkRemind").classList.toggle("hidden", !g.backup.needsReminder());
     this.hideAll(); this.menu.classList.remove("hidden");
   }
   // Pantalla "Jugar": modo + nivel inicial (checkpoints comprados)
@@ -7821,6 +7864,134 @@ function drawEggArrow(c, g) {
   c.restore(); drawEggPixels(c, W - 48, y, 1.2);
 }
 
+// =====================================================================
+//  SaveBackup: copia de seguridad de TODO el progreso (monedas, skins, diseños, checkpoints, logros,
+//  estadísticas, árbol, historial, álbum, consejos y opciones) como código de texto o archivo.
+//  Formato: "DINO" + versión + "." + base64(deflate(JSON)) + "." + suma de comprobación (FNV-1a de 32 bits, hex).
+// =====================================================================
+const BACKUP_CONFIG = {
+  VERSION: 1,               // versión del formato de la copia (si cambia el guardado, sube y se añade una conversión en migrate)
+  REMIND_DAYS: 7,           // días sin exportar antes del aviso del menú
+  UNDO_KEY: SAVE_KEY + ".antesDeImportar",
+};
+function fnv1a(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, "0"); }
+const b64FromBytes = bytes => { let s = ""; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s); };
+const bytesFromB64 = b64 => Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+async function deflate(text, inflate = false) {
+  const bytes = inflate ? text : new TextEncoder().encode(text);
+  if (typeof CompressionStream === "undefined") return null;   // navegador sin compresión: se guarda sin comprimir
+  const cs = inflate ? new DecompressionStream("deflate-raw") : new CompressionStream("deflate-raw");
+  const out = new Response(new Blob([bytes]).stream().pipeThrough(cs));
+  return inflate ? await out.text() : new Uint8Array(await out.arrayBuffer());
+}
+class SaveBackup {
+  constructor(game) {
+    this.g = game; const $ = id => document.getElementById(id);
+    this.el = $("backup"); this.code = $("bkCode"); this.msg = $("bkMsg"); this.sum = $("bkSummary"); this.file = $("bkFile");
+    const bind = (id, fn) => $(id).addEventListener("click", e => { game.sfx.click(); e.currentTarget.blur(); fn(); });
+    bind("bkBack", () => this.close());
+    bind("bkExport", () => this.exportCode());
+    bind("bkCopy", () => this.copy());
+    bind("bkDownload", () => this.download());
+    bind("bkImport", () => this.check(this.code.value));
+    bind("bkFileBtn", () => this.file.click());
+    bind("bkConfirm", () => this.apply());
+    bind("bkCancel", () => { this.pending = null; this.sum.classList.add("hidden"); this.say(""); });
+    bind("bkUndo", () => this.undo());
+    this.file.addEventListener("change", () => { const f = this.file.files[0]; if (!f) return; f.text().then(t => { this.code.value = t.trim(); this.check(t); }); this.file.value = ""; });
+  }
+  get visible() { return !this.el.classList.contains("hidden"); }
+  open() { this.pending = null; this.sum.classList.add("hidden"); this.code.value = ""; this.say(""); this.refreshUndo(); this.el.classList.remove("hidden"); }
+  close() { this.el.classList.add("hidden"); this.g.showMenu(); }
+  say(text, kind = "") { this.msg.textContent = text; this.msg.className = "bk-msg " + kind; }
+  refreshUndo() { let has = false; try { has = !!localStorage.getItem(BACKUP_CONFIG.UNDO_KEY); } catch (e) {} document.getElementById("bkUndo").classList.toggle("hidden", !has); }
+  // ----- Exportar -----
+  async makeCode() {
+    const s = this.g.save; s.save();
+    const json = JSON.stringify({ version: BACKUP_CONFIG.VERSION, date: new Date().toISOString(), data: s.data });
+    const z = await deflate(json).catch(() => null);
+    const body = z ? "z" + b64FromBytes(z) : "j" + b64FromBytes(new TextEncoder().encode(json));
+    return `DINO${BACKUP_CONFIG.VERSION}.${body}.${fnv1a(body)}`;
+  }
+  async exportCode() {
+    this.code.value = await this.makeCode();
+    this.markExported(); this.say(`Código listo (${fmtNum(this.code.value.length)} caracteres). Cópialo o descárgalo y guárdalo en un sitio seguro.`, "ok");
+  }
+  markExported() { this.g.save.data.lastExport = new Date().toISOString(); this.g.save.save(); }
+  async copy() {
+    if (!this.code.value.startsWith("DINO")) await this.exportCode();
+    try { await navigator.clipboard.writeText(this.code.value); this.say("Copiado al portapapeles.", "ok"); }
+    catch (e) { this.code.select(); try { document.execCommand("copy"); this.say("Copiado al portapapeles.", "ok"); } catch (e2) { this.say("No se ha podido copiar: selecciona el código y cópialo a mano.", "err"); } }
+    this.markExported();
+  }
+  async download() {
+    const code = this.code.value.startsWith("DINO") ? this.code.value : await this.makeCode();
+    const d = new Date(), name = `dino-runner-guardado-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}.txt`;
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([code], { type: "text/plain" })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    this.code.value = code; this.markExported(); this.say(`Descargado: ${name}`, "ok");
+  }
+  // ----- Importar -----
+  // Devuelve { data } o lanza un Error con un mensaje claro (no toca nada)
+  static async decode(text) {
+    const t = String(text || "").replace(/\s+/g, "");
+    const m = /^DINO(\d+)\.([zj][A-Za-z0-9+/=]+)\.([0-9a-f]{8})$/.exec(t);
+    if (!m) throw new Error("Eso no parece un código de Dino Runner (debe empezar por «DINO» y estar completo).");
+    const ver = +m[1], body = m[2];
+    if (fnv1a(body) !== m[3]) throw new Error("El código está dañado o incompleto (la suma de comprobación no coincide). No se ha cambiado nada.");
+    if (ver > BACKUP_CONFIG.VERSION) throw new Error(`Este código es de una versión más nueva del juego (formato ${ver}). Actualiza el juego para cargarlo.`);
+    let json;
+    try { json = body[0] === "z" ? await deflate(bytesFromB64(body.slice(1)), true) : new TextDecoder().decode(bytesFromB64(body.slice(1))); }
+    catch (e) { throw new Error("No se ha podido descomprimir el código. No se ha cambiado nada."); }
+    let obj; try { obj = JSON.parse(json); } catch (e) { throw new Error("El contenido del código no es válido. No se ha cambiado nada."); }
+    if (!obj || typeof obj.data !== "object") throw new Error("El código no contiene un guardado. No se ha cambiado nada.");
+    return SaveBackup.migrate(obj);
+  }
+  // Conversión de formatos antiguos (versión → versión actual)
+  static migrate(obj) {
+    if ((obj.version || 1) < 1) obj.version = 1;
+    return obj;
+  }
+  static summary(d) {
+    const n = v => fmtNum(Number(v) || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const skins = Array.isArray(d.owned) ? d.owned.length : 1, achs = d.ach && d.ach.unlocked ? Object.keys(d.ach.unlocked).length : 0;
+    const rec = d.records ? Math.max(d.records.normal || 0, d.records.easy || 0, d.records.hard || 0) : 0;
+    return [`${n(d.coins)} monedas`, `${skins} skin${skins === 1 ? "" : "s"}`, `${achs} logro${achs === 1 ? "" : "s"}`, `${n(d.fossils)} fósiles`, `${(d.checkpoints || []).length} checkpoints`, `récord ${n(rec)}`, `${n(d.eggWallet)} huevos`].join(", ");
+  }
+  async check(text) {
+    this.sum.classList.add("hidden"); this.pending = null;
+    try {
+      const obj = await SaveBackup.decode(text);
+      this.pending = obj;
+      document.getElementById("bkSumText").textContent = `Guardado del ${new Date(obj.date).toLocaleString("es-ES")}: ${SaveBackup.summary(obj.data)}.`;
+      this.sum.classList.remove("hidden"); this.say("Código correcto. Revisa el resumen y confirma.", "ok");
+    } catch (e) { this.say(e.message, "err"); this.g.sfx.denied(); }
+  }
+  apply() {
+    if (!this.pending) return;
+    try {
+      const cur = localStorage.getItem(SAVE_KEY);   // copia del progreso actual para poder deshacer
+      if (cur) localStorage.setItem(BACKUP_CONFIG.UNDO_KEY, cur);
+      localStorage.setItem(SAVE_KEY, JSON.stringify(this.pending.data));
+    } catch (e) { this.say("No se ha podido escribir en el almacenamiento del navegador.", "err"); return; }
+    this.say("¡Progreso cargado! Reiniciando…", "ok"); setTimeout(() => location.reload(), 400);
+  }
+  undo() {
+    try {
+      const prev = localStorage.getItem(BACKUP_CONFIG.UNDO_KEY); if (!prev) return;
+      localStorage.setItem(SAVE_KEY, prev); localStorage.removeItem(BACKUP_CONFIG.UNDO_KEY);
+    } catch (e) { this.say("No se ha podido restaurar.", "err"); return; }
+    this.say("Guardado anterior restaurado. Reiniciando…", "ok"); setTimeout(() => location.reload(), 400);
+  }
+  // Aviso del menú: 7 días sin exportar y progreso importante
+  needsReminder() {
+    const d = this.g.save.data, since = d.lastExport || d.firstPlay; if (!since) return false;
+    const days = (Date.now() - new Date(since).getTime()) / 864e5;
+    const big = d.coins >= 1000 || d.owned.length > 2 || Object.keys(d.ach.unlocked).length >= 5 || d.completed >= 3 || (d.fossils || 0) >= 10;
+    return big && days >= BACKUP_CONFIG.REMIND_DAYS;
+  }
+}
+
 // Causa de un golpe (estadística «qué te mata más»)
 function obstacleCause(o) {
   if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
@@ -7860,6 +8031,7 @@ class Game {
     this.ach = new AchievementManager(this);
     this.ui = new UI(this); this.shop = new Shop(this); this.roulette = new Roulette(this); this.manual = new Manual(this);
     this.rogue = new RogueManager(this); this.history = new BuildHistory(this); this.album = new UpgradeAlbum(this);
+    this.backup = new SaveBackup(this);
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
     this.clouds = Array.from({ length: 6 }, () => ({ x: rand(0, W), y: rand(20, 120), w: rand(50, 110) }));
     this.stars = Array.from({ length: 50 }, () => ({ x: rand(0, W), y: rand(0, 190), s: Math.random() < 0.2 ? 3 : 2, tw: rand(1, 4), ph: rand(0, 6) }));
@@ -7927,7 +8099,7 @@ class Game {
   // ----- Estados -----
   closeScreens() {
     this.ui.hideAll();
-    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el]) el.classList.add("hidden");
+    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el]) el.classList.add("hidden");
   }
   showMenu() {
     if (["playing", "paused", "choice"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
@@ -7975,6 +8147,7 @@ class Game {
   openRoulette(from) { this.state = "roulette"; this.closeScreens(); this.roulette.open(from); }
   openManual(from) { if (from !== "pause") this.state = "manual"; this.closeScreens(); this.manual.open(from); }
   openHistory(from) { this.closeScreens(); this.history.open(from); }
+  openBackup() { this.state = "backup"; this.closeScreens(); this.backup.open(); }
   openAlbum() { this.state = "album"; this.closeScreens(); this.album.open(); }
   openAchievements(from) { this.state = "achievements"; this.closeScreens(); this.ach.open(from); }
   setPaused(on) {
@@ -8250,7 +8423,7 @@ class Game {
     if (this.shake > 0) { this.shake -= dt; if (this.shake <= 0) this.shakeMag = 0; }
     this.updateAmbient(this.state === "paused" ? 0 : dt);
 
-    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album"].includes(this.state)) {
+    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup"].includes(this.state)) {
       this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt); return;
     }
     if (this.state === "over") {
@@ -8534,7 +8707,7 @@ const KEY_CODES = { KeyW: "w", KeyA: "a", KeyS: "s", KeyD: "d", KeyE: "e", KeyP:
 const keyOf = e => (e.key && e.key.length === 1 ? e.key.toLowerCase() : KEY_CODES[e.code] || e.code);
 addEventListener("keydown", e => {
   const k = keyOf(e), st = game.state;
-  if (e.target && e.target.tagName === "INPUT") return;            // escribir el nombre de un diseño
+  if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;           // escribir el nombre de un diseño
   // Si el foco está en un botón, Espacio/Enter lo pulsan (comportamiento normal del navegador)
   if ((e.code === "Space" || e.code === "Enter") && e.target.closest && e.target.closest("button")) return;
   // Controles: W saltar · S deslizarse/caída rápida · A carril de arriba · D carril de abajo · E rugido · P pausa
@@ -8555,6 +8728,7 @@ addEventListener("keydown", e => {
   if (game.roulette.visible) { if (k === "Escape") game.roulette.close(); return; }
   if (game.history.visible) { if (k === "Escape") game.history.close(); return; }
   if (game.album.visible) { if (k === "Escape") game.album.close(); return; }
+  if (game.backup.visible) { if (k === "Escape") game.backup.close(); return; }
   if (st === "choice") {   // elección de mejora o pacto: A/D o flechas + W/Intro, R barajar, Q saltar, 1–4 directa
     const S = game.rogue.screen;
     if (k === "a" || k === "ArrowLeft") S.move(-1);
