@@ -429,6 +429,19 @@
   .bk-sum p { margin: 4px 0; font-size: 15px; }
   .bk-msg { min-height: 1.2em; font-size: 12px; margin: 6px 0; } .bk-msg.ok { color: var(--go); } .bk-msg.err { color: #ff8a8a; }
   .bk-remind { font-family: var(--f-title); font-size: 10px; color: var(--weak); margin: 10px 0 0; animation: synpulse 1.6s ease-in-out infinite; }
+  /* Estadísticas */
+  .st-big { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .st-big b { font-size: 20px; overflow-wrap: anywhere; }
+  .st-chart { width: 100%; height: auto; image-rendering: pixelated; border: 2px solid var(--line); display: block; margin: 6px 0 14px; }
+  .st-table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; font-size: 12px; }
+  .st-table th, .st-table td { border: 2px solid var(--line); padding: 4px 6px; background: var(--surface-2); text-align: center; }
+  .st-table th { background: var(--surface-3); font-family: var(--f-title); font-weight: 400; font-size: 10px; color: var(--text-dim); }
+  .st-table canvas { display: block; image-rendering: pixelated; }
+  .card.st h3 { text-align: left; margin: 12px 0 4px; }
+  .st-build { justify-content: flex-start; flex-direction: column; align-items: flex-start; }
+  .st-skin { display: flex; gap: 14px; align-items: center; } .st-skin canvas { image-rendering: pixelated; border: 2px solid var(--line); }
+  .st-skin b { font-family: var(--f-title); font-weight: 400; font-size: 20px; color: var(--weak); display: block; } .st-skin small { color: var(--text-dim); }
+  #stBody { overflow-x: auto; }
 </style>
 </head>
 <body>
@@ -467,6 +480,7 @@
       <button class="btn" id="btnAch">🏆 Logros</button>
       <button class="btn" id="btnAlbum">📖 Álbum</button>
       <button class="btn" id="btnMenuHistory">Historial</button>
+      <button class="btn" id="btnStats">📊 Estadísticas</button>
       <button class="btn" id="btnBackup">💾 Guardar / Cargar</button>
       <button class="btn" id="btnManual">Manual</button>
       <button class="btn purple" id="btnVersus">👥 Multijugador</button>
@@ -634,6 +648,16 @@
       <div class="actions"><button class="btn primary" id="bkConfirm">Sí, cargar este progreso</button><button class="btn" id="bkCancel">Cancelar</button></div></div>
     <p id="bkMsg" class="bk-msg"></p>
     <div class="actions"><button class="btn ghost hidden" id="bkUndo">↶ Restaurar el guardado anterior</button></div>
+  </div>
+</div>
+
+<!-- Estadísticas -->
+<div id="statsScr" class="overlay hidden">
+  <div class="card achs st">
+    <div class="shop-head"><h2>Estadísticas</h2><button class="btn" id="stBack">← Volver</button></div>
+    <div class="tabs" id="stTabs"></div>
+    <div id="stBody"></div>
+    <div class="actions" style="margin-top:14px"><button class="btn ghost" id="stReset">Reiniciar estadísticas</button></div>
   </div>
 </div>
 
@@ -6045,6 +6069,7 @@ class UI {
     bind("btnAch", () => game.openAchievements("menu"));
     bind("btnAlbum", () => game.openAlbum());
     bind("btnBackup", () => game.openBackup());
+    bind("btnStats", () => game.openStats());
     bind("btnHistory", () => game.openHistory("over"));
     bind("btnMenuHistory", () => game.openHistory("menu"));
     bind("btnManual", () => game.openManual("menu"));
@@ -7002,7 +7027,9 @@ class AchievementManager {
   checkStat(k) { for (const a of ACHIEVEMENTS) if (a.stat === k && this.stat(k) >= a.goal) this.unlock(a.id); }
   // Evento central: todo el juego informa aquí de lo que pasa
   event(type, d = {}) {
-    if (DEBUG || this.game.versus) return;              // con el modo prueba o en multijugador no se consiguen logros
+    if (this.game.versus) return;                       // en multijugador no se consiguen logros
+    if (this.game.statsMgr) this.game.statsMgr.event(type, d);   // las estadísticas usan los mismos eventos
+    if (DEBUG) return;                                  // con el modo prueba no se consiguen logros
     const g = this.game, easy = g.mode.id === "easy", hard = g.mode.id === "hard", normal = !easy, run = g.run;   // los logros «solo Normal» también valen en Difícil
     switch (type) {
       case "runStart":
@@ -7669,7 +7696,7 @@ class RogueManager {
   onUpgradeAdded(u) {
     const al = this.album; al.ups[u.id] = 1; this.g.save.save();
     const legends = Object.keys(this.g.build.levels).filter(id => UPGRADE_BY_ID[id].rarity === "legendaria").length;
-    this.g.ach.event("upgradePicked", { distinct: Object.keys(al.ups).length, legends });
+    this.g.ach.event("upgradePicked", { id: u.id, rarity: u.rarity, distinct: Object.keys(al.ups).length, legends });
   }
   get album() { return this.g.save.data.album; }
   // Historial: últimas 20 partidas
@@ -7992,6 +8019,195 @@ class SaveBackup {
   }
 }
 
+// =====================================================================
+//  StatsManager: estadísticas permanentes (save.data.stats). Se alimenta de los mismos eventos que los logros
+//  (AchievementManager.event le pasa cada evento antes de filtrar) y tiene su pantalla con pestañas y gráficos.
+// =====================================================================
+const RARITY_RANK = { comun: 1, rara: 2, epica: 3, legendaria: 4 };
+const fmtInt = v => String(Math.round(Number(v) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const fmtTime = s => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60; return h ? `${h} h ${m} min` : m ? `${m} min ${s % 60} s` : `${s} s`; };
+class StatsManager {
+  constructor(game) {
+    this.g = game; this.tab = "general"; this.resetArm = 0; this.fight = null;
+    const $ = id => document.getElementById(id);
+    this.el = $("statsScr"); this.body = $("stBody"); this.resetBtn = $("stReset");
+    $("stBack").addEventListener("click", e => { e.currentTarget.blur(); game.sfx.click(); this.close(); });
+    this.resetBtn.addEventListener("click", e => { e.currentTarget.blur(); this.resetClick(); });
+    const tabs = $("stTabs");
+    for (const [k, name] of [["general", "General"], ["jefes", "Jefes"], ["monturas", "Monturas"], ["roguelike", "Roguelike"], ["otros", "Otros"]]) {
+      const b = document.createElement("button"); b.className = "tab"; b.dataset.t = k; b.textContent = name;
+      b.addEventListener("click", () => { game.sfx.click(); this.tab = k; this.render(); }); tabs.appendChild(b);
+    }
+  }
+  get s() { const d = this.g.save.data; return d.stats || (d.stats = {}); }
+  // Acceso a contadores anidados: o("move").jumps++
+  o(k) { const s = this.s; return s[k] || (s[k] = {}); }
+  inc(obj, k, n = 1) { obj[k] = (obj[k] || 0) + n; }
+  boss(id) { const B = this.o("bosses"); return B[id] || (B[id] = { faced: 0, wins: 0, losses: 0, best: 0, hearts: 0, ended: 0, corrupt: 0, gold: 0 }); }
+  mount(id) { const M = this.o("mounts"); return M[id] || (M[id] = { uses: 0, time: 0, lost: 0 }); }
+  endFight(id, lost) { if (!this.fight || this.fight.id !== id) return; const B = this.boss(id); B.hearts += this.fight.hearts; B.ended++; if (lost) B.losses++; this.fight = null; }
+  event(type, d = {}) {
+    const g = this.g; if (g.tutorial) return;
+    const s = this.s, mv = () => this.o("move");
+    switch (type) {
+      case "runStart": this.inc(this.o("games"), g.mode.id); break;
+      case "jump": this.inc(mv(), "jumps"); break;
+      case "doubleJump": this.inc(mv(), "doubleJumps"); break;
+      case "slide": this.inc(mv(), "slides"); break;
+      case "stomp": this.inc(mv(), "stomps"); break;
+      case "laneChange": this.inc(mv(), "lanes"); break;
+      case "roar": this.inc(mv(), "roars"); break;
+      case "superRoar": this.inc(mv(), "superRoars"); break;
+      case "roarKill": this.inc(mv(), "destroyed"); break;
+      case "nearMiss": this.inc(mv(), "nearMiss"); break;
+      case "eggCollected": this.inc(s, "eggs"); break;
+      case "levelReached": s.maxLevel = Math.max(s.maxLevel || 1, d.level); break;
+      case "coinsEarned": this.inc(s, "coinsEarned", d.n); break;
+      case "coinsSpent": this.inc(this.o("spent"), d.on || "otros", d.n); break;
+      case "purchase": {
+        const n = d.kind === "skin" ? d.skin.price : d.kind === "checkpoint" ? g.checkpoints.price(d.level) : d.kind === "editor" ? CONFIG.EDITOR_PRICE : 0;
+        if (n) this.inc(this.o("spent"), "shop", n);
+        break;
+      }
+      case "rouletteSpin": {
+        const R = this.o("roulette"); this.inc(R, "spins"); this.inc(R, "bet", d.bet); this.inc(this.o("spent"), "roulette", d.bet);
+        if (d.win > d.bet) this.inc(R, "won", d.win - d.bet); else this.inc(R, "lost", d.bet - d.win);
+        if (d.mult === d.top) this.inc(R, "jackpots");
+        break;
+      }
+      case "freeSpin": this.inc(this.o("roulette"), "free"); break;
+      // Jefes
+      case "bossStart": { const B = this.boss(d.id); B.faced++; this.fight = { id: d.id, hearts: 0 }; break; }
+      case "heartLost": if (d.boss && this.fight) this.fight.hearts++; break;
+      case "bossDefeated": {
+        const B = this.boss(d.id); B.wins++; if (d.time && (!B.best || d.time < B.best)) B.best = Math.round(d.time * 10) / 10;
+        if (d.tier === 1) B.corrupt++; if (d.tier >= 2) B.gold++;
+        this.endFight(d.id, false); break;
+      }
+      case "bossLost": this.endFight(d.id, true); break;
+      // Monturas
+      case "mountUsed": this.mount(d.id).uses++; break;
+      case "mountTime": this.mount(d.id).time += d.t; break;
+      case "mountLost": this.mount(d.id).lost++; break;
+      // Roguelike
+      case "upgradePicked": {
+        const R = this.o("rogue"); this.inc(this.o("picks"), d.id);
+        R.bestRarity = Math.max(R.bestRarity || 0, RARITY_RANK[d.rarity] || 0); break;
+      }
+      case "synergy": this.inc(this.o("rogue"), "synergies"); break;
+      case "pact": this.inc(this.o("rogue"), "pacts"); break;
+    }
+  }
+  // Fin de partida (la llama Game.bankRun): tiempo, distancia, puntuaciones, muerte, skin y mejor build
+  runEnd() {
+    const g = this.g; if (g.tutorial) return;
+    const s = this.s, score = g.score;
+    if (g.versus) { if (g.state !== "over") return; const V = this.o("versus"), [a, b] = [g.player.score, g.p2.score]; this.inc(V, "games"); this.inc(V, a === b ? "draws" : a > b ? "p1" : "p2"); this.inc(s, "time", g.runTime); return; }
+    this.inc(s, "time", g.runTime); this.inc(s, "distance", g.distScore); this.inc(this.o("skins"), g.skinId, g.runTime);
+    s.maxLevel = Math.max(s.maxLevel || 1, g.level.level);
+    const best = this.o("best"); best[g.mode.id] = Math.max(best[g.mode.id] || 0, score);
+    s.last = [...(s.last || []), score].slice(-20);
+    if (g.state === "over") {
+      const D = this.o("deaths"); this.inc(D, "total"); this.inc(this.o("deathBy"), g.deathCause || "Obstáculo"); this.inc(this.o("deathBiome"), g.level.biome.id);
+      if (g.bosses.phase === "fight" && g.bosses.pending) this.endFight(BOSS_IDS[g.bosses.pending.type], true);
+    }
+    const R = this.o("rogue");
+    if (!R.bestBuild || score > R.bestBuild.score) R.bestBuild = { score, ...g.build.summary() };
+  }
+  // ----- Pantalla -----
+  get visible() { return !this.el.classList.contains("hidden"); }
+  open() { this.resetArm = 0; this.render(); this.el.classList.remove("hidden"); }
+  close() { this.el.classList.add("hidden"); this.g.showMenu(); }
+  resetClick() {
+    const g = this.g; this.resetArm++;
+    if (this.resetArm === 1) { this.resetBtn.textContent = "¿Seguro? Se borrarán las estadísticas"; g.sfx.denied(); return; }
+    if (this.resetArm === 2) { this.resetBtn.textContent = "Última confirmación: pulsa otra vez"; g.sfx.denied(); return; }
+    g.save.data.stats = {}; g.save.save(); this.resetArm = 0; g.sfx.shieldBreak(); this.render();   // monedas, skins y logros no se tocan
+  }
+  big(label, value, col = "") { return `<div><small>${label}</small><b${col ? ` style="color:${col}"` : ""}>${value}</b></div>`; }
+  render() {
+    const s = this.s, g = this.g;
+    document.querySelectorAll("#stTabs .tab").forEach(b => b.classList.toggle("active", b.dataset.t === this.tab));
+    this.resetBtn.textContent = "Reiniciar estadísticas";
+    const games = this.o("games"), total = (games.normal || 0) + (games.easy || 0) + (games.hard || 0), best = this.o("best"), sp = this.o("spent"), mv = this.o("move");
+    let html = "";
+    if (this.tab === "general") {
+      html = `<div class="stats st-big">${this.big("PARTIDAS", fmtInt(total))}${this.big("TIEMPO JUGADO", fmtTime(s.time))}${this.big("DISTANCIA", fmtInt(s.distance) + " pts")}${this.big("NIVEL MÁS ALTO", s.maxLevel || 1)}
+        ${this.big("MEJOR NORMAL", fmtInt(best.normal), UI_T.go)}${this.big("MEJOR FÁCIL", fmtInt(best.easy), UI_T.info)}${this.big("MEJOR DIFÍCIL", fmtInt(best.hard), UI_T.danger)}
+        ${this.big("MONEDAS GANADAS", fmtInt(s.coinsEarned), UI_T.gold)}${this.big("MONEDAS GASTADAS", fmtInt((sp.shop || 0) + (sp.roulette || 0) + (sp.reroll || 0)), UI_T.gold)}${this.big("HUEVOS", fmtInt(s.eggs))}</div>
+        <p class="touch-hint">Gastadas: tienda ${fmtInt(sp.shop)} · ruleta ${fmtInt(sp.roulette)} · barajar cartas ${fmtInt(sp.reroll)}</p>
+        <h3>Puntuación de las últimas 20 partidas</h3><canvas class="st-chart" data-chart="last" width="760" height="170"></canvas>
+        <h3>Movimiento</h3><table class="st-table"><tr>${["Saltos", "Dobles saltos", "Deslizamientos", "Pisotones", "Cambios de carril", "Rugidos", "Súper rugidos", "Destruidos", "Por los pelos"].map(x => `<th>${x}</th>`).join("")}</tr>
+        <tr>${["jumps", "doubleJumps", "slides", "stomps", "lanes", "roars", "superRoars", "destroyed", "nearMiss"].map(k => `<td>${fmtInt(mv[k])}</td>`).join("")}</tr></table>
+        <h3>Muertes: ${fmtInt(this.o("deaths").total)} · qué te mata más</h3><canvas class="st-chart" data-chart="deaths" width="760" height="190"></canvas>
+        <h3>Dónde mueres más</h3><canvas class="st-chart" data-chart="biomes" width="760" height="150"></canvas>`;
+    } else if (this.tab === "jefes") {
+      const B = this.o("bosses");
+      html = `<h3>Victorias por jefe</h3><canvas class="st-chart" data-chart="bosses" width="760" height="190"></canvas>
+        <table class="st-table"><tr><th></th><th>Jefe</th><th>Combates</th><th>Victorias</th><th>Derrotas</th><th>% victoria</th><th>Mejor tiempo</th><th>♥ perdidos (media)</th><th>Corrupta</th><th>Dorada</th></tr>
+        ${BOSS_IDS.map((id, i) => { const b = B[id] || {}; const fin = (b.wins || 0) + (b.losses || 0);
+          return `<tr><td><canvas class="st-boss" data-boss="${i}" width="96" height="40"></canvas></td><td>${BOSS_NAMES[i]}</td><td>${fmtInt(b.faced)}</td><td>${fmtInt(b.wins)}</td><td>${fmtInt(b.losses)}</td>
+          <td>${fin ? Math.round(b.wins / fin * 100) + " %" : "—"}</td><td>${b.best ? fmtNum(b.best) + " s" : "—"}</td><td>${b.ended ? fmtNum(Math.round(b.hearts / b.ended * 10) / 10) : "—"}</td><td>${fmtInt(b.corrupt)}</td><td>${fmtInt(b.gold)}</td></tr>`; }).join("")}</table>
+        <p class="touch-hint">Corrupta = boss reforzado de la segunda vuelta · Dorada = tercera vuelta o más.</p>`;
+    } else if (this.tab === "monturas") {
+      const M = this.o("mounts");
+      html = `<table class="st-table"><tr><th></th><th>Montura</th><th>Bioma</th><th>Veces usada</th><th>Tiempo total</th><th>Perdida por un golpe</th></tr>
+        ${MOUNT_BIOMES.map(b => { const m = MOUNT_CONFIG.mounts[b], x = M[m.id] || {}, bi = BIOMES.find(z => z.id === b);
+          return `<tr><td><canvas class="st-mount" data-mount="${m.id}" width="64" height="40"></canvas></td><td>${m.name}</td><td>${bi ? bi.name : b}</td><td>${fmtInt(x.uses)}</td><td>${fmtTime(x.time)}</td><td>${fmtInt(x.lost)}</td></tr>`; }).join("")}</table>`;
+    } else if (this.tab === "roguelike") {
+      const R = this.o("rogue"), P = this.o("picks"), top = Object.entries(P).sort((a, b) => b[1] - a[1]), fav = top[0] && UPGRADE_BY_ID[top[0][0]];
+      const rr = Object.keys(RARITY_RANK).find(k => RARITY_RANK[k] === R.bestRarity), bb = R.bestBuild;
+      html = `<div class="stats st-big">${this.big("MEJORA MÁS ELEGIDA", fav ? `${fav.name} ×${top[0][1]}` : "—", fav ? upColor(fav) : "")}${this.big("RAREZA MÁS ALTA", rr ? ROGUE_CONFIG.RARITY[rr].name : "—", rr ? ROGUE_CONFIG.RARITY[rr].color : "")}
+        ${this.big("SINERGIAS ACTIVADAS", fmtInt(R.synergies), SYN_COLOR)}${this.big("PACTOS ACEPTADOS", fmtInt(R.pacts), PACT_COLOR)}</div>
+        <h3>Mejor build${bb ? ` (${fmtInt(bb.score)} pts)` : ""}</h3><div class="build-row st-build">${bb ? buildIconsHtml({ ups: bb.ups, syn: bb.syn, pacts: bb.pacts }, true) : `<small class="touch-hint">Todavía no hay ninguna</small>`}</div>
+        <h3>Mejoras más elegidas</h3><canvas class="st-chart" data-chart="picks" width="760" height="170"></canvas>`;
+    } else {
+      const R = this.o("roulette"), V = this.o("versus"), SK = Object.entries(this.o("skins")).sort((a, b) => b[1] - a[1]), fav = SK[0] && SkinCatalog.get(SK[0][0]);
+      html = `<h3>Ruleta</h3><div class="stats st-big">${this.big("GIROS", fmtInt(R.spins))}${this.big("APOSTADO", fmtInt(R.bet), UI_T.gold)}${this.big("GANADO", "+" + fmtInt(R.won), UI_T.go)}${this.big("PERDIDO", "−" + fmtInt(R.lost), UI_T.danger)}${this.big("JACKPOTS", fmtInt(R.jackpots), UI_T.weak)}${this.big("GIROS GRATIS", fmtInt(R.free))}</div>
+        <h3>Multijugador (el «rival» de este juego)</h3><div class="stats st-big">${this.big("CARRERAS", fmtInt(V.games))}${this.big("GANA J1", fmtInt(V.p1), UI_T.go)}${this.big("GANA J2", fmtInt(V.p2), UI_T.info)}${this.big("EMPATES", fmtInt(V.draws))}</div>
+        <h3>Skins más usados</h3><div class="st-skin">${fav ? `<canvas id="stSkin" width="200" height="120"></canvas><div><b>${fav.name}</b><small>${fmtTime(SK[0][1])} en partida</small></div>` : `<small class="touch-hint">Juega una partida para empezar a contar</small>`}</div>
+        <table class="st-table">${SK.slice(0, 8).map(([id, t]) => `<tr><td>${SkinCatalog.get(id) ? SkinCatalog.get(id).name : id}</td><td>${fmtTime(t)}</td></tr>`).join("")}</table>`;
+    }
+    this.body.innerHTML = html;
+    this.body.querySelectorAll("canvas[data-chart]").forEach(cv => this.chart(cv, cv.dataset.chart));
+    this.body.querySelectorAll("canvas.st-mount").forEach(cv => { const c = cv.getContext("2d"); c.imageSmoothingEnabled = false; drawMountIcon(c, cv.dataset.mount, 32, 24, 0, 0.75); });
+    this.body.querySelectorAll("canvas.st-boss").forEach(cv => { try { const c = cv.getContext("2d"); DEMOS.boss(c, 0, { w: 96, h: 40, arg: cv.dataset.boss, state: {} }, g); } catch (e) {} });
+    paintBuildIcons(this.body);
+    const sc = document.getElementById("stSkin"); if (sc && SK0(this)) drawSkinPreview(sc.getContext("2d"), SK0(this), { tick: 0, speed: 2, trail: null, acc: 0 }, 200, 120, 4);
+  }
+  // Gráficos sencillos en canvas
+  chart(cv, kind) {
+    const c = cv.getContext("2d"), W2 = cv.width, H2 = cv.height, s = this.s, pad = 34;
+    c.fillStyle = "#14101f"; c.fillRect(0, 0, W2, H2);
+    c.font = '10px "Raptor Pixel Display", monospace'; c.textBaseline = "middle";
+    const bars = (items, color) => {
+      if (!items.length) { c.fillStyle = UI_T.dim; c.textAlign = "center"; c.fillText("Sin datos todavía", W2 / 2, H2 / 2); return; }
+      const max = Math.max(...items.map(x => x[1]), 1), rowH = Math.min(26, (H2 - 10) / items.length);
+      items.forEach(([label, v, col], i) => {
+        const y = 6 + i * rowH, w = Math.round((W2 - 240) * v / max);
+        c.fillStyle = UI_T.text; c.textAlign = "right"; c.fillText(label.length > 24 ? label.slice(0, 23) + "…" : label, 196, y + rowH / 2);
+        c.fillStyle = col || color; c.fillRect(204, y + 3, Math.max(2, w), rowH - 6);
+        c.fillStyle = "rgba(255,255,255,0.3)"; c.fillRect(204, y + 3, Math.max(2, w), 2);
+        c.fillStyle = UI_T.text; c.textAlign = "left"; c.fillText(fmtInt(v), 210 + w, y + rowH / 2);
+      });
+    };
+    if (kind === "last") {
+      const L = s.last || [];
+      if (L.length < 2) { c.fillStyle = UI_T.dim; c.textAlign = "center"; c.fillText(L.length ? `Una partida: ${fmtInt(L[0])} pts` : "Sin datos todavía", W2 / 2, H2 / 2); return; }
+      const max = Math.max(...L, 1), x = i => pad + i * (W2 - pad * 2) / (L.length - 1), y = v => H2 - 20 - (H2 - 40) * v / max;
+      c.strokeStyle = "#3a2f50"; c.lineWidth = 1; for (let k = 0; k <= 4; k++) { const yy = 20 + (H2 - 40) * k / 4; c.beginPath(); c.moveTo(pad, yy); c.lineTo(W2 - pad, yy); c.stroke(); }
+      c.strokeStyle = UI_T.go; c.lineWidth = 3; c.beginPath(); L.forEach((v, i) => i ? c.lineTo(x(i), y(v)) : c.moveTo(x(i), y(v))); c.stroke();
+      L.forEach((v, i) => { c.fillStyle = v === max ? UI_T.weak : UI_T.go; c.fillRect(x(i) - 3, y(v) - 3, 6, 6); });
+      c.fillStyle = UI_T.dim; c.textAlign = "left"; c.fillText(fmtInt(max), 4, 20); c.fillText("0", 4, H2 - 20);
+      c.textAlign = "center"; c.fillText("más antigua → más reciente", W2 / 2, H2 - 7);
+    } else if (kind === "deaths") bars(Object.entries(this.o("deathBy")).sort((a, b) => b[1] - a[1]).slice(0, 7), UI_T.danger);
+    else if (kind === "biomes") bars(Object.entries(this.o("deathBiome")).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, v]) => { const b = BIOMES.find(z => z.id === id); return [b ? b.name : id, v, b ? b.accent : null]; }), UI_T.roar);
+    else if (kind === "bosses") { const B = this.o("bosses"); bars(BOSS_IDS.map((id, i) => [BOSS_NAMES[i], (B[id] || {}).wins || 0]).filter(x => x[1] > 0), UI_T.go); }
+    else if (kind === "picks") bars(Object.entries(this.o("picks")).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id, v]) => [UPGRADE_BY_ID[id] ? UPGRADE_BY_ID[id].name : id, v, UPGRADE_BY_ID[id] ? upColor(UPGRADE_BY_ID[id]) : null]), UI_T.gold);
+  }
+}
+function SK0(st) { const e = Object.entries(st.o("skins")).sort((a, b) => b[1] - a[1])[0]; return e && SkinCatalog.exists(e[0]) ? e[0] : null; }
+
 // Causa de un golpe (estadística «qué te mata más»)
 function obstacleCause(o) {
   if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
@@ -8031,7 +8247,7 @@ class Game {
     this.ach = new AchievementManager(this);
     this.ui = new UI(this); this.shop = new Shop(this); this.roulette = new Roulette(this); this.manual = new Manual(this);
     this.rogue = new RogueManager(this); this.history = new BuildHistory(this); this.album = new UpgradeAlbum(this);
-    this.backup = new SaveBackup(this);
+    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this);
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
     this.clouds = Array.from({ length: 6 }, () => ({ x: rand(0, W), y: rand(20, 120), w: rand(50, 110) }));
     this.stars = Array.from({ length: 50 }, () => ({ x: rand(0, W), y: rand(0, 190), s: Math.random() < 0.2 ? 3 : 2, tw: rand(1, 4), ph: rand(0, 6) }));
@@ -8050,7 +8266,7 @@ class Game {
   }
   newRun() { return { biomes: new Set(), eggs: {}, powerupTypes: new Set(), lastPowerup: 0, lastRoar: 0, lastLane: 0 }; }
   reset() {
-    this.distance = 0; this.runCoins = 0; this.runEggs = 0; this.speed = CONFIG.BASE_SPEED * this.mode.startSpeedMult; this.lives = this.mode.lives;
+    this.runTime = 0; this.distance = 0; this.runCoins = 0; this.runEggs = 0; this.speed = CONFIG.BASE_SPEED * this.mode.startSpeedMult; this.lives = this.mode.lives;
     this.effectMax = { shield: 1, magnet: 1, slowmo: 1, turbo: 1 };
     this.obstacles = []; this.coinsArr = []; this.powerups = []; this.particles = []; this.eggs = []; this.hatches = [];
     this.effects = { shield: 0, magnet: 0, slowmo: 0, turbo: 0 };
@@ -8099,7 +8315,7 @@ class Game {
   // ----- Estados -----
   closeScreens() {
     this.ui.hideAll();
-    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el]) el.classList.add("hidden");
+    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el]) el.classList.add("hidden");
   }
   showMenu() {
     if (["playing", "paused", "choice"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
@@ -8147,6 +8363,7 @@ class Game {
   openRoulette(from) { this.state = "roulette"; this.closeScreens(); this.roulette.open(from); }
   openManual(from) { if (from !== "pause") this.state = "manual"; this.closeScreens(); this.manual.open(from); }
   openHistory(from) { this.closeScreens(); this.history.open(from); }
+  openStats() { this.state = "stats"; this.closeScreens(); this.statsMgr.open(); }
   openBackup() { this.state = "backup"; this.closeScreens(); this.backup.open(); }
   openAlbum() { this.state = "album"; this.closeScreens(); this.album.open(); }
   openAchievements(from) { this.state = "achievements"; this.closeScreens(); this.ach.open(from); }
@@ -8383,6 +8600,7 @@ class Game {
     this.banked = true;
     const s = this.save.data, earned = this.runCoinsInt;
     s.coins += earned; s.eggWallet += this.runEggs;   // los huevos recogidos se gastan en la tienda de huevos
+    this.statsMgr.runEnd();
     if (this.versus) { this.save.save(); return; }   // en multijugador no hay récords ni logros
     if (this.tutorial) { this.save.save(); return; }
     this.rogue.recordRun();
@@ -8423,7 +8641,7 @@ class Game {
     if (this.shake > 0) { this.shake -= dt; if (this.shake <= 0) this.shakeMag = 0; }
     this.updateAmbient(this.state === "paused" ? 0 : dt);
 
-    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup"].includes(this.state)) {
+    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup", "stats"].includes(this.state)) {
       this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt); return;
     }
     if (this.state === "over") {
@@ -8437,7 +8655,7 @@ class Game {
     for (const k of POWERUP_TYPES) {
       if (this.effects[k] > 0) { this.effects[k] = Math.max(0, this.effects[k] - dt); if (k === "turbo" && this.effects[k] === 0) this.grace = CONFIG.HIT_GRACE; }
     }
-    this.grace = Math.max(0, this.grace - dt);
+    this.grace = Math.max(0, this.grace - dt); this.runTime += dt;
     this.roarCd = Math.max(0, this.roarCd - dt);
     this.fury.update(dt);
     if (this.superWave && (this.superWave.t += dt) > 0.7) this.superWave = null;
@@ -8728,6 +8946,7 @@ addEventListener("keydown", e => {
   if (game.roulette.visible) { if (k === "Escape") game.roulette.close(); return; }
   if (game.history.visible) { if (k === "Escape") game.history.close(); return; }
   if (game.album.visible) { if (k === "Escape") game.album.close(); return; }
+  if (game.statsMgr.visible) { if (k === "Escape") game.statsMgr.close(); return; }
   if (game.backup.visible) { if (k === "Escape") game.backup.close(); return; }
   if (st === "choice") {   // elección de mejora o pacto: A/D o flechas + W/Intro, R barajar, Q saltar, 1–4 directa
     const S = game.rogue.screen;
