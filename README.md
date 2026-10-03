@@ -32,7 +32,7 @@ La portada ocupa toda la pantalla, con el escenario del juego animado de fondo (
 - **Pase de temporada (gratis):** 30 niveles que se suben con la XP de cada partida; dan monedas, huevos, fósiles y tres skins exclusivas. La del nivel 30, **Prisma Celestial**, cambia de color sin parar, lleva halo, bufanda y gemas en órbita, estela prismática y rugido propio.
 - **Modo Aleatorio:** dificultad Normal con una regla sorpresa distinta en cada nivel (12 posibles) y récord propio.
 - **Nivel secreto:** solo si completas los 10 niveles desde el nivel 1 sin morir (sin perder vidas ni revivir) aparece un portal dorado al nivel 11, el Santuario prismático, con un jefe secreto de tres fases.
-- **Código secreto:** en Opciones → Código secreto. Desbloquea todas las mejoras (árbol y álbum completos, y empezar cada partida con todas las mejoras, que se puede desactivar).
+- **Código secreto:** en Opciones → Código secreto. Lo desbloquea todo: todas las skins (tienda, logros, huevos y pase), editor, checkpoints, pase completo, logros, árbol y álbum, nivel secreto desde cualquier partida, 99 999 monedas, 999 huevos y 999 fósiles, y empezar cada partida con todas las mejoras (esto último se puede desactivar).
 - **Rendimiento:** resolución interna con tope y calidad automática si el equipo no llega a 60 fps; los sprites se cachean.
 - **Tienda:** 16 skins del kit, 3 exclusivas de logros, checkpoints y editor de skins propias (3 ranuras). Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un rugido especial con pose animada.
 - **Ruleta:** apuestas de 10 a 500 monedas del juego y un giro gratis diario.

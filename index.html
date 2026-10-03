@@ -647,7 +647,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 14</span>
+    <span class="mm-ver">Versión 15</span>
   </div>
 </div>
 
@@ -1673,6 +1673,19 @@ function unlockAllUpgrades(g) {
   for (const x of SYNERGIES) s.album.syn[x.id] = 1;
   for (const p of PACTS) s.album.pacts[p.id] = 1;
   s.codeUsed = true; s.allUpgrades = true;
+  // …y TODO lo demás
+  const ids = [...SKINS_DATA.skins.map(k => k.id), ...EXCLUSIVE_SKINS.map(k => k.id), ...EGG_SKINS.map(k => k.id), ...SEASON_SKINS.map(k => k.id)];
+  for (const id of ids) if (!s.owned.includes(id)) s.owned.push(id);                 // todas las skins (tienda, logros, huevos y pase)
+  s.editor = true;                                                                     // editor de skins
+  s.completed = Math.max(s.completed, CONFIG.CHECKPOINT_LEVELS);                       // todos los checkpoints
+  for (let l = 2; l <= CONFIG.CHECKPOINT_LEVELS; l++) if (!s.checkpoints.includes(l)) s.checkpoints.push(l);
+  s.season = { id: SEASON_CONFIG.ID, xp: 0, tier: SEASON_CONFIG.TIERS, seen: SEASON_CONFIG.TIERS };   // pase completo
+  const now = new Date().toISOString();
+  for (const a of ACHIEVEMENTS) if (!s.ach.unlocked[a.id]) s.ach.unlocked[a.id] = now;  // todos los logros (sin avisos)
+  s.bossesDefeated = [...new Set([...s.bossesDefeated, ...BOSS_IDS])];
+  s.secretUnlocked = true;                                                             // nivel secreto siempre abierto
+  s.tutorialDone = true;
+  s.coins += 99999; s.eggWallet += 999; s.fossils += 999;                              // monedas, huevos y fósiles de sobra
   g.build.cache = {}; g.save.save();
 }
 
@@ -2292,6 +2305,7 @@ class SaveManager {
         this.data.fossils = num(d.fossils); this.data.treeResets = num(d.treeResets);
         if (obj(d.tips)) this.data.tips = { seen: obj(d.tips.seen) ? d.tips.seen : {}, off: !!d.tips.off };
         if (obj(d.season)) this.data.season = { id: num(d.season.id) || 1, xp: num(d.season.xp), tier: Math.min(num(d.season.tier), 30), seen: num(d.season.seen) };
+        this.data.secretUnlocked = !!d.secretUnlocked;
         this.data.codeUsed = !!d.codeUsed; this.data.allUpgrades = !!d.allUpgrades;
         this.data.tutorialDone = !!d.tutorialDone; this.data.tutorialRewarded = !!d.tutorialRewarded;
         if (Array.isArray(d.buildHistory)) this.data.buildHistory = d.buildHistory.filter(r => r && typeof r === "object").slice(0, 20);
@@ -6680,7 +6694,8 @@ class UI {
     const g = this.game, inp = this.$("codeInput"), msg = this.$("codeMsg"), code = inp.value.trim();
     if (code === SECRET_CODE) {
       unlockAllUpgrades(g); inp.value = ""; g.sfx.jackpot(); g.flashT = 0.4;
-      msg.className = "bk-msg ok"; msg.textContent = "¡Código correcto! Árbol completo, álbum completo y todas las mejoras activas en cada partida.";
+      msg.className = "bk-msg ok"; msg.textContent = "¡Código correcto! Todo desbloqueado: skins, editor, checkpoints, pase, logros, árbol, álbum, nivel secreto y todas las mejoras en cada partida.";
+      if (g.shop.refresh) g.shop.refresh(); g.ach.wallet();
     } else { g.sfx.denied(); msg.className = "bk-msg err"; msg.textContent = code ? "Código incorrecto." : "Escribe un código."; }
     this.updateCode(); this.showMenuInfo && this.showMenuInfo();
   }
@@ -9374,7 +9389,7 @@ class Game {
   }
   // ----- Tutorial (nivel de práctica) -----
   // Nivel secreto: partida completa desde el nivel 1 sin morir (ni perder vidas ni revivir)
-  secretOk() { return !this.versus && !this.tutorial && this.startLevel === 1 && this.run.clean; }
+  secretOk() { return !this.versus && !this.tutorial && (this.save.data.secretUnlocked || (this.startLevel === 1 && this.run.clean)); }
   get firstTime() { const s = this.save.data; return !s.tutorialDone && !s.records.normal && !s.records.easy && !s.records.hard; }
   startTutorial() {
     this.sfx.unlock();
