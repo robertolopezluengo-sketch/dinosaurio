@@ -31,6 +31,8 @@ La portada ocupa toda la pantalla, con el escenario del juego animado de fondo (
 - **Tutorial y consejos:** nivel de práctica sin poder morir y consejos la primera vez que aparece cada cosa (se pueden desactivar).
 - **Pase de temporada (gratis):** 30 niveles que se suben con la XP de cada partida; dan monedas, huevos, fósiles y tres skins exclusivas. La del nivel 30, **Prisma Celestial**, cambia de color sin parar, lleva halo, bufanda y gemas en órbita, estela prismática y rugido propio.
 - **Modo Aleatorio:** dificultad Normal con una regla sorpresa distinta en cada nivel (12 posibles) y récord propio.
+- **Carrera diaria:** un recorrido nuevo cada día, el mismo para todos (semilla con la fecha), en Normal desde el nivel 1 con una regla del día fija. Intentos ilimitados con mejor marca propia; el primer intento del día da 200 monedas (+40 por cada día de racha, hasta 7) y 300 XP del pase. Panel con la regla, intentos, racha e historial de 7 días.
+- **Pantallas con el estilo de la portada:** todas las pantallas del menú (tienda, ruleta, logros, manual, pase, árbol, estadísticas, álbum, historial y copia) se abren sobre el fondo animado de la portada; Elegir modo, Pausa y Game Over están rediseñadas (marcador que sube, qué te eliminó, cuánto faltó para el récord y barra del pase animada).
 - **Nivel secreto:** solo si completas los 10 niveles desde el nivel 1 sin morir (sin perder vidas ni revivir) aparece un portal dorado al nivel 11, el Santuario prismático, con un jefe secreto de tres fases.
 - **Código secreto:** en Opciones → Código secreto. Lo desbloquea todo: todas las skins (tienda, logros, huevos y pase), editor, checkpoints, pase completo, logros, árbol y álbum, nivel secreto desde cualquier partida, 99 999 monedas, 999 huevos y 999 fósiles, y empezar cada partida con todas las mejoras (esto último se puede desactivar).
 - **Música por bioma:** cada uno de los 11 biomas tiene su propia melodía (y también la portada y el jefe secreto), generada con Web Audio.
@@ -38,7 +40,7 @@ La portada ocupa toda la pantalla, con el escenario del juego animado de fondo (
 - **Rendimiento:** resolución interna con tope y calidad automática si el equipo no llega a 60 fps; los sprites se cachean.
 - **Tienda:** 16 skins del kit, 3 exclusivas de logros, checkpoints y editor de skins propias (3 ranuras). Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un rugido especial con pose animada.
 - **Ruleta:** apuestas de 10 a 500 monedas del juego y un giro gratis diario.
-- **Logros:** 61 logros con recompensas en monedas y skins exclusivas.
+- **Logros:** 66 logros con recompensas en monedas y skins exclusivas.
 - Todo se guarda en `localStorage` (clave `dinoRunner.save.v2`; las monedas de versiones anteriores se conservan).
 
 ## Ajustes

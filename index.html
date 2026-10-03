@@ -569,6 +569,96 @@
   body.app .help { display: none; }
   body.app #stage { width: min(100%, calc((100vh - 76px) * 2.5)); }
   @media (orientation: landscape) and (max-height: 500px) { #stage { width: min(100%, calc((100vh - 70px) * 2.5)); } body { padding: 6px 10px; gap: 6px; } }
+  /* ===== Pantallas con el estilo de la portada (v18) ===== */
+  .overlay.scr { background: radial-gradient(ellipse 80% 90% at 50% 40%, rgba(14,11,22,.3), rgba(14,11,22,.86)); }
+  .overlay.scr > .card { position: relative; background: rgba(35,27,56,.9); box-shadow: inset 0 2px 0 var(--bevel), 6px 6px 0 var(--line), 0 24px 60px rgba(0,0,0,.55); animation: scrin .3s ease-out; }
+  .overlay.scr > .card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; z-index: 3;
+    background: linear-gradient(90deg, var(--gold), var(--go), var(--info), var(--purple), #ff5ce1, var(--gold)); background-size: 200% 100%; animation: scrbar 6s linear infinite; }
+  @keyframes scrin { from { opacity: 0; transform: translateY(20px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes scrbar { to { background-position: -200% 0; } }
+  .overlay.scr .shop-head { background: rgba(35,27,56,.97); }
+  .overlay.scr .shop-head h2 { font-size: 26px; line-height: 34px; text-shadow: 3px 3px 0 var(--line), 0 0 18px rgba(255,185,56,.35); }
+  .scr-card { background: transparent !important; border: none !important; box-shadow: none !important; max-width: 980px; overflow-x: hidden; }
+  .scr-card::before { display: none !important; }
+  .scr-title { margin: 0 0 4px; font-size: clamp(30px, 6vw, 64px); line-height: 1.05; color: var(--gold); letter-spacing: 3px; text-shadow: 5px 5px 0 var(--line), 0 0 30px rgba(255,185,56,.35); animation: mmfloat 3.2s ease-in-out infinite; }
+  .scr-sub { margin: 0 0 16px; font-family: var(--f-title); font-size: 10px; letter-spacing: 3px; color: var(--text); text-shadow: 2px 2px 0 var(--line); text-transform: uppercase; }
+  .scr-card .mm-back { display: block; margin: 0 auto 6px 0; }
+  .scr-card h3 { text-shadow: 2px 2px 0 var(--line); }
+  .scr-card .touch-hint { color: var(--text); text-shadow: 1px 1px 0 var(--line); }
+  /* Elegir modo */
+  #play .modes { gap: 14px; margin: 14px 0 18px; }
+  #play .mode { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 12px 14px; background: rgba(35,27,56,.92); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); transition: transform .1s, background .1s; animation: rise .35s ease-out both; }
+  #play .mode:nth-child(2) { animation-delay: .05s; } #play .mode:nth-child(3) { animation-delay: .1s; } #play .mode:nth-child(4) { animation-delay: .15s; }
+  #play .mode i { font-style: normal; font-size: 34px; line-height: 40px; filter: drop-shadow(2px 2px 0 var(--line)); }
+  #play .mode:hover { transform: translateY(-4px); background: var(--surface-3); }
+  #play .mode.sel { transform: translateY(-4px); background: var(--surface-3); outline: 3px solid var(--go); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line), 0 0 24px rgba(95,209,90,.4); }
+  #play .lvl { background: rgba(35,27,56,.92); }
+  .scr-go { width: min(420px, 100%); margin: 16px auto 0; }
+  .mm-play kbd { font-size: 10px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  /* Pausa */
+  .pause-cols { display: flex; gap: 22px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .pause-btns { width: min(360px, 100%); }
+  .pause-card .build-box { flex: 1 1 280px; max-width: 420px; background: rgba(35,27,56,.92); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); padding: 8px 12px; }
+  .pause-card .build-box:empty { display: none; }
+  .mm-btn small { margin-left: auto; font-size: 11px; color: var(--text-dim); }
+  .mm-play small { margin-left: 0; color: #1d3a1a; }
+  /* Game Over */
+  .overlay.over-scr { background: radial-gradient(ellipse 80% 90% at 50% 35%, rgba(60,8,16,.8), rgba(14,11,22,.95)); }
+  #pause.scr { background: radial-gradient(ellipse 80% 90% at 50% 40%, rgba(23,18,37,.78), rgba(14,11,22,.95)); }
+  /* Submenús con mucho contenido: el título de la portada se encoge */
+  .mm.sub-open .mm-title { font-size: clamp(28px, 4vw, 44px); animation: none; } .mm.sub-open .mm-sub { display: none; }
+  .over-title { margin: 0; font-size: clamp(34px, 7vw, 72px); line-height: 1.05; letter-spacing: 3px; text-shadow: 5px 5px 0 var(--line), 0 0 30px rgba(255,59,59,.45); animation: overdrop .55s cubic-bezier(.2,1.6,.4,1) both; }
+  @keyframes overdrop { from { opacity: 0; transform: translateY(-60px) scale(1.4); } to { opacity: 1; transform: none; } }
+  .over-mode { display: block; font-family: var(--f-title); font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-shadow: 1px 1px 0 var(--line); margin-top: 6px; }
+  .over-cause { margin: 6px 0 0; font-size: 12px; color: #ff9a9a; text-shadow: 1px 1px 0 var(--line); min-height: 1em; }
+  .over-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; margin: 12px 0 16px; text-align: center; }
+  .over-main, .over-side > div:not(:empty) { background: rgba(35,27,56,.92); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); padding: 12px; animation: rise .4s ease-out both; }
+  .over-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .over-side > div:nth-child(2) { animation-delay: .1s; } .over-side > div:nth-child(3) { animation-delay: .2s; } .over-side > div:nth-child(4) { animation-delay: .3s; } .over-side > div:nth-child(5) { animation-delay: .4s; }
+  .over-side > div:empty { display: none; }
+  .over-score { font-size: clamp(40px, 8vw, 72px); line-height: 1; color: var(--text); }
+  .over-score.pop { color: var(--weak); animation: scorepop .5s ease-out; }
+  @keyframes scorepop { 40% { transform: scale(1.25); } }
+  .over-pts { font-family: var(--f-title); font-size: 10px; color: var(--text-dim); }
+  .over-tobeat { font-size: 12px; color: var(--text-dim); min-height: 1em; margin-top: 4px; }
+  .over-main .stats { margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+  .over-main .stats > div { min-width: 0; padding: 6px 8px; animation: rise .35s ease-out both; }
+  .over-main .stats > div:nth-child(1) { animation-delay: .25s; } .over-main .stats > div:nth-child(2) { animation-delay: .32s; } .over-main .stats > div:nth-child(3) { animation-delay: .39s; }
+  .over-main .stats > div:nth-child(4) { animation-delay: .46s; } .over-main .stats > div:nth-child(5) { animation-delay: .53s; } .over-main .stats > div:nth-child(6) { animation-delay: .6s; } .over-main .stats > div:nth-child(7) { animation-delay: .67s; }
+  .over-main .stats b { font-size: 15px; line-height: 24px; }
+  .over-season { text-align: left; }
+  .os-head { display: flex; justify-content: space-between; gap: 8px; font-family: var(--f-title); font-size: 10px; color: #ff9de6; margin-bottom: 6px; }
+  .os-head b { font-weight: 400; color: var(--weak); } .os-xp { color: var(--weak); }
+  .over-season .bar i { display: block; height: 100%; transition: width 1.2s cubic-bezier(.3,.8,.3,1) .5s; }
+  .os-up { margin: 6px 0 0; font-family: var(--f-title); font-size: 10px; color: var(--weak); animation: synpulse 1s ease-in-out infinite; }
+  .over-fossils { margin: 0; text-align: left; }
+  .over-ach { text-align: left; }
+  .over-daily { display: flex; flex-direction: column; gap: 4px; text-align: left; font-size: 12px; outline: 2px solid #5fb4ff; }
+  .over-daily > b { font-family: var(--f-title); font-weight: 400; font-size: 10px; color: var(--info); }
+  .over-daily span b { font-family: var(--f-title); font-weight: 400; color: var(--weak); }
+  .od-reward { color: var(--weak); } .od-reward .coin, .dl-reward .coin { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; }
+  .over-actions .btn { animation: rise .35s ease-out both; animation-delay: .5s; }
+  @media (max-width: 760px) { .over-grid { grid-template-columns: 1fr; } }
+  /* Carrera diaria (submenú de la portada) */
+  .mm-daily { background: linear-gradient(90deg, rgba(40,90,170,.92), rgba(70,170,200,.9)); }
+  .mm-daily small { margin-left: auto; font-family: var(--f-text); font-size: 11px; color: #e8f6ff; }
+  .dl-box { display: flex; flex-direction: column; gap: 10px; }
+  .dl-box > div { background: rgba(35,27,56,.92); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); padding: 10px 12px; animation: rise .3s ease-out both; }
+  .dl-head { display: flex; flex-direction: column; gap: 2px; text-align: center; }
+  .dl-head b { font-family: var(--f-title); font-weight: 400; font-size: 15px; color: var(--info); text-transform: capitalize; } .dl-head small { font-size: 11px; color: var(--text-dim); }
+  .dl-rule { display: flex; gap: 12px; align-items: center; text-align: left; outline: 2px solid #c9a6ff; }
+  .dl-rule i { font-style: normal; font-size: 34px; } .dl-rule div { display: flex; flex-direction: column; gap: 2px; }
+  .dl-rule small { font-family: var(--f-title); font-size: 10px; color: #c9a6ff; } .dl-rule b { font-family: var(--f-title); font-weight: 400; font-size: 15px; color: var(--weak); } .dl-rule span { font-size: 12px; color: var(--text); }
+  .dl-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .dl-stats div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .dl-stats small { font-family: var(--f-title); font-size: 10px; color: var(--text-dim); } .dl-stats b { font-family: var(--f-title); font-weight: 400; font-size: 15px; color: var(--weak); }
+  .dl-reward { font-size: 12px; color: var(--text); text-align: center; } .dl-reward b { font-family: var(--f-title); font-weight: 400; color: var(--weak); }
+  .dl-hist { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 74px; align-items: end; }
+  .dl-hist div { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
+  .dl-hist i { display: block; width: 70%; min-height: 3px; background: var(--info); border: 2px solid var(--line); box-sizing: border-box; }
+  .dl-hist .today i { background: var(--weak); } .dl-hist small { font-size: 10px; color: var(--text-dim); text-transform: capitalize; }
+  @media (max-width: 640px) { .dl-stats { grid-template-columns: 1fr 1fr; } .scr-card { padding: 12px 8px; } }
 </style>
 </head>
 <body>
@@ -607,6 +697,7 @@
 
     <nav id="mmMain" class="mm-panel">
       <button class="mm-btn mm-play" id="btnPlay">► JUGAR<small>Récord <b id="menuBest">0</b></small></button>
+      <button class="mm-btn mm-daily" data-sub="mmDaily"><i>📅</i>Carrera diaria<small id="menuDaily">Mejor hoy 0</small><em class="mm-dot hidden" id="dotDaily"></em></button>
       <button class="mm-btn" id="btnVersus"><i>👥</i>Multijugador</button>
       <button class="mm-btn mm-season" id="btnSeason"><i>🎟️</i>Pase de temporada<small id="menuSeason">Nivel 0/30</small><em class="mm-dot hidden" id="dotSeason"></em></button>
       <button class="mm-btn" data-sub="mmShop"><i>🛒</i>Tienda y ruleta<em class="mm-dot hidden" id="dotShop"></em></button>
@@ -614,6 +705,12 @@
       <button class="mm-btn" data-sub="mmOpts"><i>⚙️</i>Opciones</button>
       <p class="mm-hint">Pulsa <kbd>W</kbd> para jugar</p>
     </nav>
+
+    <section id="mmDaily" class="mm-panel mm-sub-panel hidden">
+      <button class="mm-back" data-back>← Carrera diaria</button>
+      <div id="dailyBox" class="dl-box"></div>
+      <button class="mm-btn mm-play" id="btnDaily">► CORRER LA DIARIA<small>Intentos ilimitados · cuenta tu mejor marca</small></button>
+    </section>
 
     <section id="mmShop" class="mm-panel mm-sub-panel hidden">
       <button class="mm-back" data-back>← Tienda y ruleta</button>
@@ -661,47 +758,47 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 17</span>
+    <span class="mm-ver">Versión 18</span>
   </div>
 </div>
 
-<!-- Elegir modo y nivel -->
-<div id="play" class="overlay hidden">
-  <div class="card">
-    <h2 id="playTitle">Elige modo</h2>
+<!-- Elegir modo y nivel (estilo portada) -->
+<div id="play" class="overlay scr hidden">
+  <div class="card scr-card play-card">
+    <button class="mm-back" id="playBack">← Volver</button>
+    <h2 class="scr-title" id="playTitle">Elige modo</h2>
     <p class="touch-hint hidden" id="vsHint" style="margin:-4px 0 12px">J1 (carril de arriba): <kbd>W</kbd> saltar · <kbd>S</kbd> deslizarse · <kbd>E</kbd> rugido · <kbd>A</kbd> trampa — J2 (carril de abajo): <kbd>↑</kbd> saltar · <kbd>↓</kbd> deslizarse · <kbd>→</kbd> rugido · <kbd>←</kbd> trampa. Cada 6 s ganas una trampa para el rival. Sin jefes; gana quien aguante más.</p>
     <div class="modes">
-      <button class="mode" data-mode="normal"><b>NORMAL</b><small id="descNormal"></small></button>
-      <button class="mode" data-mode="easy"><b>FÁCIL</b><small id="descEasy"></small></button>
-      <button class="mode hard" data-mode="hard"><b>DIFÍCIL</b><small id="descHard"></small></button>
-      <button class="mode random" data-mode="random"><b>🎲 ALEATORIO</b><small id="descRandom"></small></button>
+      <button class="mode" data-mode="normal"><i>🦖</i><b>NORMAL</b><small id="descNormal"></small></button>
+      <button class="mode" data-mode="easy"><i>🌱</i><b>FÁCIL</b><small id="descEasy"></small></button>
+      <button class="mode hard" data-mode="hard"><i>💀</i><b>DIFÍCIL</b><small id="descHard"></small></button>
+      <button class="mode random" data-mode="random"><i>🎲</i><b>ALEATORIO</b><small id="descRandom"></small></button>
     </div>
     <div id="startBox"><h3>Empezar desde</h3>
     <div id="startLevels" class="levels"></div></div>
     <p class="touch-hint" id="noCheckpoints">Compra checkpoints en la tienda para empezar en niveles más avanzados.</p>
-    <div class="actions" style="margin-top:14px">
-      <button class="btn primary" id="btnGo">► ¡A correr!</button>
-      <button class="btn" id="playBack">← Volver</button>
-    </div>
+    <button class="mm-btn mm-play scr-go" id="btnGo">► ¡A CORRER!<small>o pulsa <kbd>W</kbd></small></button>
   </div>
 </div>
 
-<!-- Pausa -->
-<div id="pause" class="overlay hidden">
-  <div class="card">
-    <h2>PAUSA</h2>
-    <p class="sub">Pulsa P para continuar</p>
-    <div class="actions">
-      <button class="btn primary" id="btnResume">► Continuar</button>
-      <button class="btn" id="btnPauseManual">Manual</button>
-      <button class="btn" id="btnPauseMenu">Menú</button>
+<!-- Pausa (estilo portada) -->
+<div id="pause" class="overlay scr hidden">
+  <div class="card scr-card pause-card">
+    <h2 class="scr-title">PAUSA</h2>
+    <p class="scr-sub" id="pauseInfo"></p>
+    <div class="pause-cols">
+      <nav class="mm-panel pause-btns">
+        <button class="mm-btn mm-play" id="btnResume">► CONTINUAR<small>o pulsa <kbd>P</kbd></small></button>
+        <button class="mm-btn" id="btnPauseManual"><i>📘</i>Manual</button>
+        <button class="mm-btn" id="btnPauseMenu"><i>🏠</i>Salir al menú<small>Se guardan las monedas</small></button>
+      </nav>
+      <div id="pauseBuild" class="build-box"></div>
     </div>
-    <div id="pauseBuild" class="build-box"></div>
   </div>
 </div>
 
 <!-- Ruleta de monedas -->
-<div id="roulette" class="overlay hidden">
+<div id="roulette" class="overlay scr hidden">
   <div class="card roulette">
     <div class="shop-head">
       <h2>Ruleta</h2>
@@ -728,7 +825,7 @@
 </div>
 
 <!-- Logros -->
-<div id="achievements" class="overlay hidden">
+<div id="achievements" class="overlay scr hidden">
   <div class="card achs">
     <div class="shop-head">
       <h2>Logros</h2>
@@ -742,7 +839,7 @@
 </div>
 
 <!-- Manual -->
-<div id="manual" class="overlay hidden">
+<div id="manual" class="overlay scr hidden">
   <div class="card manual">
     <div class="shop-head"><h2>Manual del juego</h2><button class="btn" id="mBack">← Volver</button></div>
     <div class="m-body">
@@ -755,31 +852,38 @@
   </div>
 </div>
 
-<!-- Game Over -->
-<div id="over" class="overlay hidden">
-  <div class="card">
-    <h2 class="danger" id="overTitle">GAME OVER</h2>
-    <small id="overModeLbl">MODO NORMAL</small>
+<!-- Game Over (estilo portada) -->
+<div id="over" class="overlay scr over-scr hidden">
+  <div class="card scr-card over-card">
+    <h2 class="danger over-title" id="overTitle">GAME OVER</h2>
+    <small id="overModeLbl" class="over-mode">MODO NORMAL</small>
+    <p id="overCause" class="over-cause"></p>
     <div id="overVs" class="vs hidden"></div>
-    <div id="overSolo">
-    <div class="big" id="overScore">0</div>
-    <small>PUNTOS</small>
-    <div id="overRecord" class="record hidden">¡NUEVO RÉCORD!</div>
-    <div class="stats">
-      <div><small>NIVEL</small><b id="overLevel">1</b></div>
-      <div><small>MONEDAS GANADAS</small><b class="earned">+<span id="overCoins">0</span></b></div>
-      <div><small>HUEVOS</small><b id="overEggs">0</b></div>
-      <div><small>JEFES</small><b id="overBosses">0</b></div>
-      <div><small>LOGROS</small><b id="overAch">0</b></div>
-      <div><small>TOTAL</small><b><span class="coin"></span> <span id="overWallet">0</span></b></div>
-      <div><small>RÉCORD</small><b id="overHi">0</b></div>
+    <div id="overSolo" class="over-grid">
+      <div class="over-main">
+        <div class="big over-score" id="overScore">0</div>
+        <small class="over-pts">PUNTOS</small>
+        <div id="overRecord" class="record hidden">¡NUEVO RÉCORD!</div>
+        <div id="overToBeat" class="over-tobeat"></div>
+        <div class="stats">
+          <div><small>NIVEL</small><b id="overLevel">1</b></div>
+          <div><small>MONEDAS</small><b class="earned">+<span id="overCoins">0</span></b></div>
+          <div><small>HUEVOS</small><b id="overEggs">0</b></div>
+          <div><small>JEFES</small><b id="overBosses">0</b></div>
+          <div><small>LOGROS</small><b id="overAch">0</b></div>
+          <div><small>RÉCORD</small><b id="overHi">0</b></div>
+          <div><small>TOTAL</small><b><span class="coin"></span> <span id="overWallet">0</span></b></div>
+        </div>
+      </div>
+      <div class="over-side">
+        <div id="overDaily" class="over-daily hidden"></div>
+        <div id="overSeason" class="over-season"></div>
+        <div id="overFossils" class="over-fossils"></div>
+        <div class="over-ach" id="overAchList"></div>
+        <div id="overBuild" class="build-box"></div>
+      </div>
     </div>
-    </div>
-    <div class="over-ach" id="overAchList"></div>
-    <div id="overFossils" class="over-fossils"></div>
-    <div id="overSeason" class="over-fossils over-season"></div>
-    <div id="overBuild" class="build-box"></div>
-    <div class="actions">
+    <div class="actions over-actions">
       <button class="btn primary" id="btnRetry">↻ Reintentar</button>
       <button class="btn gold" id="btnOverShop">Tienda</button>
       <button class="btn" id="btnMenu">Menú</button>
@@ -805,7 +909,7 @@
 </div>
 
 <!-- Copia de seguridad -->
-<div id="backup" class="overlay hidden">
+<div id="backup" class="overlay scr hidden">
   <div class="card bk">
     <div class="shop-head"><h2>Guardar / Cargar</h2><button class="btn" id="bkBack">← Volver</button></div>
     <p class="touch-hint">Guarda TODO tu progreso (monedas, skins, diseños, checkpoints, logros, estadísticas, árbol, historial, álbum y opciones) en un código de texto o en un archivo, y cárgalo en otro navegador u ordenador.</p>
@@ -822,7 +926,7 @@
 </div>
 
 <!-- Pase de temporada -->
-<div id="season" class="overlay hidden">
+<div id="season" class="overlay scr hidden">
   <div class="card achs season">
     <div class="shop-head"><h2>Pase de temporada</h2><div class="wallet" id="seasonLvl">Nivel 0/30</div><button class="btn" id="seasonBack">← Volver</button></div>
     <div class="ss-hero">
@@ -839,7 +943,7 @@
 </div>
 
 <!-- Árbol de mejoras permanentes -->
-<div id="tree" class="overlay hidden">
+<div id="tree" class="overlay scr hidden">
   <div class="card achs tree">
     <div class="shop-head"><h2>Árbol de mejoras</h2><div class="wallet" id="treeFossils">0</div><button class="btn" id="treeBack">← Volver</button></div>
     <p class="touch-hint">Mejoras permanentes que se aplican al empezar cada partida (no en el multijugador). Se pagan con <b>fósiles</b>: los ganas al acabar cada partida completando niveles, derrotando jefes, activando sinergias y batiendo tu récord. Un nodo se desbloquea cuando el anterior de su rama tiene nivel 1.</p>
@@ -850,7 +954,7 @@
 </div>
 
 <!-- Estadísticas -->
-<div id="statsScr" class="overlay hidden">
+<div id="statsScr" class="overlay scr hidden">
   <div class="card achs st">
     <div class="shop-head"><h2>Estadísticas</h2><button class="btn" id="stBack">← Volver</button></div>
     <div class="tabs" id="stTabs"></div>
@@ -860,7 +964,7 @@
 </div>
 
 <!-- Historial de builds -->
-<div id="history" class="overlay hidden">
+<div id="history" class="overlay scr hidden">
   <div class="card achs">
     <div class="shop-head"><h2>Historial de builds</h2><button class="btn" id="histBack">← Volver</button></div>
     <p class="touch-hint">Tus últimas 20 partidas con las mejoras, sinergias y pactos que elegiste.</p>
@@ -869,7 +973,7 @@
 </div>
 
 <!-- Álbum de mejoras -->
-<div id="album" class="overlay hidden">
+<div id="album" class="overlay scr hidden">
   <div class="card achs">
     <div class="shop-head"><h2>Álbum de mejoras</h2><div class="wallet" id="albumCount">0/0</div><button class="btn" id="albumBack">← Volver</button></div>
     <div id="albumGrid"></div>
@@ -877,7 +981,7 @@
 </div>
 
 <!-- Tienda -->
-<div id="shop" class="overlay hidden">
+<div id="shop" class="overlay scr hidden">
   <div class="card shop">
     <div class="shop-head">
       <h2>Tienda</h2>
@@ -1373,6 +1477,8 @@ const ACHIEVEMENTS = [
   { id: "primera-raiz", cat: "arbol", name: "Primera raíz", desc: "Compra tu primer nodo del árbol", reward: 50 },
   { id: "rama-completa", cat: "arbol", name: "Rama completa", desc: "Completa una rama entera del árbol", reward: 300 },
   { id: "arbol-milenario", cat: "arbol", name: "Árbol milenario", desc: "Completa el árbol", reward: 1500 },
+  { id: "madrugador", cat: "modos", name: "Madrugador", desc: "Termina tu primera carrera diaria", reward: 100 },
+  { id: "racha-semanal", cat: "modos", name: "Racha semanal", desc: "Juega la carrera diaria 7 días seguidos", reward: 600 },
   { id: "era-prismatica", cat: "coleccion", name: "Era prismática", desc: "Completa los 30 niveles del pase de temporada", reward: 1000 },
   // Secretos
   { id: "por-los-pelos", cat: "secretos", secret: true, name: "Por los pelos", desc: "Esquiva un obstáculo a menos de 5 px", reward: 100 },
@@ -2356,6 +2462,8 @@ class SaveManager {
         this.data.fossils = num(d.fossils); this.data.treeResets = num(d.treeResets);
         if (obj(d.tips)) this.data.tips = { seen: obj(d.tips.seen) ? d.tips.seen : {}, off: !!d.tips.off };
         if (obj(d.season)) this.data.season = { id: num(d.season.id) || 1, xp: num(d.season.xp), tier: Math.min(num(d.season.tier), 30), seen: num(d.season.seen) };
+        if (obj(d.daily)) { const y = d.daily; this.data.daily = { date: typeof y.date === "string" ? y.date : "", best: num(y.best), attempts: num(y.attempts), streak: num(y.streak), lastDay: typeof y.lastDay === "string" ? y.lastDay : "", bestEver: num(y.bestEver), days: num(y.days),
+          history: Array.isArray(y.history) ? y.history.filter(h => h && typeof h.date === "string").map(h => ({ date: h.date, best: num(h.best) })).slice(0, 14) : [] }; }
         this.data.secretUnlocked = !!d.secretUnlocked;
         this.data.codeUsed = !!d.codeUsed; this.data.allUpgrades = !!d.allUpgrades;
         this.data.tutorialDone = !!d.tutorialDone; this.data.tutorialRewarded = !!d.tutorialRewarded;
@@ -6722,6 +6830,7 @@ class UI {
     bind("btnStats", () => game.openStats());
     bind("btnTree", () => game.openTree());
     bind("btnSeason", () => game.openSeason());
+    bind("btnDaily", () => game.startDaily());
     bind("btnCode", () => { const b = $("codeBox"); b.classList.toggle("hidden"); $("codeMsg").textContent = ""; if (!b.classList.contains("hidden")) $("codeInput").focus(); });
     bind("codeOk", () => this.redeem());
     $("codeInput").addEventListener("keydown", e => { if (e.key === "Enter") this.redeem(); });
@@ -6775,8 +6884,9 @@ class UI {
   updateMute() { const m = this.game.sfx.muted; this.$("btnMute").querySelector("b").textContent = m ? "Sonido: NO" : "Sonido: SÍ"; this.$("btnMute").querySelector("i").textContent = m ? "🔇" : "🔊"; }
   // Submenús de la portada
   menuPanel(id = "mmMain") {
+    if (id === "mmDaily") this.$("dailyBox").innerHTML = this.game.dailyRace.panelHtml();   // carrera diaria: regla, marcas e historial
     for (const p of this.menu.querySelectorAll(".mm-panel")) p.classList.toggle("hidden", p.id !== id);
-    this.menuSub = id === "mmMain" ? null : id;
+    this.menuSub = id === "mmMain" ? null : id; this.menu.classList.toggle("sub-open", !!this.menuSub);
     const first = this.menu.querySelector(`#${id} .mm-btn, #${id} .mm-tile`); if (first && this.game.state === "menu" && id !== "mmMain") first.focus({ preventScroll: true });
   }
   menuBack() { if (this.menuSub) { this.game.sfx.click(); this.menuPanel(); } }
@@ -6798,6 +6908,8 @@ class UI {
     this.$("menuSpin").textContent = spin ? "¡Giro gratis disponible!" : "Apuesta monedas del juego";
     this.$("menuTree").textContent = tree ? "¡Puedes comprar un nodo!" : `${s.fossils} fósiles`;
     for (const [id, on] of [["dotSpin", spin], ["dotShop", spin], ["dotTree", tree], ["dotProg", tree], ["dotBackup", bk]]) this.$(id).classList.toggle("hidden", !on);
+    const dr = g.dailyRace; this.$("menuDaily").textContent = dr.rewardPending ? `${dr.rule.icon} ¡Premio esperando!` : `Mejor hoy ${fmtInt(dr.d.best)} · 🔥${dr.streak}`;
+    this.$("dotDaily").classList.toggle("hidden", !dr.rewardPending);
     const sd = g.season.d; this.$("menuSeason").textContent = `Nivel ${sd.tier}/${SEASON_CONFIG.TIERS}`; this.$("dotSeason").classList.toggle("hidden", sd.seen >= sd.tier);
     this.updateCode(); this.$("codeBox").classList.add("hidden");
     paintFossils(this.menu); this.menuPanel(keepSub && this.menuSub ? this.menuSub : "mmMain");
@@ -6836,6 +6948,7 @@ class UI {
   showPause() {
     const g = this.game, box = this.$("pauseBuild");
     box.classList.toggle("hidden", g.versus);
+    const L = g.level; this.$("pauseInfo").textContent = `${g.daily ? "Carrera diaria" : g.versus ? "Multijugador" : g.mode.name} · Nivel ${L.level} · ${L.biome.name} · ${fmtInt(g.versus ? g.distScore : g.score)} puntos`;
     if (!g.versus) { box.innerHTML = `<h3>Tu build</h3><div class="build-list">${buildIconsHtml(g.build, true)}</div>`; paintBuildIcons(box); }
     this.hideAll(); this.pause.classList.remove("hidden");
   }
@@ -6854,21 +6967,38 @@ class UI {
       this.hideAll(); this.over.classList.remove("hidden"); return;
     }
     this.$("overTitle").textContent = "GAME OVER"; this.$("overTitle").style.color = "";
-    this.$("overScore").textContent = g.score;
+    const D = g.daily ? g.dailyResult : null, rec = D ? g.dailyRace.d.best : s.records[g.mode.id];
+    this.countUp(this.$("overScore"), g.score, g.newRecord || (D && D.best && !D.first));
+    this.$("overCause").textContent = g.deathCause ? `💀 Te eliminó: ${g.deathCause}` : "";
     const F = g.runFossils, of = this.$("overFossils");
     of.innerHTML = F && F.total ? `${fossilHtml()} +${F.total} fósiles <small>(${F.lines.map(([t, n]) => `${t} ${n >= 0 ? "+" : ""}${n}`).join(" · ")})</small>` : `${fossilHtml()} Sin fósiles esta vez <small>(completa niveles y derrota jefes)</small>`;
     paintFossils(of);
-    const sp = this.$("overSeason"), sd = g.season.d;
-    sp.innerHTML = `🎟️ +${g.runXP || 0} XP del pase · nivel ${sd.tier}/${SEASON_CONFIG.TIERS}${(g.runSeason || []).length ? ` · <b>¡${g.runSeason.map(x => x.txt).join(", ")}!</b>` : ""}`;
+    // Pase de temporada: la barra se llena desde donde estaba antes de la partida
+    const sp = this.$("overSeason"), sd = g.season.d, max = sd.tier >= SEASON_CONFIG.TIERS, ups = (g.runSeason || []).length;
+    const to = max ? 100 : Math.round(sd.xp / g.season.need() * 100), from = ups || !g.seasonBefore ? 0 : Math.round(g.seasonBefore.frac * 100);
+    sp.innerHTML = `<div class="os-head"><span>🎟️ Pase · nivel <b>${sd.tier}</b>/${SEASON_CONFIG.TIERS}</span><span class="os-xp">+${g.runXP || 0} XP</span></div><div class="bar ss-bar"><i style="width:${from}%"></i></div>${ups ? `<p class="os-up">¡SUBES DE NIVEL! ${g.runSeason.map(x => x.txt).join(" · ")}</p>` : ""}`;
+    const bar = sp.querySelector("i"); requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = to + "%"; }));
+    // Carrera diaria
+    const od = this.$("overDaily"); od.classList.toggle("hidden", !D);
+    if (D) od.innerHTML = `<b>📅 Carrera diaria · ${g.randomMod ? g.randomMod.icon + " " + g.randomMod.name : ""}</b><span>Mejor hoy: <b>${fmtInt(g.dailyRace.d.best)}</b> · Intento ${g.dailyRace.d.attempts} · Racha ${g.dailyRace.streak} 🔥</span>${D.reward ? `<span class="od-reward">🎁 Premio del día: <span class="coin"></span> +${D.reward.coins} y +${D.reward.xp} XP</span>` : ""}`;
     const ob = this.$("overBuild"); ob.innerHTML = `<h3>Build final</h3><div class="build-row">${buildIconsHtml(g.build)}</div>`; paintBuildIcons(ob); this.$("overLevel").textContent = g.level.level;
-    this.$("overCoins").textContent = g.runCoinsInt; this.$("overWallet").textContent = s.coins; this.$("overHi").textContent = s.records[g.mode.id];
-    this.$("overRecord").classList.toggle("hidden", !g.newRecord);
+    this.$("overCoins").textContent = g.runCoinsInt; this.$("overWallet").textContent = s.coins; this.$("overHi").textContent = rec;
+    const isRec = D ? D.best && !D.first : g.newRecord;
+    this.$("overRecord").textContent = D ? "¡MEJOR MARCA DEL DÍA!" : "¡NUEVO RÉCORD!";
+    this.$("overRecord").classList.toggle("hidden", !isRec);
+    this.$("overToBeat").textContent = isRec ? "" : D && D.first ? "Primera marca del día: ¡ahora intenta superarla!" : rec > g.score ? `A ${fmtInt(rec - g.score)} puntos de ${D ? "tu mejor marca de hoy" : "tu récord"}` : "";
     this.$("overBosses").textContent = g.runBosses; this.$("overEggs").textContent = g.runEggs;
-    this.$("overModeLbl").textContent = g.mode.label;
+    this.$("overModeLbl").textContent = D ? `CARRERA DIARIA · ${fmtDay(g.dailyRace.today).toUpperCase()}` : g.mode.label;
     const list = g.ach.runUnlocked;
     this.$("overAch").textContent = list.length;
     this.$("overAchList").innerHTML = list.length ? "🏆 " + list.map(a => a.name).join(" · ") : "";
     this.hideAll(); this.over.classList.remove("hidden");
+  }
+  // Marcador que sube de 0 a la puntuación final
+  countUp(el, n, pop) {
+    const t0 = performance.now(), dur = clamp(n / 4, 400, 1100); el.classList.remove("pop");
+    const step = now => { const k = Math.min(1, (now - t0) / dur); el.textContent = fmtInt(Math.round(n * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); else if (pop) el.classList.add("pop"); };
+    requestAnimationFrame(step);
   }
   hideAll() { for (const el of [this.menu, this.over, this.play, this.pause]) el.classList.add("hidden"); }
 
@@ -6949,7 +7079,7 @@ class UI {
     c.font = '10px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.dim; c.fillText("PUNTOS", 20, 24);
     c.font = '20px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.text; c.fillText(pad(g.score), 84, 25);
     c.font = '10px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.dim; c.fillText("RÉCORD", 20, 46);
-    c.fillStyle = "#ffe9a8"; c.fillText(pad(g.save.record(g.mode.id)), 84, 46);
+    c.fillStyle = "#ffe9a8"; c.fillText(pad(g.daily ? g.dailyRace.d.best : g.save.record(g.mode.id)), 84, 46);
     c.fillStyle = UI_T.line; c.fillRect(17, 60, 182, 2);
     c.fillStyle = UI_T.line; c.beginPath(); c.arc(26, 74, 8, 0, Math.PI * 2); c.fill();
     c.fillStyle = UI_T.gold; c.beginPath(); c.arc(26, 74, 6, 0, Math.PI * 2); c.fill();
@@ -6966,7 +7096,7 @@ class UI {
       const left = B.nextAt - g.distScore, lvl = Math.floor(B.nextAt / CONFIG.POINTS_PER_LEVEL) + 1;
       if (!B.active && !g.tutorial && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
     }
-    if (g.randomMod) this.pill(c, `🎲 ${g.randomMod.name.toUpperCase()}`, W / 2, B.boss && B.boss.state !== "leave" ? 98 : 74, 10, "#e4d0ff", "rgba(80,40,140,0.85)");
+    if (g.randomMod) this.pill(c, `${g.daily ? "📅 DIARIA · " + g.randomMod.icon : "🎲"} ${g.randomMod.name.toUpperCase()}`, W / 2, B.boss && B.boss.state !== "leave" ? 98 : 74, 10, "#e4d0ff", "rgba(80,40,140,0.85)");
     if (DEBUG) this.text(c, "DEBUG · 1–9, 0 nivel · B boss", W / 2, H - 42, 10, "#ff8a8a", "center");
 
     // Modo: vidas (Fácil) o aviso (Difícil)
@@ -8144,6 +8274,11 @@ const MANUAL_SECTIONS = [
     <p>Dificultad Normal, pero cada nivel trae una <b>regla sorpresa</b> que se anuncia al empezar el nivel (y se ve arriba en el marcador). Tiene su propio récord.</p>
     <table><tr><th>Regla</th><th>Qué hace</th></tr>${RANDOM_MODS.map(m => `<tr><td>${m.icon} ${m.name}</td><td>${m.desc}</td></tr>`).join("")}</table>
     <div class="tip">Dicen que quien recorre los 10 niveles de un tirón, sin caer ni una sola vez, encuentra un portal dorado…</div>` },
+  { title: "Carrera diaria", html: () => `
+    <p>En la portada, <b>📅 Carrera diaria</b>: cada día hay un recorrido nuevo, <b>el mismo para todos</b> (obstáculos, monturas, altares y cartas de mejora salen de una semilla con la fecha). Se juega en Normal desde el nivel 1 con una <b>regla del día</b> fija toda la partida (una de las del modo Aleatorio).</p>
+    <ul><li>Intentos ilimitados: cuenta tu <b>mejor marca del día</b> (tiene su propio récord y no toca el del modo Normal).</li>
+      <li>El primer intento de cada día da <b>${DAILY_CONFIG.COINS} monedas y ${DAILY_CONFIG.XP} XP</b> del pase, +${DAILY_CONFIG.STREAK_COINS} monedas por cada día de <b>racha</b> (hasta ${DAILY_CONFIG.STREAK_MAX} días).</li>
+      <li>El panel muestra la regla, tus intentos, la racha y un gráfico de tus marcas de los últimos 7 días.</li></ul>` },
   { title: "Árbol de mejoras", html: () => { const F = TREE_CONFIG.FOSSILS; return `
     <p>Mejoras <b>permanentes</b> que se aplican al empezar cada partida (en todos los modos de un jugador). Se pagan con <b>fósiles</b>, una moneda aparte que no compite con la tienda.</p>
     <table><tr><th>Cómo se ganan los fósiles (al acabar la partida)</th><th>Fósiles</th></tr>
@@ -9404,6 +9539,77 @@ function musicFor(g) {
   const k = "b-" + g.level.biome.id; return MUSIC[k] ? k : "calm";
 }
 
+// =====================================================================
+//  Carrera diaria: el mismo recorrido para todos durante el día (semilla = fecha), dificultad Normal desde
+//  el nivel 1 y una «regla del día» fija toda la partida. Intentos ilimitados; cuenta la mejor marca.
+//  El primer intento de cada día da premio (más con racha de días seguidos).
+// =====================================================================
+const DAILY_CONFIG = { COINS: 200, XP: 300, STREAK_COINS: 40, STREAK_MAX: 7, HISTORY: 14 };
+function mulberry32(a) {
+  return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const yesterdayKey = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
+const fmtDay = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }); };
+// Ejecuta fn con Math.random sustituido por un generador con semilla
+function withRng(rng, fn) { const r = Math.random; Math.random = rng; try { return fn(); } finally { Math.random = r; } }
+
+class DailyRace {
+  constructor(game) { this.g = game; this.rng = null; }
+  get d() {
+    const s = this.g.save.data;
+    if (!s.daily) s.daily = { date: "", best: 0, attempts: 0, streak: 0, lastDay: "", bestEver: 0, days: 0, history: [] };
+    const d = s.daily, k = dayKey(); if (d.date !== k) { d.date = k; d.best = 0; d.attempts = 0; }
+    return d;
+  }
+  get today() { return dayKey(); }
+  get seed() { return hashStr("dino-runner-diaria-" + this.today); }
+  // Regla del día (una de las del modo Aleatorio, la misma para todos)
+  get rule() { const r = mulberry32(this.seed ^ 0x9e3779b9); r(); return RANDOM_MODS[Math.floor(r() * RANDOM_MODS.length)]; }
+  get rewardPending() { return this.d.lastDay !== this.today; }
+  // Racha vigente: días seguidos jugando (se pierde si ayer no jugaste)
+  get streak() { const d = this.d; return d.lastDay === this.today || d.lastDay === yesterdayKey() ? d.streak : 0; }
+  get nextReward() { return DAILY_CONFIG.COINS + DAILY_CONFIG.STREAK_COINS * (Math.min(this.streak + 1, DAILY_CONFIG.STREAK_MAX) - 1); }
+  // Empieza un intento: un generador con semilla para cada sistema (así no se descuadran entre ellos)
+  begin() {
+    const s = this.seed;
+    this.rng = { spawn: mulberry32(s), mount: mulberry32(s ^ 0x51ed27), rogue: mulberry32(s ^ 0xa5a5a5), pool: mulberry32(s ^ 0x3c6ef3) };
+    this.d.attempts++; this.g.save.save();
+  }
+  // Al acabar (Game.bankRun): mejor marca del día, racha y premio del primer intento
+  finish(score) {
+    const d = this.d, today = this.today, out = { best: score > d.best, first: d.attempts <= 1, reward: null, prev: d.best };
+    if (out.best) d.best = score;
+    d.bestEver = Math.max(d.bestEver || 0, d.best);
+    if (d.lastDay !== today) {
+      out.reward = { coins: this.nextReward, xp: DAILY_CONFIG.XP };
+      d.streak = d.lastDay === yesterdayKey() ? d.streak + 1 : 1; d.lastDay = today; d.days = (d.days || 0) + 1;
+      this.g.save.data.coins += out.reward.coins;
+    }
+    const h = d.history.find(x => x.date === today); if (h) h.best = d.best; else d.history.unshift({ date: today, best: d.best });
+    d.history = d.history.slice(0, DAILY_CONFIG.HISTORY);
+    this.g.ach.unlock("madrugador"); if (d.streak >= 7) this.g.ach.unlock("racha-semanal");
+    this.rng = null; return out;
+  }
+  // Panel del menú: regla del día, mejor marca, racha e historial de los últimos 7 días
+  panelHtml() {
+    const d = this.d, r = this.rule, st = this.streak, hist = [];
+    for (let i = 6; i >= 0; i--) { const x = new Date(); x.setDate(x.getDate() - i); const k = dayKey(x), h = d.history.find(y => y.date === k); hist.push({ k, v: h ? h.best : 0, today: i === 0 }); }
+    const max = Math.max(1, ...hist.map(h => h.v));
+    return `<div class="dl-head"><b>📅 ${fmtDay(this.today)}</b><small>Mismo recorrido para todos hoy · Normal desde el nivel 1</small></div>
+      <div class="dl-rule"><i>${r.icon}</i><div><small>REGLA DEL DÍA</small><b>${r.name}</b><span>${r.desc}</span></div></div>
+      <div class="dl-stats"><div><small>MEJOR HOY</small><b>${fmtInt(d.best)}</b></div><div><small>INTENTOS</small><b>${d.attempts}</b></div><div><small>RACHA</small><b>${st} 🔥</b></div><div><small>MEJOR MARCA</small><b>${fmtInt(d.bestEver || 0)}</b></div></div>
+      <div class="dl-reward">${this.rewardPending ? `🎁 Premio del primer intento: <b><span class="coin"></span> ${this.nextReward}</b> y <b>${DAILY_CONFIG.XP} XP</b> del pase` : "✔ Premio de hoy conseguido · vuelve mañana para seguir la racha"}</div>
+      <div class="dl-hist">${hist.map(h => `<div class="${h.today ? "today" : ""}"><i style="height:${Math.round(h.v / max * 100)}%"></i><small>${fmtDay(h.k).split(" ")[0].replace(",", "")}</small></div>`).join("")}</div>`;
+  }
+}
+// Las partes del juego que deciden el recorrido usan el generador del día durante la carrera diaria
+for (const [proto, name, key] of [[Spawner.prototype, "update", "spawn"], [MountManager.prototype, "planLevel", "mount"], [RogueManager.prototype, "onLevelStart", "rogue"], [UpgradePool.prototype, "roll", "pool"]]) {
+  const f = proto[name];
+  proto[name] = function (...a) { const g = this.game || this.g, R = g && g.daily && g.dailyRace.rng; return R ? withRng(R[key], () => f.apply(this, a)) : f.apply(this, a); };
+}
+
 // Causa de un golpe (estadística «qué te mata más»)
 function obstacleCause(o) {
   if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
@@ -9428,6 +9634,8 @@ Sfx.prototype.mountFx = function (id) {
 //  Game: estado, bucle, colisiones y dibujo
 //  Estados: menu · play · playing · paused · over · shop · roulette · manual · achievements
 // =====================================================================
+// Estados con el fondo animado de la portada
+const MENU_STATES = ["menu", "play", "shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season"];
 class Game {
   constructor(canvas) {
     this.canvas = canvas; this.ctx = canvas.getContext("2d");
@@ -9444,6 +9652,7 @@ class Game {
     this.ui = new UI(this); this.shop = new Shop(this); this.roulette = new Roulette(this); this.manual = new Manual(this);
     this.rogue = new RogueManager(this); this.history = new BuildHistory(this); this.album = new UpgradeAlbum(this);
     this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this); this.tips = new TipManager(this); this.season = new SeasonPass(this);
+    this.dailyRace = new DailyRace(this); this.daily = false;   // carrera diaria
     this.tutSkip = document.getElementById("tutSkip");
     this.tutSkip.addEventListener("click", e => { e.currentTarget.blur(); this.sfx.click(); this.skipTutorial(); });
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
@@ -9472,7 +9681,7 @@ class Game {
     this.effects = { shield: 0, magnet: 0, slowmo: 0, turbo: 0 };
     this.grace = 0; this.roarCd = 0; this.roarWave = null; this.roarAnim = 0; this.flashT = 0; this.shake = 0; this.shakeMag = 0; this.shakeDur = 1;
     this.overTime = 0; this.overShown = false; this.newRecord = false; this.banked = false;
-    this.bossBanner = null; this.runBosses = 0; this.floaters = []; this.runBossTiers = []; this.runFossils = null;
+    this.bossBanner = null; this.runBosses = 0; this.floaters = []; this.runBossTiers = []; this.runFossils = null; this.deathCause = null; this.dailyResult = null;
     this.run = this.newRun();
     this.player.reset(); this.p2.reset(); this.spawner.reset(); this.level.reset(); this.bosses.reset();
     // Roguelike, furia y monturas
@@ -9519,8 +9728,8 @@ class Game {
   }
   showMenu() {
     if (["playing", "paused", "choice", "tip"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
-    const fromSub = ["shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season"].includes(this.state) || this.history.visible;   // vuelve al submenú de donde vino
-    this.versus = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
+    const fromSub = MENU_STATES.includes(this.state) && this.state !== "menu" && this.state !== "play" || this.history.visible;   // vuelve al submenú de donde vino
+    this.versus = false; this.daily = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
   }
   // ----- Tutorial (nivel de práctica) -----
   // Nivel secreto: partida completa desde el nivel 1 sin morir (ni perder vidas ni revivir)
@@ -9529,7 +9738,7 @@ class Game {
   startTutorial() {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = false; this.mode = MODES.normal; this.startLevel = 1;
+    this.versus = false; this.daily = false; this.mode = MODES.normal; this.startLevel = 1;
     this.tutorial = new Tutorial(this);
     this.reset(); this.fury.reset(0); this.state = "playing"; this.closeScreens();
     this.level.banner = 0; this.bosses.nextAt = 1e9; this.tutSkip.classList.remove("hidden");
@@ -9548,18 +9757,22 @@ class Game {
     if (!versus && this.firstTime) return this.startTutorial();   // la primera vez: nivel de práctica
     this.state = "play"; this.closeScreens(); this.ui.showPlay(false, versus); }
   // Empieza una partida en un modo y (opcionalmente) desde un checkpoint
-  start(modeId = this.mode.id, startLevel = this.startLevel) {
+  start(modeId = this.mode.id, startLevel = this.startLevel, daily = false) {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = false; this.endTutorial();
-    this.mode = MODES[modeId] || MODES.normal; this.save.data.lastMode = this.mode.id; this.save.save();
+    this.versus = false; this.daily = daily; this.endTutorial();
+    if (daily) { modeId = "normal"; startLevel = 1; }   // carrera diaria: Normal desde el nivel 1
+    this.mode = MODES[modeId] || MODES.normal; if (!daily) { this.save.data.lastMode = this.mode.id; this.save.save(); }
     if (startLevel > 1 && !this.checkpoints.owned(startLevel)) startLevel = 1;
     this.startLevel = startLevel;
     this.reset(); this.state = "playing"; this.closeScreens();
+    if (daily) {   // mismo recorrido para todos hoy y regla del día fija toda la partida
+      this.dailyRace.begin(); this.randomMod = this.dailyRace.rule; this.build.cache = {};
+    }
     if (startLevel > 1) this.jumpToLevel(startLevel);
     this.run.biomes.add(this.level.biome.id);
     this.run.lastPowerup = this.run.lastRoar = this.run.lastLane = this.distScore;
-    this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = "";
+    this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = daily ? `📅 Carrera diaria · ${this.randomMod.icon} ${this.randomMod.name}: ${this.randomMod.desc}` : "";
     this.ach.event("runStart");
     this.onLevelStart(this.level.level);
     this.rogue.startRun(startLevel);
@@ -9569,7 +9782,7 @@ class Game {
   startVersus(modeId = this.versus ? this.mode.id : CONFIG.VERSUS_MODE) {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = true; this.endTutorial(); this.mode = MODES[modeId] || MODES.normal; this.startLevel = 1;
+    this.versus = true; this.daily = false; this.endTutorial(); this.mode = MODES[modeId] || MODES.normal; this.startLevel = 1;
     this.p2SkinId = this.pickP2Skin();
     this.reset(); this.player.setLane(0); this.p2.setLane(1);
     for (const p of this.players) p.lives = this.mode.lives;   // Fácil: 3 vidas por raptor
@@ -9577,7 +9790,8 @@ class Game {
     this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = "J1: W · S · E · A trampa      J2: ↑ · ↓ · → · ← trampa";
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
-  retry() { if (this.versus) this.startVersus(); else if (this.tutorial) this.startTutorial(); else this.start(); }
+  retry() { if (this.versus) this.startVersus(); else if (this.tutorial) this.startTutorial(); else if (this.daily) this.startDaily(); else this.start(); }
+  startDaily() { this.start("normal", 1, true); }
   // Coloca la partida al inicio de un nivel (checkpoints y modo prueba), con su velocidad y bioma
   jumpToLevel(level, extraPoints = 0) {
     this.distance = ((level - 1) * CONFIG.POINTS_PER_LEVEL + extraPoints) * CONFIG.PX_PER_POINT;
@@ -9837,11 +10051,17 @@ class Game {
     const s = this.save.data, earned = this.runCoinsInt;
     s.coins += earned; s.eggWallet += this.runEggs;   // los huevos recogidos se gastan en la tienda de huevos
     this.statsMgr.runEnd();
-    this.runXP = this.tutorial ? 0 : this.season.xpForRun(this); this.runSeason = this.season.addXP(this.runXP);   // pase de temporada
+    const sd = this.season.d; this.seasonBefore = { tier: sd.tier, frac: sd.tier >= SEASON_CONFIG.TIERS ? 1 : sd.xp / this.season.need() };
+    this.runXP = this.tutorial ? 0 : this.season.xpForRun(this);
+    if (this.daily && !this.versus && !this.tutorial) {   // carrera diaria: mejor marca del día, racha y premio del primer intento
+      this.dailyResult = this.dailyRace.finish(this.score);
+      if (this.dailyResult.reward) this.runXP += this.dailyResult.reward.xp;
+    }
+    this.runSeason = this.season.addXP(this.runXP);   // pase de temporada
     if (this.versus) { this.save.save(); return; }   // en multijugador no hay récords ni logros
     if (this.tutorial) { this.save.save(); return; }
     this.rogue.recordRun();
-    if (this.score > s.records[this.mode.id]) { s.records[this.mode.id] = this.score; this.newRecord = true; }
+    if (!this.daily && this.score > s.records[this.mode.id]) { s.records[this.mode.id] = this.score; this.newRecord = true; }   // la diaria tiene su propia marca
     this.runFossils = fossilsForRun(this); s.fossils += this.runFossils.total;   // árbol de mejoras
     this.save.save();
     this.ach.event("score", { score: this.score });
@@ -9880,9 +10100,9 @@ class Game {
     if (this.shake > 0) { this.shake -= dt; if (this.shake <= 0) this.shakeMag = 0; }
     this.updateAmbient(this.state === "paused" ? 0 : dt);
 
-    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season"].includes(this.state)) {
+    if (MENU_STATES.includes(this.state)) {
       this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt);
-      if (this.state === "menu" && (this.menuT = (this.menuT || 0) + dt) > 8) { this.menuT = 0; this.level.setBiome((this.level.cur + 1) % BIOMES.length); }   // la portada recorre los biomas
+      if ((this.menuT = (this.menuT || 0) + dt) > 8) { this.menuT = 0; this.level.setBiome((this.level.cur + 1) % BIOMES.length); }   // la portada recorre los biomas
       return;
     }
     if (this.state === "over") {
@@ -10082,9 +10302,14 @@ class Game {
     else this.fastRuns = 0;
   }
   draw() {
-    const bgOn = this.state === "menu" || this.state === "play";
+    const bgOn = MENU_STATES.includes(this.state);   // portada y todas las pantallas del menú: fondo animado a pantalla completa
     if (bgOn !== this.menuBgOn) { this.menuBgOn = bgOn; this.ui.menuBg.classList.toggle("hidden", !bgOn); }
-    if (bgOn) { this.drawMenuBg(); if (this.state === "menu") return; }   // en la portada el canvas del juego queda tapado
+    if (bgOn) {   // el canvas del juego queda tapado: solo se dibujan el fondo y los canvas propios de cada pantalla
+      this.drawMenuBg();
+      if (this.roulette.visible) this.roulette.draw();
+      if (this.manual.visible) this.manual.drawDemos(this.time);
+      return;
+    }
     const c = this.ctx;
     if (this.canvas.clientWidth && this.canvas.clientWidth !== this.cssW) this.resize();
     c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.imageSmoothingEnabled = false;
