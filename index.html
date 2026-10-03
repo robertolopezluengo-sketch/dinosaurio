@@ -552,6 +552,10 @@
   .modes { grid-template-columns: repeat(4, 1fr); }
   .mode.random b { color: #c9a6ff; }
   @media (max-width: 760px) { .modes { grid-template-columns: 1fr 1fr; } }
+  .code-box { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 12px; background: rgba(35,27,56,.92); border: 2px solid var(--line); padding: 10px; }
+  .code-box input { font-family: var(--f-text); font-size: 16px; background: #14101f; color: var(--text); border: 2px solid var(--line); padding: 8px 10px; min-width: 220px; }
+  .code-box .btn { font-size: 10px; line-height: 10px; padding: 10px 12px 12px; min-width: 0; }
+  .code-box p { width: 100%; text-align: center; margin: 4px 0 0; }
 </style>
 </head>
 <body>
@@ -629,6 +633,13 @@
         <button class="mm-tile" id="btnMute"><i>🔊</i><b>Sonido: SÍ</b></button>
         <button class="mm-tile" id="btnTips"><i>💡</i><b>Consejos: SÍ</b></button>
         <button class="mm-tile" id="btnTipsReset"><i>↺</i><b>Volver a ver los consejos</b></button>
+        <button class="mm-tile" id="btnCode"><i>🔑</i><b>Código secreto</b></button>
+        <button class="mm-tile hidden" id="btnAllUps"><i>⚡</i><b>Todas las mejoras: SÍ</b><small>En cada partida (código)</small></button>
+      </div>
+      <div id="codeBox" class="code-box hidden">
+        <input id="codeInput" type="text" maxlength="24" placeholder="Escribe el código" autocomplete="off" spellcheck="false">
+        <button class="btn primary" id="codeOk">Canjear</button>
+        <p id="codeMsg" class="bk-msg"></p>
       </div>
     </section>
   </div>
@@ -636,7 +647,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 13</span>
+    <span class="mm-ver">Versión 14</span>
   </div>
 </div>
 
@@ -1352,6 +1363,8 @@ const ACHIEVEMENTS = [
   { id: "por-los-pelos", cat: "secretos", secret: true, name: "Por los pelos", desc: "Esquiva un obstáculo a menos de 5 px", reward: 100 },
   { id: "todo-o-nada", cat: "secretos", secret: true, name: "Todo o nada", desc: "Apuesta el máximo en la ruleta y gana", reward: 150 },
   { id: "constancia", cat: "secretos", secret: true, name: "Constancia", desc: "Juega 100 partidas", reward: 300, goal: 100, stat: "games" },
+  { id: "camino-perfecto", cat: "secretos", secret: true, name: "Camino perfecto", desc: "Completa los 10 niveles sin morir y entra en el nivel secreto", reward: 500 },
+  { id: "rex-prismatico", cat: "secretos", secret: true, name: "Rey de reyes", desc: "Derrota al jefe secreto del nivel 11", reward: 2000 },
   { id: "raptor-completo", cat: "secretos", secret: true, name: "Raptor completo", desc: "Consigue todos los demás logros", reward: 5000, skin: "fosil-legendario" },
 ];
 const ACH_CATS = { carrera: "Carrera", jefes: "Jefes", habilidad: "Habilidad", coleccion: "Colección", ruleta: "Ruleta", modos: "Modos", monturas: "Monturas", roguelike: "Roguelike", arbol: "Árbol", secretos: "Secretos" };
@@ -1650,6 +1663,18 @@ const RANDOM_MODS = [
   { id: "caos", name: "Caos", icon: "🌀", desc: "Obstáculos un 30 % más a menudo · puntos ×1,4", mod: { obstacleFreq: v => v * 1.3, scoreMult: v => v * 1.4 } },
   { id: "paseo", name: "Paseo", icon: "🌼", desc: "Un 20 % más lento · monedas ×1,5", mod: { speedMult: v => v * 0.8, coinMult: v => v * 1.5 } },
 ];
+
+// --- Código secreto ---
+const SECRET_CODE = "P1kach0$6767";
+function unlockAllUpgrades(g) {
+  const s = g.save.data;
+  for (const n of TREE_NODES) s.tree[n.id] = n.max;                                  // árbol de mejoras completo
+  for (const u of UPGRADES) s.album.ups[u.id] = 1;                                    // álbum completo
+  for (const x of SYNERGIES) s.album.syn[x.id] = 1;
+  for (const p of PACTS) s.album.pacts[p.id] = 1;
+  s.codeUsed = true; s.allUpgrades = true;
+  g.build.cache = {}; g.save.save();
+}
 
 // --- Pase de temporada (gratis, sin dinero real): se sube jugando ---
 const SEASON_CONFIG = {
@@ -2229,7 +2254,7 @@ class SaveManager {
       version: 1, firstPlay: new Date().toISOString(), lastExport: "",
       stats: {}, tree: {}, fossils: 0, treeResets: 0, lastWeeklySpin: "",
       tips: { seen: {}, off: false }, tutorialDone: false, tutorialRewarded: false,
-      season: { id: 1, xp: 0, tier: 0, seen: 0 },
+      season: { id: 1, xp: 0, tier: 0, seen: 0 }, codeUsed: false, allUpgrades: false,
     };
     this.load();
     if (DEBUG) {
@@ -2267,6 +2292,7 @@ class SaveManager {
         this.data.fossils = num(d.fossils); this.data.treeResets = num(d.treeResets);
         if (obj(d.tips)) this.data.tips = { seen: obj(d.tips.seen) ? d.tips.seen : {}, off: !!d.tips.off };
         if (obj(d.season)) this.data.season = { id: num(d.season.id) || 1, xp: num(d.season.xp), tier: Math.min(num(d.season.tier), 30), seen: num(d.season.seen) };
+        this.data.codeUsed = !!d.codeUsed; this.data.allUpgrades = !!d.allUpgrades;
         this.data.tutorialDone = !!d.tutorialDone; this.data.tutorialRewarded = !!d.tutorialRewarded;
         if (Array.isArray(d.buildHistory)) this.data.buildHistory = d.buildHistory.filter(r => r && typeof r === "object").slice(0, 20);
         if (d.album && typeof d.album === "object") for (const k of ["ups", "syn", "pacts"]) if (d.album[k] && typeof d.album[k] === "object") this.data.album[k] = d.album[k];
@@ -3131,6 +3157,7 @@ class MountManager {
   wantsPickup() {
     const g = this.g, p = this.plan[g.level.level]; if (!p || p.done) return false;
     const inLevel = g.distScore - (g.level.level - 1) * CONFIG.POINTS_PER_LEVEL, toBoss = CONFIG.BOSS_AT_IN_LEVEL - inLevel;
+    if (g.level.biome.id === "santuario") return false;   // el santuario no tiene montura
     if (inLevel < p.at || this.active || this.pickup || g.bosses.active || g.level.portal || (g.rogue && g.rogue.altar)) return false;
     if (toBoss > 0 && toBoss < MOUNT_CONFIG.BOSS_MARGIN) return false;
     return true;
@@ -3670,13 +3697,14 @@ class LevelManager {
   constructor(game) {
     this.game = game;
     this.biomes = BIOMES.map((d, i) => new Biome(d, i));
+    this.biomes.push(new Biome(SECRET_BIOME, BIOMES.length));   // índice 10: nivel secreto
     this.cur = 0; this.prev = 0; this.fade = 1;
     this.reset();
   }
   reset() { this.level = 1; this.banner = 0; this.bannerSub = ""; this.portal = null; this.warp = 0; this.setBiome(0); }
   get biome() { return this.biomes[this.cur]; }
   setBiome(i) { if (i === this.cur) return; this.prev = this.cur; this.cur = i; this.fade = 0; }
-  jumpTo(level) { this.portal = null; this.warp = 0; this.level = level; this.setBiome((level - 1) % this.biomes.length); this.fade = 1; }   // checkpoints
+  jumpTo(level) { this.portal = null; this.warp = 0; this.level = level; this.setBiome((level - 1) % BIOMES.length); this.fade = 1; }   // checkpoints
   // Final del nivel en px de recorrido
   get boundary() { return this.level * CONFIG.POINTS_PER_LEVEL * CONFIG.PX_PER_POINT; }
   // Dónde está (o estará) el portal: el generador deja libre el tramo anterior
@@ -3686,15 +3714,18 @@ class LevelManager {
   check() {
     const g = this.game;
     if (!this.portal && g.distance + CONFIG.PORTAL_SHOW_DISTANCE >= this.boundary)
-      this.portal = { at: Math.max(this.boundary, g.distance + CONFIG.PORTAL_MIN_AHEAD), next: this.level % this.biomes.length };
+      this.portal = { at: Math.max(this.boundary, g.distance + CONFIG.PORTAL_MIN_AHEAD), next: this.level === SECRET_CONFIG.LEVEL - 1 && g.secretOk() ? BIOMES.length : this.level % BIOMES.length };
     if (this.portal && g.distance >= this.portal.at) {
       this.portal = null;
       const eggs = g.onLevelComplete(this.level);
       this.level++;
-      this.setBiome((this.level - 1) % this.biomes.length);   // tras el último bioma vuelve a empezar el ciclo
+      const secret = this.level === SECRET_CONFIG.LEVEL && g.secretOk();   // camino perfecto: portal dorado al nivel secreto
+      if (secret) g.run.secret = true;
+      this.setBiome(secret ? BIOMES.length : (this.level - 1) % BIOMES.length);   // tras el último bioma vuelve a empezar el ciclo
       this.warp = CONFIG.PORTAL_WARP_TIME;
       this.banner = CONFIG.LEVEL_BANNER_TIME; this.bannerSub = g.versus ? "¡Más rápido!" : `Huevos del nivel ${this.level - 1}: ${eggs}/${CONFIG.EGGS_PER_LEVEL}`;
-      g.sfx.levelUp(); g.sfx.portal(); g.addShake(0.3, 5); g.ach.event("levelReached", { level: this.level });
+      if (secret) { this.bannerSub = "¡NIVEL SECRETO! Has completado los 10 niveles sin morir"; g.flashT = 0.6; g.sfx.jackpot(); g.bossBanner = null; }
+      g.sfx.levelUp(); g.sfx.portal(); g.addShake(0.3, 5); g.ach.event("levelReached", { level: this.level, secret });
       g.mounts.dismount("time"); g.mounts.hazards = [];   // la montura se queda en su bioma
       g.onLevelStart(this.level);
     }
@@ -3765,8 +3796,11 @@ class BossManager {
   get active() { return this.phase !== null; }
   // Siguiente boss a los BOSS_AT_IN_LEVEL puntos del nivel indicado (o del siguiente si ya se ha pasado)
   syncTo(level) { this.nextAt = (level - 1) * CONFIG.POINTS_PER_LEVEL + CONFIG.BOSS_AT_IN_LEVEL; }
-  info(level) { const d = levelDef(level); return { type: d.boss, tier: d.tier + Math.floor((level - 1) / CONFIG.LEVELS.length), level }; }
-  nameOf(level) { return BOSS_NAMES[levelDef(level).boss]; }
+  info(level) {
+    if (level === SECRET_CONFIG.LEVEL && this.game.run.secret) return { type: BOSS_COUNT, tier: 0, level, secret: true };   // jefe secreto
+    const d = levelDef(level); return { type: d.boss, tier: d.tier + Math.floor((level - 1) / CONFIG.LEVELS.length), level };
+  }
+  nameOf(level) { return BOSS_NAMES[this.info(level).type]; }
   startWarning() {
     const g = this.game, level = Math.floor(this.nextAt / CONFIG.POINTS_PER_LEVEL) + 1;
     this.pending = this.info(level);
@@ -6399,6 +6433,183 @@ Boss.prototype.drawTele = function (c, w) {
 };
 
 // =====================================================================
+//  NIVEL SECRETO (nivel 11): solo aparece si completas los 10 niveles desde el nivel 1 sin morir
+//  (sin perder vidas en Fácil y sin usar Segunda oportunidad ni Resurrección). Bioma «Santuario prismático»
+//  y jefe secreto «Rex Prismático»: tres fases que examinan pisotón, rugido reflejo y salto.
+// =====================================================================
+const SECRET_CONFIG = {
+  LEVEL: 11,                 // número del nivel secreto
+  BOSS_HP_MULT: 1.7,         // vida respecto a un boss normal
+  EXTRA_TIME: 25,            // s extra de combate
+  COINS: 800,                // monedas por vencerlo
+  SEASON_XP: 1500,           // XP del pase por vencerlo
+  BITE_DMG: 3, REFLECT_DMG: 2, JUMP_DMG: 3,
+};
+const SECRET_BIOME = { id: "santuario", name: "Santuario prismático", accent: "#ff9de6", sky: "none", stars: true, ambient: "spores", ambientColors: ["#ff5ce1", "#7df9ff", "#ffd23f", "#9b5cff"], deco: ["shooting"],
+  patternBiome: "night",
+  pal: { skyTop: "#05020f", skyMid: "#1c0a3a", skyBot: "#3a1468", far: "#2a1450", near: "#3a1c6a", ground: "#2a1a44", band: "#3c2860", bandHi: "#ff9de6", bandEdge: "#160c2a", pebble: "#7df9ff", accent: "#ff9de6" },
+  far: { min: 30, max: 100, rough: 0.4, step: 12 }, near: { min: 10, max: 40, rough: 0.3, step: 10 },
+  obstacles: { ground: "crystal", rock: "icerock", flyer: "bat" } };
+BOSS_NAMES.push("Rex Prismático");
+BOSS_IDS.push("rex");
+const BOSS_COUNT = 10;   // jefes normales (el secreto no cuenta para «los 10 bosses»)
+
+// ---- Escenario del santuario (capas pixel art como los demás biomas) ----
+function scCrystal(c, x, h, w, col, hi) {   // cristal vertical con punta
+  for (let y = 0; y < h; y++) { const ww = y < w ? y + 1 : w; pR(c, col, x - Math.floor(ww / 2), HZ - h + y, ww, 1); }
+  pR(c, hi, x - 1, HZ - h + Math.floor(w / 2), 1, Math.max(2, h - w));
+}
+SCENES.santuario = P => ({
+  sky: scSky(P, c => {
+    scStarsStatic(c, 211, 90, ["#ffffff", "#ffd0f0", "#c8f8ff"]);
+    const cols = ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"];   // aurora arcoíris tramada
+    cols.forEach((col, i) => { c.fillStyle = scDither(c, col, i % 2); for (let x = 0; x < 450; x++) c.fillRect(x, Math.round(26 + i * 3 + Math.sin(x / 38 + i * 0.5) * 9), 1, 2); });
+    const x = 380, y = 30;   // gran prisma flotante en el cielo
+    for (let k = 0; k < 16; k++) pR(c, k < 8 ? "#e8e0ff" : "#b8a8f0", x - k, y - 16 + k, 1 + k * 2, 1);
+    for (let k = 0; k < 10; k++) pR(c, "#8a78d8", x - 15 + k * 1.5, y + k, 31 - k * 3, 1);
+    cols.forEach((col, i) => pR(c, col, x + 16, y + i * 2, 40, 2));
+  }),
+  layers: [
+    { f: 0.03, draw: c => { pRidge(c, "#2a1450", HZ + 2, 34, [[2, 10], [5, 6], [11, 2]], 2, 223, "#4a2a80"); const r = seededRandom(229); for (let x = 30; x < SC_TW; x += 70 + r() * 60) wrapX(x, xx => scCrystal(c, xx, 26 + r() * 30, 7, "#3a1c6a", "#7a5ac0")); } },
+    { f: 0.12, draw: c => { const r = seededRandom(233), cols = ["#ff5ce1", "#7df9ff", "#ffd23f", "#9b5cff"]; for (let x = 40; x < SC_TW; x += 90 + r() * 70) { const col = cols[Math.floor(r() * 4)]; wrapX(x, xx => { scCrystal(c, xx, 20 + r() * 26, 6, col, "#ffffff"); scCrystal(c, xx + 7, 12 + r() * 10, 4, shadeHex(col, -0.3), "#ffffff"); }); } } },
+    { f: 0.25, draw: c => { c.fillStyle = scDither(c, "#5a2a8a"); c.fillRect(0, HZ - 6, SC_TW, 8); for (let x = 0; x < SC_TW; x += 9) { pR(c, x % 27 ? "#7df9ff" : "#ff5ce1", x, HZ - 9 - (x % 4), 1, 4 + (x % 4)); } } },
+  ],
+  anim: (c, g, a) => {   // destellos flotantes
+    for (let i = 0; i < 18; i++) { const x = mod(i * 97 - g.scroll * 0.06 + Math.sin(g.time + i) * 10, W + 20) - 10, y = 60 + (i * 53) % 140 + Math.sin(g.time * 2 + i) * 6;
+      c.globalAlpha = a * (0.4 + 0.6 * Math.abs(Math.sin(g.time * 3 + i))); c.fillStyle = ["#ff5ce1", "#7df9ff", "#ffd23f", "#ffffff"][i % 4]; c.fillRect(Math.round(x), Math.round(y), 2, 2); }
+    c.globalAlpha = a;
+  },
+});
+function drawPrismHaz(c, h) {   // cristal escupido / prisma rodante
+  const hue = (h.t * 400) % 360, col = hslHex(hue, 90, 65), x = h.x, y = -(h.y + h.h);
+  c.save(); c.translate(x + h.w / 2, y + h.h / 2); c.rotate(h.spin ? h.t * -10 : 0);
+  c.fillStyle = "#140a2e"; c.beginPath(); c.moveTo(0, -h.h / 2 - 3); c.lineTo(h.w / 2 + 3, 0); c.lineTo(0, h.h / 2 + 3); c.lineTo(-h.w / 2 - 3, 0); c.closePath(); c.fill();
+  c.fillStyle = col; c.beginPath(); c.moveTo(0, -h.h / 2); c.lineTo(h.w / 2, 0); c.lineTo(0, h.h / 2); c.lineTo(-h.w / 2, 0); c.closePath(); c.fill();
+  c.fillStyle = "rgba(255,255,255,0.7)"; c.fillRect(-h.w / 6, -h.h / 3, h.w / 6, h.h / 3);
+  c.restore();
+}
+function drawPrismLaser(c, h) {
+  const cols = ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"], bh = h.h / cols.length;
+  c.globalAlpha = 0.4; c.fillStyle = "#ffffff"; c.fillRect(h.x, -(h.y + h.h) - 6, h.w, h.h + 12); c.globalAlpha = 1;
+  cols.forEach((col, i) => { c.fillStyle = col; c.fillRect(h.x, -(h.y + h.h) + i * bh, h.w, bh + 0.5); });
+}
+
+class PrismRexBoss extends Boss {
+  constructor(game, cycle) {
+    super(game, cycle, BOSS_NAMES[10], SECRET_CONFIG.BOSS_HP_MULT);
+    this.colors = ["#ff5ce1", "#7df9ff", "#ffd23f", "#9b5cff", "#ffffff"]; this.trapKind = "quicksand"; this.trapColor = "#ff9de6";
+    this.rx = 1100; this.head = { laneT: 0.5, x: 520, y: 150 }; this.headTo = { ...this.head }; this.idleHead = true; this.fast = false; this.jaw = 0; this.lastPhase = 1; this.rolls = [];
+    this.setRules({ roar: false, trap: false });
+    this.maxTime = CONFIG.BOSS_MAX_TIME + SECRET_CONFIG.EXTRA_TIME; this.reflectDist = 95; this.roarCdMult = 0.5;
+    this.coins = SECRET_CONFIG.COINS;
+  }
+  get phase() { return this.hp > this.maxHp * 2 / 3 ? 1 : this.hp > this.maxHp / 3 ? 2 : 3; }
+  hintText() { return ["", "FASE 1: esquiva el mordisco y PISA su mandíbula (S) cuando la apoye", "FASE 2: DEVUÉLVELE los cristales con el rugido (E) justo antes de que caigan", "FASE 3: SALTA por encima de los prismas rodantes"][this.phase]; }
+  canStomp() { return this.phase === 1; }
+  onRoar(lane) { if (this.phase === 2) super.onRoar(lane); }
+  onReflectHit() { if (this.phase === 2) this.damage(SECRET_CONFIG.REFLECT_DMG, "reflect"); }
+  damage(n, kind, at) {
+    if (kind === "stomp") n = SECRET_CONFIG.BITE_DMG;
+    const r = super.damage(n, kind, at);
+    if (r && this.hp > 0 && this.phase !== this.lastPhase) {
+      this.lastPhase = this.phase; this.clearAttacks(); this.say(`¡FASE ${this.phase}!`, "#ff5ce1", 32, 0, 450, 150); this.game.addShake(0.5, 10); this.game.flashT = 0.3;
+      this.after(1.2, () => { if (this.state === "fight") this.attack(); });
+    }
+    return r;
+  }
+  // Prismas rodantes: daño al saltar por encima
+  extraCollide(pl, lane) {
+    for (const h of this.hazards) {
+      if (!h.roll || h.jumped || h.dead || h.lane !== lane) continue;
+      const px = pl.x + 24;
+      if (px + 27 > h.x && px < h.x + h.w && pl.y >= h.h - 4) { h.jumped = true; h.harmful = false; this.game.sfx.stomp(); this.say("¡SALTO!", "#7df9ff"); this.damage(SECRET_CONFIG.JUMP_DMG, "jump", { laneT: lane, x: h.x + h.w / 2, y: h.h + 20 }); }
+    }
+    return false;
+  }
+  target() { return { lane: Math.round(this.head.laneT), laneT: this.head.laneT, x: this.head.x + 40, y: this.head.y + 20 }; }
+  clearAttacks() { super.clearAttacks(); this.idleHead = true; this.fast = false; }
+  updateBody(dt) {
+    this.rx = 660 + this.away * 520 + Math.sin(this.t * 1.6) * 6 + (this.state === "defeat" ? this.stateT * 60 : 0);
+    if (this.idleHead) this.headTo = { laneT: 0.5, x: this.rx - 120 + Math.sin(this.t * 2) * 12, y: 150 + Math.sin(this.t * 2.6) * 10 };
+    const k = Math.min(1, dt * (this.fast ? 28 : 6));
+    for (const key of ["laneT", "x", "y"]) this.head[key] = lerp(this.head[key], this.headTo[key], k);
+    this.jaw = lerp(this.jaw, this.fast || !this.idleHead ? 1 : 0.15 + 0.1 * Math.sin(this.t * 4), Math.min(1, dt * 10));
+  }
+  attack() {
+    if (this.state !== "fight") return;
+    const ph = this.phase, r = Math.random();
+    if (ph === 1) { if (r < 0.7) this.bite(this.p.lane); else this.laser(() => this.bite(this.p.lane)); }
+    else if (ph === 2) { if (r < 0.7) this.crystals(); else this.laser(() => this.crystals()); }
+    else { if (r < 0.65) this.roll(); else this.laser(() => this.roll()); }
+  }
+  bite(lane) {   // mordisco: cámbiate de carril; luego apoya la mandíbula en ese carril (písala)
+    const d = this.tele(0.85);
+    this.idleHead = false; this.fast = false; this.headTo = { laneT: lane, x: COL_X - 10, y: 170 };
+    this.warn(lane, "shadow", d); this.game.sfx.bossWarn();
+    this.after(d, () => {
+      this.fast = true; this.headTo = { laneT: lane, x: COL_X - 10, y: 0 };
+      this.addHazard({ lane, x: COL_X - 10, y: 0, w: COL_W + 20, h: 300, life: 0.2, isBody: true });
+      this.game.addShake(0.25, 6); this.game.burst(lane, COL_X + 30, 10, this.colors, 14);
+      this.rest(lane, { x: COL_X - 10, y: 0, w: COL_W + 20, h: 34 }, 0, () => { this.idleHead = true; this.fast = false; });
+    });
+  }
+  crystals() {   // cristales en arco que hay que devolver con el rugido
+    const n = 3 + (this.fury ? 1 : 0), gap = 0.55 / this.speedMul, T = 1.15 / Math.sqrt(this.speedMul);
+    for (let i = 0; i < n; i++) this.after(i * gap, () => {
+      const L = i === 0 ? this.p.lane : randInt(0, 1);
+      this.warn(L, "target", T); this.game.sfx.toss(); this.jaw = 1;
+      this.lob(L, this.head.x, this.head.y + 20, T, drawPrismHaz);
+    });
+    this.after((n - 1) * gap + T + 0.8, () => this.attack());
+  }
+  roll() {   // prismas rodantes por tu carril: sáltalos (daño) o cámbiate
+    const lane = this.p.lane, d = this.tele(0.9), n = this.fury ? 2 : 1;
+    this.warn(lane, "arrow", d, { y: 20 }); this.game.sfx.stomp();
+    for (let i = 0; i < n; i++) this.after(d + i * 0.75 / this.speedMul, () => {
+      const L = i === 0 ? lane : 1 - lane;
+      this.addHazard({ lane: L, x: 900, y: 0, w: 46, h: 46, vx: -520 * this.speedMul, life: 4, roll: true, spin: true, draw: drawPrismHaz });
+    });
+    this.after(d + n * 0.75 / this.speedMul + 1.6, () => this.attack());
+  }
+  laser(then) {   // rayo prismático de los ojos: bajo = saltar · medio = deslizarse
+    const d = this.tele(0.8), hk = choice(["low", "mid"]), lane = this.p.lane, b = LASER[hk];
+    this.warn(lane, "line", d, { y: b.y, h: b.h, x2: 900 }); this.jaw = 1;
+    this.after(d, () => { this.addHazard({ lane, x: 0, w: 900, y: b.y, h: b.h, life: 0.45, draw: drawPrismLaser }); this.game.sfx.laser(); this.game.addShake(0.15, 3); });
+    this.after(d + 0.9, then);
+  }
+  // Dibujo: cuerpo de cristal (carril central) + cuello encadenado + cabeza que muerde
+  hue(o = 0) { return hslHex(this.t * 60 + o, 85, 60); }
+  drawBody(c, lane) {
+    if (lane === 0) {   // cuerpo detrás, en el carril de arriba
+      const x = this.rx, t = this.t, step = Math.sin(t * 7) * 6, D = "#140a2e";
+      c.save(); applyLane(c, 0.5);
+      const tail = [[x + 150, 70], [x + 230, 90], [x + 300, 100], [x + 360, 104]];
+      tail.forEach(([tx, ty], i) => BO(c, D, this.hue(30 + i * 20), tx, ty - 16 + Math.sin(t * 3 + i) * 4, 70 - i * 10, 34 - i * 6));
+      for (const [lx, ph] of [[x + 30, step], [x + 110, -step]]) { BO(c, D, this.hue(200), lx, 0, 34, 70 + ph); BO(c, D, this.hue(220), lx - 10, 0, 50, 12); }
+      BO(c, D, this.hue(0), x, 60, 170, 110);
+      for (let i = 0; i < 6; i++) { const sx = x + 14 + i * 26, sh = 24 + (i % 2) * 10; B(c, D, sx - 2, 168, 22, sh + 2); B(c, this.hue(i * 60), sx, 168, 18, sh); B(c, "#ffffff", sx + 4, 172, 4, sh - 8); }
+      B(c, this.hue(90), x + 20, 70, 130, 14); B(c, "rgba(255,255,255,0.45)", x + 26, 140, 80, 8);
+      BO(c, D, this.hue(330), x - 22, 110 + Math.sin(t * 5) * 4, 30, 12, 2);   // bracito
+      c.restore();
+    }
+    // cuello (cadena en pantalla) y cabeza en su carril
+    const sh = toScreen(0.5, this.rx + 10, 150), hp = toScreen(this.head.laneT, this.head.x + 70, this.head.y + 40);
+    if (lane === Math.round(this.head.laneT)) {
+      drawChain(c, sh, hp, { x: (sh.x + hp.x) / 2 + 20, y: Math.min(sh.y, hp.y) - 50 }, 9, 30 * hp.s, 24 * hp.s, "#140a2e", [this.hue(10), this.hue(50), this.hue(90)]);
+      c.save(); applyLane(c, this.head.laneT);
+      const hx = this.head.x, hy = this.head.y, j = this.jaw * 16, D = "#140a2e";
+      BO(c, D, this.hue(0), hx, hy + 22 + j * 0.2, 96, 40);                      // cráneo
+      BO(c, D, this.hue(20), hx - 6, hy + 4 - j, 78, 18);                       // mandíbula inferior (se abre)
+      for (let i = 0; i < 6; i++) { B(c, "#ffffff", hx + 4 + i * 12, hy + 22, 5, 7); B(c, "#ffffff", hx + 2 + i * 12, hy + 12 - j, 5, 6); }
+      B(c, D, hx + 58, hy + 44, 18, 12); B(c, this.fury ? "#ff3b3b" : "#fff6b0", hx + 60, hy + 46, 14, 8); B(c, "#ffffff", hx + 62, hy + 50, 4, 3);   // ojo
+      for (let i = 0; i < 4; i++) { const cx = hx + 40 + i * 14, ch = 14 + (i % 2) * 8; B(c, D, cx - 1, hy + 62, 10, ch + 1); B(c, this.hue(120 + i * 50), cx, hy + 62, 8, ch); }   // cuernos de cristal
+      c.restore();
+    }
+  }
+}
+BOSS_CLASSES.push(PrismRexBoss);
+
+// =====================================================================
 //  UI: marcador en el canvas y pantallas HTML (menú, jugar, pausa, game over)
 // =====================================================================
 // Colores de la interfaz (tokens de la propuesta de Claude Design)
@@ -6429,6 +6640,10 @@ class UI {
     bind("btnStats", () => game.openStats());
     bind("btnTree", () => game.openTree());
     bind("btnSeason", () => game.openSeason());
+    bind("btnCode", () => { const b = $("codeBox"); b.classList.toggle("hidden"); $("codeMsg").textContent = ""; if (!b.classList.contains("hidden")) $("codeInput").focus(); });
+    bind("codeOk", () => this.redeem());
+    $("codeInput").addEventListener("keydown", e => { if (e.key === "Enter") this.redeem(); });
+    bind("btnAllUps", () => { const s = game.save.data; s.allUpgrades = !s.allUpgrades; game.save.save(); this.updateCode(); });
     bind("btnTutorial", () => game.startTutorial());
     bind("btnTips", () => { game.tips.toggle(); this.updateTips(); });
     bind("btnTipsReset", () => { game.tips.resetSeen(); this.$("btnTipsReset").querySelector("b").textContent = "✔ Consejos reiniciados"; });
@@ -6460,6 +6675,19 @@ class UI {
     this.selMode = game.mode.id; this.selLevel = 1;
     this.updateMute();
   }
+  // Código secreto: desbloquea todas las mejoras (árbol completo, álbum completo y todas las mejoras en cada partida)
+  redeem() {
+    const g = this.game, inp = this.$("codeInput"), msg = this.$("codeMsg"), code = inp.value.trim();
+    if (code === SECRET_CODE) {
+      unlockAllUpgrades(g); inp.value = ""; g.sfx.jackpot(); g.flashT = 0.4;
+      msg.className = "bk-msg ok"; msg.textContent = "¡Código correcto! Árbol completo, álbum completo y todas las mejoras activas en cada partida.";
+    } else { g.sfx.denied(); msg.className = "bk-msg err"; msg.textContent = code ? "Código incorrecto." : "Escribe un código."; }
+    this.updateCode(); this.showMenuInfo && this.showMenuInfo();
+  }
+  updateCode() {
+    const s = this.game.save.data, b = this.$("btnAllUps");
+    b.classList.toggle("hidden", !s.codeUsed); b.querySelector("b").textContent = s.allUpgrades ? "Todas las mejoras: SÍ" : "Todas las mejoras: NO";
+  }
   updateTips() { const off = this.game.save.data.tips.off; this.$("btnTips").querySelector("b").textContent = off ? "Consejos: NO" : "Consejos: SÍ"; this.$("btnTipsReset").querySelector("b").textContent = "Volver a ver los consejos"; }
   updateMute() { const m = this.game.sfx.muted; this.$("btnMute").querySelector("b").textContent = m ? "Sonido: NO" : "Sonido: SÍ"; this.$("btnMute").querySelector("i").textContent = m ? "🔇" : "🔊"; }
   // Submenús de la portada
@@ -6488,6 +6716,7 @@ class UI {
     this.$("menuTree").textContent = tree ? "¡Puedes comprar un nodo!" : `${s.fossils} fósiles`;
     for (const [id, on] of [["dotSpin", spin], ["dotShop", spin], ["dotTree", tree], ["dotProg", tree], ["dotBackup", bk]]) this.$(id).classList.toggle("hidden", !on);
     const sd = g.season.d; this.$("menuSeason").textContent = `Nivel ${sd.tier}/${SEASON_CONFIG.TIERS}`; this.$("dotSeason").classList.toggle("hidden", sd.seen >= sd.tier);
+    this.updateCode(); this.$("codeBox").classList.add("hidden");
     paintFossils(this.menu); this.menuPanel(keepSub && this.menuSub ? this.menuSub : "mmMain");
     this.$("menuFossils").textContent = s.fossils; this.updateTips();
     this.$("debugHint").classList.toggle("hidden", !DEBUG);
@@ -7450,6 +7679,7 @@ class AchievementManager {
       case "levelReached":
         this.max("bestBiomes", run.biomes.size);
         if (d.level > BIOMES.length) this.unlock("vuelta-al-mundo");
+        if (d.secret) this.unlock("camino-perfecto");
         if (easy && d.level >= 2) this.unlock("aprendiz");
         if (normal && d.level >= 4) this.unlock("sin-red");
         if (hard && d.level >= 4) this.unlock("sin-piedad");
@@ -7478,8 +7708,9 @@ class AchievementManager {
         this.max("bossTypes", new Set(g.save.data.bossesDefeated.filter(x => BOSS_IDS.includes(x))).size);
         if (d.flawless) this.unlock("sin-rasguno");
         if (d.id === "nave") this.unlock("apagon");
+        if (d.id === "rex") this.unlock("rex-prismatico");
         if (hard) this.unlock("pesadilla");
-        if (normal && g.bosses.defeatedRun.size >= BOSS_IDS.length) this.unlock("tirano");
+        if (normal && [...g.bosses.defeatedRun].filter(x => x !== "rex").length >= BOSS_COUNT) this.unlock("tirano");
         this.max("bestRunCoins", g.runCoinsInt);
         break;
       }
@@ -7713,7 +7944,7 @@ const MANUAL_SECTIONS = [
     Tienes ${CONFIG.BOSS_MAX_TIME} s (el boss final, más): si lo vences ganas +${CONFIG.BOSS_COINS} monedas y +${CONFIG.BOSS_POINTS} puntos; si no, se retira sin premio.</p>
     <div class="tip warn"><b>Cada boss se vence de una forma distinta</b>: pisotón, rugido, devolver proyectiles, saltar por encima, cabezazo, voltear y pisar, trampas, deslizarse, romper un escudo… La forma de dañar al boss actual aparece abajo en la pantalla durante la pelea. El turbo le hace ${CONFIG.BOSS_DMG_TURBO} de daño a cualquiera.</div>
     <div class="tip">Señales: sombra roja con «!» = golpe desde arriba · flecha roja = algo viene por ese carril · línea parpadeante = láser · diana = proyectil en arco.</div>
-    ${BOSS_NAMES.map((n, i) => { const lv = CONFIG.LEVELS.map((L, k) => L.boss === i ? `nivel ${k + 1} (${BIOMES[k].name}${L.tier ? ", reforzado" : ""})` : "").filter(Boolean).join(" y ");
+    ${BOSS_NAMES.slice(0, BOSS_COUNT).map((n, i) => { const lv = CONFIG.LEVELS.map((L, k) => L.boss === i ? `nivel ${k + 1} (${BIOMES[k].name}${L.tier ? ", reforzado" : ""})` : "").filter(Boolean).join(" y ");
       return `<h4>${i + 1}. ${n}</h4>
       <div class="m-demos">${demo("boss", n, i, true)}</div>
       <p><b>Aparece en:</b> ${lv}. Vida base: ${Math.round(CONFIG.BOSS_HP * BOSS_HP_MULTS[i])} (Fácil: la mitad; Difícil: +${pct(CONFIG.HARD.BOSS_HP_MULT - 1)}).</p>
@@ -7774,7 +8005,7 @@ const MANUAL_SECTIONS = [
     Cuando consigues uno aparece un aviso en la esquina sin pausar el juego.</p>
     <ul>
       <li><b>Carrera</b>: llega lejos y visita los ${BIOMES.length} biomas.</li>
-      <li><b>Jefes</b>: derrota a los ${BOSS_NAMES.length} bosses, y mejor sin recibir golpes.</li>
+      <li><b>Jefes</b>: derrota a los ${BOSS_COUNT} bosses, y mejor sin recibir golpes.</li>
       <li><b>Habilidad</b>: salta mucho, ruge mucho… o aguanta sin rugir, sin power-ups o sin cambiar de carril.</li>
       <li><b>Colección</b>: ahorra, compra skins, recoge huevos y usa la tienda.</li>
       <li><b>Ruleta</b> y <b>Modos</b>: prueba la ruleta, el giro diario y los tres modos (y termina el tutorial).</li>
@@ -7821,6 +8052,15 @@ const MANUAL_SECTIONS = [
     · Busca una sinergia (las cartas que la completan llevan la etiqueta «SINERGIA») en vez de coger un poco de todo.<br>
     · Un pacto compensa si tu build ya tapa su desventaja: el Pacto del silencio con Furia rápida, el de la bestia si llevas Presa fácil…<br>
     · En la pausa ves todo tu build con sus descripciones; en el menú tienes el <b>Álbum</b> y el <b>Historial</b> de tus últimas 20 partidas.</div>`; } },
+  { title: "Pase de temporada", html: () => `
+    <p>El <b>pase de temporada</b> (${SEASON_CONFIG.NAME}) es gratis y sin dinero real. Cada partida da XP: puntos ÷ ${SEASON_CONFIG.XP.PER_POINTS}, +${SEASON_CONFIG.XP.BOSS} por jefe, +${SEASON_CONFIG.XP.LEVEL} por nivel, +${SEASON_CONFIG.XP.EGG} por huevo y +${SEASON_CONFIG.XP.SYNERGY} por sinergia (×${fmtNum(SEASON_CONFIG.MODE_MULT.hard)} en Difícil, ×${fmtNum(SEASON_CONFIG.MODE_MULT.easy)} en Fácil).</p>
+    <p>Tiene ${SEASON_CONFIG.TIERS} niveles. Cada uno da su recompensa al momento (monedas, huevos o fósiles) y los niveles 10, 20 y 30 dan skins exclusivas.
+    La del nivel ${SEASON_CONFIG.TIERS}, <b>Prisma Celestial</b>, es la mejor del juego: cambia de color sin parar, lleva halo, bufanda y gemas en órbita, deja una estela prismática y tiene su propio rugido.</p>
+    <div class="m-demos">${SEASON_SKINS.map(k => demo("skin", k.name + ` (nivel ${k.season})`, k.id)).join("")}</div>` },
+  { title: "Modo Aleatorio", html: () => `
+    <p>Dificultad Normal, pero cada nivel trae una <b>regla sorpresa</b> que se anuncia al empezar el nivel (y se ve arriba en el marcador). Tiene su propio récord.</p>
+    <table><tr><th>Regla</th><th>Qué hace</th></tr>${RANDOM_MODS.map(m => `<tr><td>${m.icon} ${m.name}</td><td>${m.desc}</td></tr>`).join("")}</table>
+    <div class="tip">Dicen que quien recorre los 10 niveles de un tirón, sin caer ni una sola vez, encuentra un portal dorado…</div>` },
   { title: "Árbol de mejoras", html: () => { const F = TREE_CONFIG.FOSSILS; return `
     <p>Mejoras <b>permanentes</b> que se aplican al empezar cada partida (en todos los modos de un jugador). Se pagan con <b>fósiles</b>, una moneda aparte que no compite con la tienda.</p>
     <table><tr><th>Cómo se ganan los fósiles (al acabar la partida)</th><th>Fósiles</th></tr>
@@ -8079,6 +8319,12 @@ class RogueManager {
   // Al empezar la partida (desde el nivel 1 o un checkpoint)
   startRun(startLevel) {
     if (!this.enabled) return;
+    if (this.g.save.data.allUpgrades) {   // código secreto: empieza con todas las mejoras a su nivel máximo
+      const b = this.g.build;
+      for (const u of UPGRADES) { b.levels[u.id] = u.max || 1; b.order.push(u.id); }
+      for (const s of SYNERGIES) if (b.synergyReady(s)) b.synergies.push(s.id);
+      b.cache = {}; return;
+    }
     const g = this.g, free = Math.floor((startLevel - 1) / ROGUE_CONFIG.CHECKPOINT_PICKS_PER);
     for (let i = 0; i < free; i++) this.queue("free", 1.2);
     if (g.stat("chosenStart")) {   // árbol: Elegido
@@ -8590,7 +8836,7 @@ class StatsManager {
       html = `<h3>Victorias por jefe</h3><canvas class="st-chart" data-chart="bosses" width="760" height="190"></canvas>
         <table class="st-table"><tr><th></th><th>Jefe</th><th>Combates</th><th>Victorias</th><th>Derrotas</th><th>% victoria</th><th>Mejor tiempo</th><th>♥ perdidos (media)</th><th>Corrupta</th><th>Dorada</th></tr>
         ${BOSS_IDS.map((id, i) => { const b = B[id] || {}; const fin = (b.wins || 0) + (b.losses || 0);
-          return `<tr><td><canvas class="st-boss" data-boss="${i}" width="96" height="40"></canvas></td><td>${BOSS_NAMES[i]}</td><td>${fmtInt(b.faced)}</td><td>${fmtInt(b.wins)}</td><td>${fmtInt(b.losses)}</td>
+          return `<tr><td><canvas class="st-boss" data-boss="${i}" width="96" height="40"></canvas></td><td>${b.faced || i < BOSS_COUNT ? BOSS_NAMES[i] : "???"}</td><td>${fmtInt(b.faced)}</td><td>${fmtInt(b.wins)}</td><td>${fmtInt(b.losses)}</td>
           <td>${fin ? Math.round(b.wins / fin * 100) + " %" : "—"}</td><td>${b.best ? fmtNum(b.best) + " s" : "—"}</td><td>${b.ended ? fmtNum(Math.round(b.hearts / b.ended * 10) / 10) : "—"}</td><td>${fmtInt(b.corrupt)}</td><td>${fmtInt(b.gold)}</td></tr>`; }).join("")}</table>
         <p class="touch-hint">Corrupta = boss reforzado de la segunda vuelta · Dorada = tercera vuelta o más.</p>`;
     } else if (this.tab === "monturas") {
@@ -9068,7 +9314,7 @@ class Game {
     if (this.canvas.width !== px) { this.canvas.width = px; this.canvas.height = Math.round(px * H / W); }
     this.dpr = this.canvas.width / W; this.cssW = cssW;
   }
-  newRun() { return { biomes: new Set(), eggs: {}, powerupTypes: new Set(), lastPowerup: 0, lastRoar: 0, lastLane: 0 }; }
+  newRun() { return { clean: true, secret: false, biomes: new Set(), eggs: {}, powerupTypes: new Set(), lastPowerup: 0, lastRoar: 0, lastLane: 0 }; }
   reset() {
     this.runTime = 0; this.distance = 0; this.runCoins = 0; this.runEggs = 0; this.speed = CONFIG.BASE_SPEED * this.mode.startSpeedMult; this.lives = this.mode.lives;
     this.effectMax = { shield: 1, magnet: 1, slowmo: 1, turbo: 1 };
@@ -9127,6 +9373,8 @@ class Game {
     this.versus = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
   }
   // ----- Tutorial (nivel de práctica) -----
+  // Nivel secreto: partida completa desde el nivel 1 sin morir (ni perder vidas ni revivir)
+  secretOk() { return !this.versus && !this.tutorial && this.startLevel === 1 && this.run.clean; }
   get firstTime() { const s = this.save.data; return !s.tutorialDone && !s.records.normal && !s.records.easy && !s.records.hard; }
   startTutorial() {
     this.sfx.unlock();
@@ -9328,13 +9576,14 @@ class Game {
       return false;
     }
     if (this.lives > 1) {   // modo Fácil: se pierde una vida y hay unos segundos de invencibilidad
-      this.lives--; this.grace = this.mode.hitInvuln; this.sfx.lifeLost(); this.addShake(0.3, 6);
+      this.lives--; this.run.clean = false; this.grace = this.mode.hitInvuln; this.sfx.lifeLost(); this.addShake(0.3, 6);
       this.floatText(this.player.laneT, this.player.x + 30, this.player.y + 90, "-1 VIDA", "#ff6b6b", 22);
       this.ach.event("heartLost");
       return false;
     }
     const b = this.build, second = this.stat("secondChance") > b.used.secondChance, resu = this.stat("resurrection") && !b.used.resurrection;
     if (second || resu) {   // Segunda oportunidad / Resurrección (si tienes las dos, la segunda da +1 corazón en el siguiente jefe)
+      this.run.clean = false;
       if (second) { b.used.secondChance++; if (resu) { b.used.resurrection = 1; this.pendingHeart++; } }
       else b.used.resurrection = 1;
       this.grace = 2 * this.stat("graceMult"); this.sfx.perfect(); this.addShake(0.4, 8); this.flashT = 0.3;
@@ -9374,13 +9623,15 @@ class Game {
   // Llamados por la clase Boss
   onBossDefeated(b) {
     const B = this.bosses, id = BOSS_IDS[B.pending.type], coins = Math.round(b.coins * this.mode.coinValue * this.stat("bossCoinMult"));
-    this.runCoins += coins; this.runBosses++; this.runBossTiers.push(B.pending.tier || 0);
+    this.runCoins += coins; this.runBosses++; this.runBossTiers.push(B.pending.secret ? 2 : B.pending.tier || 0);
+    if (B.pending.secret) { this.season.addXP(SECRET_CONFIG.SEASON_XP); this.save.data.secretBeaten = (this.save.data.secretBeaten || 0) + 1; }
     this.distance += CONFIG.BOSS_POINTS * CONFIG.PX_PER_POINT;
     const s = this.save.data;
     if (!s.bossesDefeated.includes(id)) s.bossesDefeated.push(id);
     B.defeatedRun.add(id); this.save.save();
     this.sfx.bossDefeat(); this.addShake(0.6, 10);
-    this.bossBanner = { t: 2.5, text: "¡BOSS DERROTADO!", sub: `+${fmtNum(coins)} monedas · +${CONFIG.BOSS_POINTS} puntos`, color: "#ffd23f" };
+    this.bossBanner = B.pending.secret ? { t: 4, text: "¡JEFE SECRETO DERROTADO!", sub: `+${fmtNum(coins)} monedas · +${SECRET_CONFIG.SEASON_XP} XP del pase · ¡Eres una leyenda!`, color: "#ff5ce1" }
+      : { t: 2.5, text: "¡BOSS DERROTADO!", sub: `+${fmtNum(coins)} monedas · +${CONFIG.BOSS_POINTS} puntos`, color: "#ffd23f" };
     this.ach.event("bossDefeated", { id, flawless: !B.hitTaken, fury: b.fury, tier: B.pending.tier, time: b.fightT });
     this.build.bossesBeaten++;
     if (this.rogue) this.rogue.queue("boss", 2.6);   // tras la animación de victoria: ELIGE UNA MEJORA
@@ -9481,7 +9732,7 @@ class Game {
 
     if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season"].includes(this.state)) {
       this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt);
-      if (this.state === "menu" && (this.menuT = (this.menuT || 0) + dt) > 8) { this.menuT = 0; this.level.setBiome((this.level.cur + 1) % this.level.biomes.length); }   // la portada recorre los biomas
+      if (this.state === "menu" && (this.menuT = (this.menuT || 0) + dt) > 8) { this.menuT = 0; this.level.setBiome((this.level.cur + 1) % BIOMES.length); }   // la portada recorre los biomas
       return;
     }
     if (this.state === "over") {
