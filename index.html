@@ -495,7 +495,7 @@
   <div class="card">
     <h1>DINO RUNNER</h1>
     <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus bosses</p>
-    <p class="touch-hint" style="margin:-8px 0 10px">Versión 11 · Monturas, roguelike, árbol, estadísticas y tutorial</p>
+    <p class="touch-hint" style="margin:-8px 0 10px">Versión 12 · Monturas, roguelike, árbol, estadísticas y tutorial (equilibrado)</p>
     <div class="stats">
       <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
       <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
@@ -1297,18 +1297,19 @@ const MODES = { normal: new DifficultyMode("normal"), easy: new DifficultyMode("
 // =====================================================================
 const FURY_CONFIG = {
   MAX: 100,                 // barra llena
+  PASS: 1.5,                // cada obstáculo superado limpiamente (equilibrio: ~1 súper rugido por minuto jugando bien)
   NEAR_MISS: 15,            // esquivar por los pelos (menos de NEAR_MISS_PX)
-  NEAR_MISS_PX: 8,
-  EGG: 25,                  // recoger un huevo
-  ROAR_KILL: 8,             // cada obstáculo destruido con el rugido
+  NEAR_MISS_PX: 12,
+  EGG: 30,                  // recoger un huevo
+  ROAR_KILL: 12,            // cada obstáculo destruido con el rugido
   BOSS_HIT: 10,             // dañar a un boss
-  DECAY_AFTER: 10,          // s sin llenarla antes de empezar a vaciarse
-  DECAY_RATE: 8,            // puntos por segundo al vaciarse
+  DECAY_AFTER: 15,          // s sin sumar furia antes de empezar a vaciarse
+  DECAY_RATE: 3,            // puntos por segundo al vaciarse
 };
 
 // --- Monturas (una por bioma). duration en s; speed = multiplicador de la velocidad del juego ---
 const MOUNT_CONFIG = {
-  CHANCE: 0.6,              // probabilidad de que aparezca una montura en un nivel
+  CHANCE: 0.75,             // probabilidad de que aparezca una montura en un nivel (equilibrio: 0,6 → 0,75; el jefe a mitad de nivel deja poco hueco)
   WINDOW: [0.15, 0.75],     // tramo del nivel en el que puede aparecer
   BOSS_MARGIN: 300,         // puntos antes de un boss en los que nunca aparece
   CLEAR_PX: 150,            // px libres antes y después del icono
@@ -1317,12 +1318,12 @@ const MOUNT_CONFIG = {
   HIT_INVULN: 1.5,          // s invencible al perderla por un golpe
   EASY_DURATION_MULT: 1.5,  // modo Fácil: duran un 50 % más
   EASY_WARN_MULT: 1.5,      // y los avisos de sus obstáculos especiales duran un 50 % más
-  WARN_TIME: 0.8,           // s de aviso de los obstáculos especiales (cocodrilos, chorros, olas, tiburones…)
+  WARN_TIME: 0.9,           // s de aviso de los obstáculos especiales (cocodrilos, chorros, olas, tiburones…)
   mounts: {
     desert:    { id: "board",    name: "Tabla de arena",   duration: 8,  speed: 1.4, control: "W salta largo · S agacharse",          roar: true,  icon: "#e9c48a" },
     jungle:    { id: "log",      name: "Tronco por el río", duration: 8, speed: 1,   control: "W salta · arrolla lo pequeño",          roar: true,  icon: "#8a5a2a" },
     volcano:   { id: "lavarock", name: "Roca flotante",    duration: 8,  speed: 1,   control: "W sube · S baja",                       roar: true,  icon: "#ff6a1a" },
-    glacier:   { id: "sled",     name: "Trineo",           duration: 8,  speed: 2,   control: "¡No se puede frenar! Monedas ×2",       roar: true,  icon: "#c4e4f6" },
+    glacier:   { id: "sled",     name: "Trineo",           duration: 8,  speed: 1.6, control: "¡No se puede frenar! Monedas ×2",       roar: true,  icon: "#c4e4f6" },
     night:     { id: "meteor",   name: "Meteorito domado", duration: 6,  speed: 1.6, control: "Lo destruye todo · W al final: ¡SALTA!", roar: false, icon: "#ff8a2a" },
     beach:     { id: "turtle",   name: "Tortuga gigante",  duration: 10, speed: 0.7, control: "S para esconderte",                     roar: true,  icon: "#3aa878" },
     mushroom:  { id: "shroom",   name: "Seta saltarina",   duration: 8,  speed: 1,   control: "Rebota sola · W más alto · S corta",    roar: true,  icon: "#ff7ad0" },
@@ -1338,7 +1339,7 @@ const MOUNT_CONFIG = {
   SHROOM_BOUNCE: 860, SHROOM_HOLD_GRAVITY: 0.6,  SHROOM_STOMP_COINS: 10,
   DOLPHIN_ARC: 520, DOLPHIN_JUMP: 1000, DOLPHIN_DIVE_MAX: 2, DOLPHIN_DIVE_CD: 1, DOLPHIN_DEPTH: 46,
   COFFIN_BRAKE: 0.6, COFFIN_JUMP: 0.75,
-  ROCKET_GRAVITY: 0.4, ROCKET_IMPULSE: 520, ROCKET_CEIL: 240, ROCKET_STUN: 1,
+  ROCKET_GRAVITY: 0.4, ROCKET_IMPULSE: 520, ROCKET_CEIL: 240, ROCKET_STUN: 0.6,
   LAVA_MAX_Y: 180, LAVA_SPEED: 320, LAVA_SINK: 90,
 };
 
@@ -1351,6 +1352,7 @@ const ROGUE_CONFIG = {
   LEGENDARY_AFTER_BOSSES: 2,
   CARDS: 3, EGG_CARDS: 2,
   REROLL_BASE: 50,          // barajar: 50, 100, 200… (se duplica)
+  REROLL_FLAT: 30,          // con Tarifa plana
   SKIP_COINS: 100,          // saltar la elección
   ALTAR_CHANCE: 0.25,       // probabilidad de altar de ámbar por nivel
   MAX_PACTS: 2,
@@ -1361,22 +1363,24 @@ const ROGUE_CONFIG = {
     epica:      { name: "Épica",      color: "#9b5cff" },
     legendaria: { name: "Legendaria", color: "#ffb938" },
   },
+  // Topes (equilibrio): ninguna combinación de mejoras, pactos y árbol puede pasar de aquí
+  CAPS: { coinMult: 3, critChance: 0.45, roarRangeMult: 2, furyRate: 3.5, eggMult: 3, bossHearts: 4, bossHpMultMin: 0.6, mountDurAdd: 6 },
   CATS: { roar: "Rugido", move: "Movimiento", def: "Defensa", power: "Power-ups y furia", eco: "Economía", boss: "Jefes", mount: "Monturas", egg: "Huevos", legend: "Legendarias" },
 };
 const pctS = v => `${Math.round(v * 100)} %`;
 const UPGRADES = [
   // Rugido
   { id: "rugido-amplio", name: "Rugido amplio", rarity: "comun", cat: "roar", max: 3, desc: l => `+${20 * l} % de alcance del rugido`, mod: { roarRange: (v, l) => v * (1 + 0.2 * l) } },
-  { id: "garganta-hierro", name: "Garganta de hierro", rarity: "comun", cat: "roar", max: 3, desc: l => `−${l} s de recarga del rugido (mín. 2 s)`, mod: { roarCooldown: (v, l) => Math.max(2, v - l) } },
+  { id: "garganta-hierro", name: "Garganta de hierro", rarity: "comun", cat: "roar", max: 3, desc: l => `−${fmtNum(0.75 * l)} s de recarga del rugido (mín. 2 s)`, mod: { roarCooldown: (v, l) => Math.max(2, v - 0.75 * l) } },
   { id: "rugido-doble", name: "Rugido doble", rarity: "rara", cat: "roar", desc: () => "El rugido sale hacia delante y hacia atrás", mod: { roarBack: () => 1 } },
   { id: "eco", name: "Eco", rarity: "rara", cat: "roar", desc: () => "El rugido se repite 0,5 s después con la mitad de alcance", mod: { roarEcho: () => 1 } },
-  { id: "rugido-carril", name: "Rugido de carril", rarity: "epica", cat: "roar", desc: () => "El rugido afecta a los dos carriles", mod: { roarBothLanes: () => 1 } },
-  { id: "rugido-cortante", name: "Rugido cortante", rarity: "epica", cat: "roar", desc: () => "El rugido también destruye cactus y obstáculos de suelo", mod: { roarCactus: () => 1 } },
+  { id: "rugido-carril", name: "Rugido de carril", rarity: "epica", cat: "roar", desc: () => "El rugido también llega al otro carril (con el 60 % del alcance)", mod: { roarBothLanes: () => 1 } },
+  { id: "rugido-cortante", name: "Rugido cortante", rarity: "epica", cat: "roar", desc: () => "El rugido también destruye cactus y obstáculos de suelo bajos (no los altos)", mod: { roarCactus: () => 1 } },
   // Movimiento
   { id: "patas-ligeras", name: "Patas ligeras", rarity: "comun", cat: "move", max: 2, desc: l => `+${10 * l} % de altura de salto`, mod: { jumpMult: (v, l) => v * (1 + 0.1 * l) } },
   { id: "triple-salto", name: "Triple salto", rarity: "rara", cat: "move", desc: () => "Un salto extra en el aire", mod: { airJumps: v => v + 1 } },
   { id: "planeo", name: "Planeo", rarity: "rara", cat: "move", desc: () => "Mantén W tras el último salto para caer despacio 1,5 s", mod: { glide: () => 1 } },
-  { id: "deslizamiento-largo", name: "Deslizamiento largo", rarity: "comun", cat: "move", desc: () => "El deslizamiento dura el doble", mod: { slideMult: v => v * 2 } },
+  { id: "deslizamiento-largo", name: "Deslizamiento largo", rarity: "comun", cat: "move", desc: () => "El deslizamiento dura el doble y pasar deslizándote bajo un pájaro da +10 de furia", mod: { slideMult: v => v * 2, slideFury: () => 10 } },
   { id: "cambio-fantasma", name: "Cambio fantasma", rarity: "rara", cat: "move", desc: () => "Eres invencible mientras cambias de carril", mod: { laneGhost: () => 1 } },
   { id: "pisoton-sismico", name: "Pisotón sísmico", rarity: "epica", cat: "move", desc: () => "La caída rápida lanza una onda al aterrizar que destruye los obstáculos bajos cercanos", mod: { stompWave: () => 1 } },
   // Defensa
@@ -1388,31 +1392,31 @@ const UPGRADES = [
   { id: "powerups-duraderos", name: "Power-ups duraderos", rarity: "comun", cat: "power", max: 3, desc: l => `+${20 * l} % de duración de los power-ups`, mod: { powerupDurMult: (v, l) => v * (1 + 0.2 * l) } },
   { id: "iman-natural", name: "Imán natural", rarity: "rara", cat: "power", desc: () => "Imán permanente de corto alcance (la mitad que el power-up)", mod: { naturalMagnet: () => CONFIG.MAGNET_RADIUS / 2 } },
   { id: "furia-rapida", name: "Furia rápida", rarity: "comun", cat: "power", max: 2, desc: l => `La furia se llena un ${25 * l} % más rápido`, mod: { furyRate: (v, l) => v * (1 + 0.25 * l) } },
-  { id: "furia-eterna", name: "Furia eterna", rarity: "epica", cat: "power", desc: () => "La barra de furia ya no se vacía con el tiempo", mod: { furyNoDecay: () => 1 } },
+  { id: "furia-eterna", name: "Furia eterna", rarity: "epica", cat: "power", desc: () => "La barra de furia ya no se vacía con el tiempo y se llena un 15 % más rápido", mod: { furyNoDecay: () => 1, furyRate: v => v * 1.15 } },
   { id: "doble-super", name: "Doble súper rugido", rarity: "legendaria", cat: "power", desc: () => "Con la barra llena, el súper rugido se puede usar dos veces", mod: { superRoarUses: () => 2 } },
   // Economía
-  { id: "bolsillos-grandes", name: "Bolsillos grandes", rarity: "comun", cat: "eco", max: 3, desc: l => `+${15 * l} % de monedas`, mod: { coinMult: (v, l) => v * (1 + 0.15 * l) } },
+  { id: "bolsillos-grandes", name: "Bolsillos grandes", rarity: "comun", cat: "eco", max: 3, desc: l => `+${10 * l} % de monedas`, mod: { coinMult: (v, l) => v * (1 + 0.1 * l) } },
   { id: "huevos-dorados", name: "Huevos dorados", rarity: "rara", cat: "eco", desc: () => "Los huevos bonus valen el doble", mod: { eggMult: v => v * 2 } },
   { id: "interes", name: "Interés", rarity: "rara", cat: "eco", desc: () => "Al pasar de nivel ganas un 5 % de tus monedas de la partida (máx. 100)", mod: { interest: () => 0.05, interestCap: () => 100 } },
-  { id: "tarifa-plana", name: "Tarifa plana", rarity: "comun", cat: "eco", desc: () => "Barajar de nuevo cuesta siempre 50", mod: { rerollFlat: () => 1 } },
+  { id: "tarifa-plana", name: "Tarifa plana", rarity: "comun", cat: "eco", desc: () => "Barajar de nuevo cuesta siempre 30", mod: { rerollFlat: () => 1 } },
   { id: "tesoro-jefe", name: "Tesoro del jefe", rarity: "epica", cat: "eco", desc: () => "Los jefes dan un 50 % más de monedas", mod: { bossCoinMult: v => v * 1.5 } },
   // Jefes
-  { id: "ojo-cazador", name: "Ojo de cazador", rarity: "comun", cat: "boss", desc: () => "Las ventanas de vulnerabilidad de los jefes duran un 30 % más", mod: { bossVulnMult: v => v * 1.3 } },
+  { id: "ojo-cazador", name: "Ojo de cazador", rarity: "comun", cat: "boss", desc: () => "Las ventanas de vulnerabilidad de los jefes duran un 50 % más", mod: { bossVulnMult: v => v * 1.5 } },
   { id: "golpe-critico", name: "Golpe crítico", rarity: "rara", cat: "boss", desc: () => "Cada golpe al jefe tiene un 20 % de quitar el doble", mod: { critChance: v => Math.max(v, 0.2) } },
   { id: "calma", name: "Calma", rarity: "rara", cat: "boss", desc: () => "La forma furiosa de los jefes empieza al 30 % de vida", mod: { bossFuryAt: v => Math.min(v, 0.3) } },
   { id: "presa-facil", name: "Presa fácil", rarity: "epica", cat: "boss", desc: () => "Los jefes empiezan con un 20 % menos de vida", mod: { bossHpMult: v => v * 0.8 } },
   // Monturas
-  { id: "jinete-experto", name: "Jinete experto", rarity: "comun", cat: "mount", max: 2, desc: l => `Las monturas duran +${3 * l} s`, mod: { mountDurAdd: (v, l) => v + 3 * l } },
+  { id: "jinete-experto", name: "Jinete experto", rarity: "comun", cat: "mount", max: 2, desc: l => `Las monturas duran +${2 * l} s`, mod: { mountDurAdd: (v, l) => v + 2 * l } },
   { id: "establo", name: "Establo", rarity: "rara", cat: "mount", desc: () => "Siempre aparece una montura en cada nivel", mod: { mountChance: () => 1 } },
   { id: "montura-blindada", name: "Montura blindada", rarity: "epica", cat: "mount", desc: () => "La montura aguanta un golpe antes de perderse", mod: { mountArmor: v => v + 1 } },
   // Huevos (el rival no existe en este juego: «Pies de liebre» se cambia por una de huevos)
   { id: "nido-dorado", name: "Nido dorado", rarity: "comun", cat: "egg", desc: () => "Cada huevo recogido llena también la furia al máximo", mod: { eggFullFury: () => 1 } },
-  { id: "olfato-nido", name: "Olfato de nido", rarity: "rara", cat: "egg", desc: () => "Una flecha en el borde de la pantalla señala el siguiente huevo", mod: { eggArrow: () => 1 } },
+  { id: "olfato-nido", name: "Olfato de nido", rarity: "rara", cat: "egg", desc: () => "Una flecha señala el siguiente huevo y los huevos valen un 50 % más", mod: { eggArrow: () => 1, eggMult: v => v * 1.5 } },
   // Legendarias
-  { id: "corazon-trex", name: "Corazón de T-Rex", rarity: "legendaria", cat: "legend", desc: () => "+1 corazón en jefes, rugido con el doble de alcance y que destruye cactus", mod: { bossHearts: v => v + 1, roarRange: v => v * 2, roarCactus: () => 1 } },
-  { id: "raptor-tiempo", name: "Raptor del tiempo", rarity: "legendaria", cat: "legend", desc: () => "Cámara lenta de 1 s cuando un obstáculo está a punto de golpearte (recarga 10 s)", mod: { timeRaptor: () => 1 } },
-  { id: "midas", name: "Midas", rarity: "legendaria", cat: "legend", desc: () => "Todas las monedas valen el triple, pero el imán ya no funciona", mod: { coinMult: v => v * 3, midas: () => 1 } },
-  { id: "manada-fantasma", name: "Manada fantasma", rarity: "legendaria", cat: "legend", desc: () => "Dos raptores fantasma corren delante y destruyen el primer obstáculo que tocan cada 5 s", mod: { ghostPack: () => 1 } },
+  { id: "corazon-trex", name: "Corazón de T-Rex", rarity: "legendaria", cat: "legend", desc: () => "+1 corazón en jefes, rugido con un 50 % más de alcance y que destruye cactus bajos", mod: { bossHearts: v => v + 1, roarRange: v => v * 1.5, roarCactus: () => 1 } },
+  { id: "raptor-tiempo", name: "Raptor del tiempo", rarity: "legendaria", cat: "legend", desc: () => "Cámara lenta de 1 s cuando un obstáculo está a punto de golpearte (recarga 15 s)", mod: { timeRaptor: () => 1 } },
+  { id: "midas", name: "Midas", rarity: "legendaria", cat: "legend", desc: () => "Todas las monedas valen el doble, pero el imán ya no funciona", mod: { coinMult: v => v * 2, midas: () => 1 } },
+  { id: "manada-fantasma", name: "Manada fantasma", rarity: "legendaria", cat: "legend", desc: () => "Dos raptores fantasma corren delante y destruyen el primer obstáculo que tocan cada 8 s", mod: { ghostPack: () => 1 } },
 ];
 // Sinergias: se activan solas al tener todas sus piezas
 const SYNERGIES = [
@@ -1427,28 +1431,28 @@ const SYNERGIES = [
 // Pactos del altar de ámbar: ventaja fuerte con desventaja para toda la partida
 const PACTS = [
   { id: "pacto-sangre", name: "Pacto de sangre", good: "+2 corazones en los jefes", bad: "El escudo (power-up) ya no aparece", mod: { bossHearts: v => v + 2, noShieldPowerup: () => 1 } },
-  { id: "pacto-oro", name: "Pacto del oro", good: "Monedas ×2", bad: "Los obstáculos aparecen un 20 % más a menudo", mod: { coinMult: v => v * 2, obstacleFreq: v => v * 1.2 } },
-  { id: "pacto-bestia", name: "Pacto de la bestia", good: "Rugido sin recarga", bad: "Los jefes tienen un 30 % más de vida", mod: { roarNoCd: () => 1, bossHpMult: v => v * 1.3 } },
-  { id: "pacto-prisa", name: "Pacto de la prisa", good: "Puntuación ×1,5", bad: "El juego va un 15 % más rápido y pierdes el doble salto", mod: { speedMult: v => v * 1.15, scoreMult: v => v * 1.5, noDoubleJump: () => 1 } },
-  { id: "pacto-silencio", name: "Pacto del silencio", good: "La furia se llena el triple de rápido", bad: "El rugido normal desaparece (solo queda el súper rugido)", mod: { furyRate: v => v * 3, noRoar: () => 1 } },
+  { id: "pacto-oro", name: "Pacto del oro", good: "Monedas ×1,6", bad: "Los obstáculos aparecen un 25 % más a menudo", mod: { coinMult: v => v * 1.6, obstacleFreq: v => v * 1.25 } },
+  { id: "pacto-bestia", name: "Pacto de la bestia", good: "Rugido casi sin recarga (1 s)", bad: "Los jefes tienen un 30 % más de vida", mod: { roarNoCd: () => 1, bossHpMult: v => v * 1.3 } },
+  { id: "pacto-prisa", name: "Pacto de la prisa", good: "Puntuación ×1,25", bad: "El juego va un 20 % más rápido y pierdes el doble salto", mod: { speedMult: v => v * 1.2, scoreMult: v => v * 1.25, noDoubleJump: () => 1 } },
+  { id: "pacto-silencio", name: "Pacto del silencio", good: "La furia se llena 2,5 veces más rápido", bad: "El rugido normal desaparece (solo queda el súper rugido)", mod: { furyRate: v => v * 2.5, noRoar: () => 1 } },
   { id: "pacto-jinete", name: "Pacto del jinete", good: "Monturas en cada nivel y duran el doble", bad: "Sin montura vas un 10 % más lento", mod: { mountChance: () => 1, mountDurMult: v => v * 2, unmountedSpeed: v => v * 0.9 } },
 ];
 
 // --- Árbol de mejoras permanentes (se paga con fósiles) ---
 const TREE_CONFIG = {
-  FOSSILS: { LEVEL: 1, BOSS: 2, BOSS_CORRUPT: 3, BOSS_GOLD: 5, SYNERGY: 1, RECORD: 5, EASY_MULT: 0.5 },
+  FOSSILS: { LEVEL: 2, BOSS: 3, BOSS_CORRUPT: 5, BOSS_GOLD: 8, SYNERGY: 2, RECORD: 5, EASY_MULT: 0.5 },   // equilibrio: ~20–30 partidas buenas para completar el árbol
   RESET_COST: 500,          // monedas para reiniciar el árbol (la primera vez es gratis)
   branches: [
     { id: "superv", name: "Supervivencia", color: "#5fd15a", nodes: [
-      { id: "escamas", name: "Escamas", max: 3, cost: [3, 6, 10], desc: l => `+${5 * l} % de duración del escudo y de la invencibilidad`, mod: { graceMult: (v, l) => v * (1 + 0.05 * l) } },
-      { id: "corazon-extra", name: "Corazón extra", max: 1, cost: [15], desc: () => "+1 corazón en los combates de jefe", mod: { bossHearts: v => v + 1 } },
+      { id: "escamas", name: "Escamas", max: 3, cost: [3, 6, 10], desc: l => `+${8 * l} % de duración del escudo y de la invencibilidad`, mod: { graceMult: (v, l) => v * (1 + 0.08 * l) } },
+      { id: "corazon-extra", name: "Corazón extra", max: 1, cost: [22], desc: () => "+1 corazón en los combates de jefe", mod: { bossHearts: v => v + 1 } },
       { id: "instinto", name: "Instinto", max: 2, cost: [8, 14], desc: l => `Los avisos de jefes y obstáculos especiales duran +${10 * l} %`, mod: { teleMult: (v, l) => v * (1 + 0.1 * l) } },
       { id: "resurreccion", name: "Resurrección", max: 1, cost: [30], desc: () => "Una vez por partida, al morir revives con 2 s de invencibilidad", mod: { resurrection: () => 1 } },
     ] },
     { id: "poder", name: "Poder", color: "#ff9a3c", nodes: [
       { id: "pulmones", name: "Pulmones", max: 3, cost: [3, 6, 10], desc: l => `−${fmtNum(0.3 * l)} s de recarga del rugido`, mod: { roarCooldown: (v, l) => Math.max(2, v - 0.3 * l) } },
       { id: "furia-innata", name: "Furia innata", max: 2, cost: [6, 12], desc: l => `Empiezas con la furia al ${25 * l} %`, mod: { furyStart: (v, l) => 0.25 * l } },
-      { id: "garras", name: "Garras", max: 2, cost: [10, 18], desc: l => `+${10 * l} % de probabilidad de golpe doble a los jefes`, mod: { critChance: (v, l) => v + 0.1 * l } },
+      { id: "garras", name: "Garras", max: 2, cost: [10, 18], desc: l => `+${7 * l} % de probabilidad de golpe doble a los jefes`, mod: { critChance: (v, l) => v + 0.07 * l } },
       { id: "despertar", name: "Despertar", max: 1, cost: [30], desc: () => "El primer súper rugido de cada partida no vacía la barra", mod: { despertar: () => 1 } },
     ] },
     { id: "fortuna", name: "Fortuna", color: "#ffb938", nodes: [
@@ -2307,6 +2311,10 @@ class RunBuild {
     if (k in this.cache) return this.cache[k];
     let v = statBase(this.game, k);
     for (const [mod, l] of this.sources()) if (mod[k]) v = mod[k](v, l);
+    const C = ROGUE_CONFIG.CAPS;   // topes de equilibrio
+    if (k === "roarRange") v = Math.min(v, CONFIG.ROAR_RANGE * C.roarRangeMult);
+    else if (k === "bossHpMult") v = Math.max(v, C.bossHpMultMin);
+    else if (C[k] != null) v = Math.min(v, C[k]);
     return (this.cache[k] = v);
   }
   // Para el álbum y el historial
@@ -7793,7 +7801,7 @@ class RogueManager {
   // Coste de barajar: 50, 100, 200… (Tarifa plana: siempre 50; Regateo: −25 % por nivel)
   rerollCost() {
     const g = this.g, R = ROGUE_CONFIG;
-    const base = g.stat("rerollFlat") ? R.REROLL_BASE : R.REROLL_BASE * Math.pow(2, g.build.rerolls);
+    const base = g.stat("rerollFlat") ? R.REROLL_FLAT : R.REROLL_BASE * Math.pow(2, g.build.rerolls);
     return Math.max(1, Math.round(base * (1 - g.stat("rerollDiscount"))));
   }
   // Álbum y logros al coger una mejora
@@ -8796,7 +8804,7 @@ class Game {
     if (this.roarCd > 0) return;
     if (this.stat("noRoar")) { this.sfx.denied(); this.floatText(this.player.laneT, this.player.x + 40, this.player.y + 100, "SOLO SÚPER RUGIDO", "#cccccc", 16); return; }
     if (M && !M.canRoar()) { this.sfx.denied(); return; }
-    const cd = this.stat("roarNoCd") ? 0.35 : this.stat("roarCooldown");
+    const cd = this.stat("roarNoCd") ? 1 : this.stat("roarCooldown");
     this.roarCd = this.roarCdMax = cd * (boss && boss.state === "fight" ? boss.roarCdMult : 1);   // algunos bosses se vencen a rugidos
     this.roarWave = { t: 0, lane: this.player.logicalLane, style: roarStyle(this.skinId), range: this.stat("roarRange"), both: !!this.stat("roarBothLanes"), back: !!this.stat("roarBack") };
     if (this.stat("roarEcho")) this.echoT = 0.5;
@@ -8830,8 +8838,9 @@ class Game {
     const k = Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME), reach = pl.x + 70 + w.range * k, back = pl.x - w.range * 0.6 * k;
     for (const o of this.obstacles) {
       if (o.dead || (!w.both && o.lane !== w.lane)) continue;
-      if (!(o.destructible || (this.stat("roarCactus") && o.kind === "ground"))) continue;
-      if ((o.x < reach && o.x + o.w > pl.x) || (w.back && o.x + o.w > back && o.x < pl.x)) { this.destroy(o, true); this.fury.add(FURY_CONFIG.ROAR_KILL); }
+      if (!(o.destructible || (this.stat("roarCactus") && o.kind === "ground" && o.h <= 64))) continue;   // Rugido cortante: solo cactus bajos
+      const r = o.lane === w.lane ? reach : pl.x + 70 + (reach - pl.x - 70) * 0.6;                           // Rugido de carril: 60 % en el otro
+      if ((o.x < r && o.x + o.w > pl.x) || (w.back && o.lane === w.lane && o.x + o.w > back && o.x < pl.x)) { this.destroy(o, true); this.fury.add(FURY_CONFIG.ROAR_KILL); }
     }
     this.mounts.roarHits(w, pl.x, reach);
     if (this.bosses.boss) this.bosses.boss.roarWave(w, pl.x, reach);
@@ -9136,7 +9145,7 @@ class Game {
         for (const o of this.obstacles) {
           if (o.dead || o.lane !== pl.logicalLane) continue;
           const hb = o.hitbox(), moved = { x: hb.x - ahead, y: hb.y, w: hb.w + ahead, h: hb.h };
-          if (hb.x > pl.x + 10 && boxes.some(a => overlap(a, moved))) { this.effects.slowmo = this.effectMax.slowmo = 1; this.timeCd = 10; this.floatText(pl.laneT, pl.x + 40, pl.y + 110, "¡RAPTOR DEL TIEMPO!", "#9b5cff", 18); break; }
+          if (hb.x > pl.x + 10 && boxes.some(a => overlap(a, moved))) { this.effects.slowmo = this.effectMax.slowmo = 1; this.timeCd = 15; this.floatText(pl.laneT, pl.x + 40, pl.y + 110, "¡RAPTOR DEL TIEMPO!", "#9b5cff", 18); break; }
         }
       }
     }
@@ -9144,7 +9153,7 @@ class Game {
       gh.cd = Math.max(0, gh.cd - dt);
       if (gh.cd > 0) continue;
       const gx = pl.x + gh.x;
-      for (const o of this.obstacles) if (!o.dead && o.lane === pl.logicalLane && o.x < gx + 40 && o.x + o.w > gx) { this.destroy(o, true); gh.cd = 5; break; }
+      for (const o of this.obstacles) if (!o.dead && o.lane === pl.logicalLane && o.x < gx + 40 && o.x + o.w > gx) { this.destroy(o, true); gh.cd = 8; break; }
     }
     if (this.stat("eggSafe")) for (const e of this.eggs) if (!e.taken && !e.returned && e.x < pl.x - 40) { e.returned = true; e.x = pl.x + this.effectiveSpeed * 2; }   // Nido seguro: el huevo vuelve 2 s después
     if (this.rogue) this.rogue.update(dt);
@@ -9185,6 +9194,7 @@ class Game {
         if (!o.passed && hb.x + hb.w < boxes[0].x) {
           o.passed = true;
           if (pl.mount) pl.mount.onPass(o);
+          this.fury.add(FURY_CONFIG.PASS + (o.kind === "flyer" && pl.sliding && !this.versus ? this.stat("slideFury") : 0));
           if (o.minGap != null && o.minGap >= 0 && o.minGap < FURY_CONFIG.NEAR_MISS_PX) {   // esquiva por los pelos
             this.fury.add(FURY_CONFIG.NEAR_MISS); this.ach.event("nearMiss");
             const inv = this.versus ? 0 : this.stat("nearMissInvuln"); if (inv) this.grace = Math.max(this.grace, inv);
