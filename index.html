@@ -527,6 +527,31 @@
   }
   @media (max-height: 560px) { .mm-title { font-size: 40px; } .mm-sub { margin-bottom: 8px; } .mm-panel { gap: 6px; } .mm-btn { padding: 8px 14px; } .mm-tile { min-height: 80px; } }
   .mm-tile, .mm-tile small, .mm-btn small, .mm-hint { font-family: var(--f-text); }
+  canvas#game, #menuBg { image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: pixelated; }
+  /* Pase de temporada */
+  .mm-season { background: linear-gradient(90deg, rgba(123,92,255,.92), rgba(255,92,225,.9)); }
+  .mm-season small { margin-left: auto; font-family: var(--f-text); font-size: 11px; color: #fff3fb; }
+  .card.season { max-width: 980px; }
+  .ss-hero { display: flex; gap: 16px; align-items: center; margin: 10px 0 14px; text-align: left; flex-wrap: wrap; }
+  .ss-hero canvas { width: 300px; height: 200px; image-rendering: pixelated; border: 2px solid var(--line); box-shadow: 0 0 24px rgba(255,92,225,.35); }
+  .ss-side { flex: 1 1 260px; display: flex; flex-direction: column; gap: 6px; }
+  .ss-side h3 { margin: 0; color: #ff9de6; } .ss-info { display: flex; flex-direction: column; gap: 2px; }
+  .ss-info b { font-family: var(--f-title); font-weight: 400; font-size: 20px; color: var(--weak); } .ss-info small { color: var(--text-dim); font-size: 12px; }
+  .ss-bar { height: 12px; } .ss-bar i { background: linear-gradient(90deg, #7b5cff, #ff5ce1, #ffd23f); }
+  .ss-track { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 12px; }
+  .ss-tier { position: relative; flex: 0 0 112px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px 6px;
+    background: var(--surface-2); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel); opacity: .7; }
+  .ss-tier small { position: absolute; top: 4px; left: 6px; font-family: var(--f-title); font-size: 10px; color: var(--text-dim); }
+  .ss-tier b { font-family: var(--f-title); font-weight: 400; font-size: 10px; line-height: 14px; text-align: center; }
+  .ss-tier i { position: absolute; top: 4px; right: 6px; font-style: normal; color: var(--go); }
+  .ss-tier.got { opacity: 1; border-color: var(--go); } .ss-tier.next { opacity: 1; outline: 2px solid var(--weak); outline-offset: 2px; }
+  .ss-tier.skin { flex-basis: 150px; background: linear-gradient(160deg, #2a1450, #4a1a5a); opacity: 1; }
+  .ss-tier .ss-skin { width: 96px; height: 60px; image-rendering: pixelated; }
+  .ss-tier .coin { width: 18px; height: 18px; display: inline-block; } .ss-tier .egg-ico { transform: scale(1.4); }
+  .over-season { color: #ff9de6; } .over-season b { font-weight: 400; color: var(--weak); }
+  .modes { grid-template-columns: repeat(4, 1fr); }
+  .mode.random b { color: #c9a6ff; }
+  @media (max-width: 760px) { .modes { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -566,6 +591,7 @@
     <nav id="mmMain" class="mm-panel">
       <button class="mm-btn mm-play" id="btnPlay">► JUGAR<small>Récord <b id="menuBest">0</b></small></button>
       <button class="mm-btn" id="btnVersus"><i>👥</i>Multijugador</button>
+      <button class="mm-btn mm-season" id="btnSeason"><i>🎟️</i>Pase de temporada<small id="menuSeason">Nivel 0/30</small><em class="mm-dot hidden" id="dotSeason"></em></button>
       <button class="mm-btn" data-sub="mmShop"><i>🛒</i>Tienda y ruleta<em class="mm-dot hidden" id="dotShop"></em></button>
       <button class="mm-btn" data-sub="mmProg"><i>🏆</i>Progreso<em class="mm-dot hidden" id="dotProg"></em></button>
       <button class="mm-btn" data-sub="mmOpts"><i>⚙️</i>Opciones</button>
@@ -583,7 +609,7 @@
     <section id="mmProg" class="mm-panel mm-sub-panel hidden">
       <button class="mm-back" data-back>← Progreso</button>
       <div class="mm-records">
-        <span>Normal <b id="menuHiN">0</b></span><span>Fácil <b id="menuHiE">0</b></span><span>Difícil <b id="menuHiH">0</b></span>
+        <span>Normal <b id="menuHiN">0</b></span><span>Fácil <b id="menuHiE">0</b></span><span>Difícil <b id="menuHiH">0</b></span><span>Aleatorio <b id="menuHiR">0</b></span>
       </div>
       <div class="mm-tiles">
         <button class="mm-tile" id="btnAch"><i>🏆</i><b>Logros</b><small id="menuAch">0/0</small></button>
@@ -623,6 +649,7 @@
       <button class="mode" data-mode="normal"><b>NORMAL</b><small id="descNormal"></small></button>
       <button class="mode" data-mode="easy"><b>FÁCIL</b><small id="descEasy"></small></button>
       <button class="mode hard" data-mode="hard"><b>DIFÍCIL</b><small id="descHard"></small></button>
+      <button class="mode random" data-mode="random"><b>🎲 ALEATORIO</b><small id="descRandom"></small></button>
     </div>
     <div id="startBox"><h3>Empezar desde</h3>
     <div id="startLevels" class="levels"></div></div>
@@ -725,6 +752,7 @@
     </div>
     <div class="over-ach" id="overAchList"></div>
     <div id="overFossils" class="over-fossils"></div>
+    <div id="overSeason" class="over-fossils over-season"></div>
     <div id="overBuild" class="build-box"></div>
     <div class="actions">
       <button class="btn primary" id="btnRetry">↻ Reintentar</button>
@@ -765,6 +793,23 @@
       <div class="actions"><button class="btn primary" id="bkConfirm">Sí, cargar este progreso</button><button class="btn" id="bkCancel">Cancelar</button></div></div>
     <p id="bkMsg" class="bk-msg"></p>
     <div class="actions"><button class="btn ghost hidden" id="bkUndo">↶ Restaurar el guardado anterior</button></div>
+  </div>
+</div>
+
+<!-- Pase de temporada -->
+<div id="season" class="overlay hidden">
+  <div class="card achs season">
+    <div class="shop-head"><h2>Pase de temporada</h2><div class="wallet" id="seasonLvl">Nivel 0/30</div><button class="btn" id="seasonBack">← Volver</button></div>
+    <div class="ss-hero">
+      <canvas id="seasonPreview" width="300" height="200"></canvas>
+      <div class="ss-side">
+        <h3>Temporada 1 · Era Prismática</h3>
+        <div id="seasonInfo" class="ss-info"></div>
+        <div class="bar ss-bar"><i id="seasonBar"></i></div><small id="seasonXp"></small>
+        <p class="touch-hint">Gratis y sin dinero real: cada partida da XP (puntos, jefes, niveles, huevos y sinergias). Las recompensas se entregan solas al subir de nivel.</p>
+      </div>
+    </div>
+    <div id="seasonTrack" class="ss-track"></div>
   </div>
 </div>
 
@@ -820,6 +865,8 @@
       <div id="skinGrid" class="grid"></div>
       <h3 class="shop-sec">🔒 Exclusivas de logros</h3>
       <div id="exclGrid" class="grid"></div>
+      <h3 class="shop-sec">🎟️ Del pase de temporada</h3>
+      <div id="seasonGrid" class="grid"></div>
       <h3 class="shop-sec">🎨 Mis diseños</h3>
       <div id="designGrid" class="grid"></div>
     </div>
@@ -902,7 +949,27 @@
 
   // Dibuja un frame en el origen nativo (ox, oy); cada píxel mide sc px de pantalla. t = tick de animación.
   // opts.tint: pinta la silueta de un color plano (para ecos). opts.alpha: opacidad.
+  var SPR_CACHE = new Map();
+  function clearSpriteCache() { SPR_CACHE.clear(); }
   function drawSprite(ctx, skinId, frame, ox, oy, sc, t, opts) {
+    var s = byId[skinId]; if (!s) return;
+    var an = (s.fx || {}).anim || {}; opts = opts || {}; t = t || 0;
+    if (an.type === "ghost" && !opts.tint) return drawSpriteRaw(ctx, skinId, frame, ox, oy, sc, t, opts);
+    var animated = !opts.tint && (an.type === "twinkle" || an.type === "pulse" || an.type === "rainbow" || an.type === "shine");
+    var pal = s.pal, sig = s.sprite; for (var k in pal) sig += pal[k];
+    var key = skinId + "|" + frame + "|" + (opts.tint || "") + "|" + (animated ? t % 720 : 0) + "|" + sig;
+    var cv = SPR_CACHE.get(key);
+    if (!cv) {
+      if (SPR_CACHE.size > 3000) SPR_CACHE.clear();
+      cv = document.createElement("canvas"); cv.width = W; cv.height = H + 8;
+      drawSpriteRaw(cv.getContext("2d"), skinId, frame, 0, 4, 1, t, { tint: opts.tint });
+      SPR_CACHE.set(key, cv);
+    }
+    ctx.save(); if (opts.alpha != null) ctx.globalAlpha = opts.alpha; ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(cv, ox * sc, (oy - 4) * sc, W * sc, (H + 8) * sc);
+    ctx.restore();
+  }
+  function drawSpriteRaw(ctx, skinId, frame, ox, oy, sc, t, opts) {
     var s = byId[skinId], fx = s.fx || {}, an = fx.anim || {}; t = t || 0; opts = opts || {};
     var fr = DATA.sprites[s.sprite].frames[frame] || {};
     oy += fr.dy || 0;
@@ -948,6 +1015,10 @@
       p.push({ x: ox + R() * 8, y: oy + 3 + R() * 13, vx: .2, vy: 0, life: 16, max: 16, c: C[Math.floor(R() * C.length)], shape: "plus", blink: true });
     } else if (tr.type === "stars") {
       p.push({ x: ox + R() * 5, y: oy + 6 + R() * 10, vx: 0, vy: 0, life: 34, max: 34, c: C[Math.floor(R() * C.length)], shape: R() < .35 ? "plus" : "px", blink: true });
+    } else if (tr.type === "prism") {
+      var sh = Math.floor(t / 2) % C.length;
+      for (var pi = 0; pi < 6; pi++) p.push({ x: ox + 1, y: oy + 9 + pi + Math.round(Math.sin((t + pi) * 0.45) * 1.5), vx: 0, vy: 0, life: 22, max: 22, c: C[(pi + sh) % C.length], w: step + 1 });
+      if (t % 2 === 0) p.push({ x: ox + R() * 18, y: oy + R() * 16, vx: .35, vy: -.15 - R() * .35, life: 22, max: 22, c: R() < .5 ? "#ffffff" : C[Math.floor(R() * C.length)], shape: "plus", blink: true });
     } else if (tr.type === "aura") {
       p.push({ x: ox + 4 + R() * 18, y: oy + 18 - R() * 3, vx: step * .9, vy: -.35 - R() * .3, life: 18, max: 18, c: C[Math.floor(R() * C.length)], shape: R() < .3 ? "plus" : "px", blink: true });
       if (t % 2 === 0) p.push({ x: ox, y: oy + 8 + R() * 6, vx: 0, vy: 0, life: 20, max: 20, c: C[Math.floor(R() * C.length)], shape: "plus", blink: true });
@@ -996,7 +1067,7 @@
     return frame;
   }
 
-  var api = { W: W, H: H, init: init, get: get, compose: compose, runFrame: runFrame, drawSprite: drawSprite, Trail: Trail, drawDino: drawDino,
+  var api = { W: W, H: H, init: init, get: get, compose: compose, runFrame: runFrame, drawSprite: drawSprite, clearSpriteCache: clearSpriteCache, Trail: Trail, drawDino: drawDino,
     get skins() { return DATA ? DATA.skins : []; } };
   root.DinoSkinsEngine = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
@@ -1276,6 +1347,7 @@ const ACHIEVEMENTS = [
   { id: "primera-raiz", cat: "arbol", name: "Primera raíz", desc: "Compra tu primer nodo del árbol", reward: 50 },
   { id: "rama-completa", cat: "arbol", name: "Rama completa", desc: "Completa una rama entera del árbol", reward: 300 },
   { id: "arbol-milenario", cat: "arbol", name: "Árbol milenario", desc: "Completa el árbol", reward: 1500 },
+  { id: "era-prismatica", cat: "coleccion", name: "Era prismática", desc: "Completa los 30 niveles del pase de temporada", reward: 1000 },
   // Secretos
   { id: "por-los-pelos", cat: "secretos", secret: true, name: "Por los pelos", desc: "Esquiva un obstáculo a menos de 5 px", reward: 100 },
   { id: "todo-o-nada", cat: "secretos", secret: true, name: "Todo o nada", desc: "Apuesta el máximo en la ruleta y gana", reward: 150 },
@@ -1340,7 +1412,7 @@ const EGG_SKINS = [
     pal: { o: "#0a0420", b: "#5a2a9a", s: "#3a1a6a", l: "#ff8fd8", a: "#c8a0ff", x: "#ffffff", y: "#ffd0f0", e: "#ffffff", p: "#0a0420" }, bg: "#0a0420", ground: "#ff8fd8",
     fx: { anim: { type: "twinkle", key: "x", colors: ["#ffffff", "#ff8fd8", "#5ce1ff", "#ffe14d"] }, trail: { type: "stars", colors: ["#ffffff", "#ff8fd8", "#5ce1ff", "#c8a0ff"] }, label: "Estela de estrellas" } },
 ].map(k => Object.assign(k, { rarity: EGG_TIER_NAMES[k.tier], price: 0, exclusive: true, egg: true }));
-const RARITY_COLORS = { "Huevo común": "#f3e2b8", "Huevo raro": "#8fd3ff", "Huevo legendario": "#ffc629", "Común": "#d6d3cb", "Raro": "#9cc9ff", "Épico": "#c9a6ff", "Legendario": "#ffd23f", "Supremo": "#ff9de6", "Exclusiva": "#ff8a8a", "Diseño": "#9be07a" };
+const RARITY_COLORS = { "Huevo común": "#f3e2b8", "Huevo raro": "#8fd3ff", "Huevo legendario": "#ffc629", "Común": "#d6d3cb", "Raro": "#9cc9ff", "Épico": "#c9a6ff", "Legendario": "#ffd23f", "Supremo": "#ff9de6", "Exclusiva": "#ff8a8a", "Diseño": "#9be07a", "Pase": "#ff5ce1" };
 
 // =====================================================================
 //  DifficultyMode: valores de cada modo (Normal / Fácil / Difícil) leídos de CONFIG
@@ -1348,7 +1420,7 @@ const RARITY_COLORS = { "Huevo común": "#f3e2b8", "Huevo raro": "#8fd3ff", "Hue
 class DifficultyMode {
   constructor(id) {
     const M = id === "easy" ? CONFIG.EASY : id === "hard" ? CONFIG.HARD : null, v = (k, def) => M && M[k] !== undefined ? M[k] : def;
-    this.id = id; this.name = id === "easy" ? "Fácil" : id === "hard" ? "Difícil" : "Normal";
+    this.id = id; this.name = id === "easy" ? "Fácil" : id === "hard" ? "Difícil" : id === "random" ? "Aleatorio" : "Normal";
     this.label = "MODO " + this.name.toUpperCase();
     this.startSpeedMult = v("START_SPEED_MULT", 1);
     this.speedPerLevel = v("SPEED_PER_LEVEL", CONFIG.SPEED_PER_LEVEL);
@@ -1371,7 +1443,7 @@ class DifficultyMode {
   patternLevel(p) { return p.lvl >= CONFIG.BOTH_LANES_LEVEL ? Math.max(CONFIG.BOTH_LANES_LEVEL - 1, p.lvl + (this.bothLanesLevel - CONFIG.BOTH_LANES_LEVEL)) : p.lvl; }
   powerupDur(type) { return POWERUPS[type].dur() * this.powerupDurMult; }
 }
-const MODES = { normal: new DifficultyMode("normal"), easy: new DifficultyMode("easy"), hard: new DifficultyMode("hard") };
+const MODES = { normal: new DifficultyMode("normal"), easy: new DifficultyMode("easy"), hard: new DifficultyMode("hard"), random: new DifficultyMode("random") };
 
 
 // =====================================================================
@@ -1387,6 +1459,17 @@ const FURY_CONFIG = {
   BOSS_HIT: 10,             // dañar a un boss
   DECAY_AFTER: 15,          // s sin sumar furia antes de empezar a vaciarse
   DECAY_RATE: 3,            // puntos por segundo al vaciarse
+};
+
+// --- Rendimiento ---
+const RENDER = {
+  MAX_PX: 2400,             // ancho máximo del lienzo en píxeles reales (antes 3600)
+  MENU_MAX_PX: 1600,        // ancho máximo del fondo animado de la portada
+  LEVELS: [1, 0.8, 0.65, 0.5],   // escalas de calidad automática
+  SAMPLE: 90,               // fotogramas por medición
+  SLOW_MS: 19,              // si la media pasa de esto (< ~52 fps), baja la calidad
+  FAST_MS: 13.5,            // si va así de sobrado varias mediciones seguidas, la sube
+  UP_AFTER: 4,
 };
 
 // --- Monturas (una por bioma). duration en s; speed = multiplicador de la velocidad del juego ---
@@ -1551,6 +1634,54 @@ const TREE_CONFIG = {
     ] },
   ],
 };
+
+// --- Modo Aleatorio: dificultad Normal + una regla sorpresa distinta en cada nivel ---
+const RANDOM_MODS = [
+  { id: "luna", name: "Gravedad lunar", icon: "🌙", desc: "Saltas más alto y caes despacio", mod: { gravityMult: v => v * 0.55, jumpMult: v => v * 0.8 } },
+  { id: "turbo", name: "Turbo loco", icon: "⚡", desc: "Todo va un 30 % más rápido · puntos ×1,3", mod: { speedMult: v => v * 1.3, scoreMult: v => v * 1.3 } },
+  { id: "oro", name: "Lluvia de oro", icon: "🪙", desc: "Monedas ×2", mod: { coinMult: v => v * 2 } },
+  { id: "rugido", name: "Rugido infinito", icon: "📢", desc: "El rugido recarga en 1,2 s", mod: { roarCooldown: () => 1.2 } },
+  { id: "furia", name: "Furia desatada", icon: "🔥", desc: "La furia se llena el triple de rápido", mod: { furyRate: v => v * 3 } },
+  { id: "estampida", name: "Estampida", icon: "🐢", desc: "Montura asegurada y dura un 50 % más", mod: { mountChance: () => 1, mountDurMult: v => v * 1.5 } },
+  { id: "niebla", name: "Niebla", icon: "🌫️", desc: "Ves menos por delante · puntos ×1,25", mod: { fog: () => 1, scoreMult: v => v * 1.25 } },
+  { id: "cruzados", name: "Carriles cruzados", icon: "🔀", desc: "A y D están intercambiadas", mod: { swapLanes: () => 1, scoreMult: v => v * 1.15 } },
+  { id: "regalos", name: "Lluvia de power-ups", icon: "🎁", desc: "Salen el triple de power-ups", mod: { powerupFreq: v => v * 3 } },
+  { id: "pluma", name: "Pies de pluma", icon: "🪶", desc: "Triple salto y saltos un 15 % más altos", mod: { airJumps: v => v + 1, jumpMult: v => v * 1.15 } },
+  { id: "caos", name: "Caos", icon: "🌀", desc: "Obstáculos un 30 % más a menudo · puntos ×1,4", mod: { obstacleFreq: v => v * 1.3, scoreMult: v => v * 1.4 } },
+  { id: "paseo", name: "Paseo", icon: "🌼", desc: "Un 20 % más lento · monedas ×1,5", mod: { speedMult: v => v * 0.8, coinMult: v => v * 1.5 } },
+];
+
+// --- Pase de temporada (gratis, sin dinero real): se sube jugando ---
+const SEASON_CONFIG = {
+  ID: 1, NAME: "Temporada 1 · Era Prismática", TIERS: 30,
+  XP_TIER: t => 180 + t * 12,           // XP para pasar del nivel t al t+1 (≈ 8 800 XP en total, unas 35–45 partidas)
+  XP: { PER_POINTS: 8, BOSS: 50, LEVEL: 30, EGG: 15, SYNERGY: 20, VERSUS_PER_POINTS: 12 },   // XP = puntos / PER_POINTS + …
+  MODE_MULT: { easy: 0.75, normal: 1, hard: 1.3, random: 1.15 },
+};
+// Recompensa de cada nivel del pase (1–30). Los niveles 10, 20 y 30 dan skins exclusivas.
+function seasonReward(t) {
+  if (t === 30) return { kind: "skin", id: "prisma-celestial" };
+  if (t === 20) return { kind: "skin", id: "eclipse-prisma" };
+  if (t === 10) return { kind: "skin", id: "cristal-temporada" };
+  if (t % 5 === 0) return { kind: "eggs", n: 10 + t / 5 * 2 };
+  if (t % 3 === 0) return { kind: "fossils", n: 4 + Math.floor(t / 6) };
+  return { kind: "coins", n: 100 + t * 15 };
+}
+// Skins del pase (las tres mejores del juego; la del nivel 30 cambia de color, lleva accesorios, estela y rugido propios)
+const SEASON_SKINS = [
+  { id: "cristal-temporada", name: "Cristal de temporada", rarity: "Pase", season: 10, sprite: "raptor-crystal",
+    pal: { o: "#1a1430", b: "#c8b8ff", s: "#8a78d8", l: "#ffffff", a: "#e0f0ff", x: "#7df9ff", y: "#ffd0f0", e: "#ff8fd8", p: "#1a1430" }, bg: "#1a1430", ground: "#7df9ff",
+    fx: { anim: { type: "twinkle", key: "x", colors: ["#7df9ff", "#ffd0f0", "#fff6b0", "#c8ffd8", "#c8b8ff"] }, trail: { type: "sparkle", colors: ["#7df9ff", "#ffd0f0", "#ffffff"] }, label: "Cristal que destella y fragmento flotante" } },
+  { id: "eclipse-prisma", name: "Eclipse prismático", rarity: "Pase", season: 20, sprite: "raptor-stars",
+    pal: { o: "#000000", b: "#1a1030", s: "#0c0618", l: "#4a2a80", a: "#2a1a50", x: "#ff5ce1", y: "#ffd23f", e: "#ffd23f", p: "#000000" }, bg: "#05020c", ground: "#ff5ce1",
+    fx: { anim: { type: "pulse", key: "x", colors: ["#ff5ce1", "#7b5cff", "#41e1ff", "#7b5cff"] }, trail: { type: "stars", colors: ["#ff5ce1", "#41e1ff", "#ffd23f", "#ffffff"] },
+      echo: { colors: ["#ff5ce1", "#7b5cff", "#41e1ff"], alpha: [0.45, 0.3, 0.16], gap: 5, every: 1 }, label: "Corona de eclipse, ecos y estela de estrellas" } },
+  { id: "prisma-celestial", name: "Prisma Celestial", rarity: "Pase", season: 30, sprite: "raptor-supreme", run: ["run1s", "run2s", "run3s", "run4s"],
+    pal: { o: "#140a2e", b: "#ff5ce1", s: "#c03aa8", l: "#ffd8f8", a: "#41e1ff", x: "#fff6b0", y: "#7b5cff", e: "#ffffff", p: "#140a2e" }, bg: "#0c0620", ground: "#ffffff",
+    fx: { trail: { type: "prism", colors: ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"] },
+      echo: { colors: ["#ff5ce1", "#41e1ff", "#ffd23f"], alpha: [0.5, 0.32, 0.18], gap: 5, every: 1 },
+      label: "Cambia de color sin parar · halo, bufanda y gemas en órbita · estela prismática" } },
+];
 
 // =====================================================================
 //  BIOMAS — uno por nivel (se repiten en ciclo). Paleta, fondo y obstáculos propios.
@@ -1724,7 +1855,7 @@ const SkinCatalog = {
   rebuild() {
     const extra = this.designs.filter(Boolean);
     if (this.preview) extra.push(this.preview);
-    SE.init({ sprites: SKINS_DATA.sprites, skins: [...this.base, ...EXCLUSIVE_SKINS, ...EGG_SKINS, ...extra] });
+    SE.init({ sprites: SKINS_DATA.sprites, skins: [...this.base, ...EXCLUSIVE_SKINS, ...EGG_SKINS, ...SEASON_SKINS, ...extra] });
   },
   get shop() { return this.base; },                 // los 16 skins de la tienda, en orden
   get(id) { return SE.get(id); },
@@ -1738,16 +1869,85 @@ const levelDef = l => CONFIG.LEVELS[(l - 1) % CONFIG.LEVELS.length];
 // Origen: pies en y = 0 (coordenadas del carril), x = borde izquierdo del sprite.
 function drawRaptor(ctx, id, st, jumpY, dead, advance, sc = CONFIG.RAPTOR_SCALE, ox = 0, groundY = -1) {
   if (!SE.get(id)) return;
+  const acc = SKIN_ACCESSORIES[id], oy = Math.round(groundY - SE.H + 1 - jumpY);
+  const frame = dead ? "idle" : jumpY > 0 ? "jump" : SE.runFrame(id, st.tick).frame;
+  if (acc && acc.back) acc.back(ctx, ox, oy, sc, st.tick, frame);
   if (advance) {
     SE.drawDino(ctx, id, ox, groundY, sc, st, jumpY, dead);
     if (st.trail && st.trail.p.length > CONFIG.TRAIL_MAX) st.trail.p.splice(0, st.trail.p.length - CONFIG.TRAIL_MAX);
-    return;
+  } else {
+    const tr = st.trail || (st.trail = new SE.Trail(id));
+    tr.drawEchoes(ctx, ox, sc, st.tick); tr.draw(ctx, sc, st.tick);
+    SE.drawSprite(ctx, id, frame, ox, oy, sc, st.tick);
   }
-  const frame = dead ? "idle" : jumpY > 0 ? "jump" : SE.runFrame(id, st.tick).frame;
-  const oy = Math.round(groundY - SE.H + 1 - jumpY), tr = st.trail || (st.trail = new SE.Trail(id));
-  tr.drawEchoes(ctx, ox, sc, st.tick); tr.draw(ctx, sc, st.tick);
-  SE.drawSprite(ctx, id, frame, ox, oy, sc, st.tick);
+  if (acc && acc.front) acc.front(ctx, ox, oy, sc, st.tick, frame);
 }
+// =====================================================================
+//  Skins del pase de temporada: color que cambia (Prisma Celestial) y accesorios animados
+//  Coordenadas de los accesorios en píxeles del sprite (24 × 20), relativas a su esquina (ox, oy).
+// =====================================================================
+function hslHex(h, s, l) {
+  h = ((h % 360) + 360) % 360; s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return "#" + [f(0), f(8), f(4)].map(v => Math.round(v * 255).toString(16).padStart(2, "0")).join("");
+}
+const PRISM = { hue: 0, step: -1 };
+// Cada fotograma: el Prisma Celestial gira por todo el arcoíris (48 tonos; el motor cachea cada tono)
+function updatePrismSkins(time) {
+  const step = Math.floor(time * 9) % 48; if (step === PRISM.step) return;
+  PRISM.step = step; const h = PRISM.hue = step * 7.5, s = SE.get("prisma-celestial"); if (!s) return;
+  Object.assign(s.pal, { b: hslHex(h, 88, 62), s: hslHex(h, 80, 44), l: hslHex(h, 95, 86), a: hslHex(h + 150, 90, 58), x: hslHex(h + 60, 100, 78), y: hslHex(h + 210, 85, 62), o: hslHex(h + 250, 60, 12), p: hslHex(h + 250, 60, 12) });
+  const e = s.fx.echo; e.colors = [hslHex(h + 90, 95, 65), hslHex(h + 180, 95, 65), hslHex(h + 270, 95, 65)];
+  s.bg = hslHex(h + 240, 55, 9);
+}
+const P_ = (c, col, ox, oy, sc, x, y, w = 1, h = 1) => { c.fillStyle = col; c.fillRect((ox + x) * sc, (oy + y) * sc, w * sc, h * sc); };
+const SKIN_ACCESSORIES = {
+  "prisma-celestial": {
+    back(c, ox, oy, sc, t) {   // aura y bufanda (por detrás del raptor)
+      const h = PRISM.hue, cx = (ox + 13) * sc, cy = (oy + 10) * sc, r = (15 + Math.sin(t * 0.4) * 1.5) * sc;
+      const g = c.createRadialGradient(cx, cy, 2 * sc, cx, cy, r);
+      g.addColorStop(0, rgbaHex(hslHex(h + 30, 100, 70), 0.42)); g.addColorStop(1, rgbaHex(hslHex(h + 90, 100, 60), 0));
+      c.fillStyle = g; c.fillRect(cx - r, cy - r, r * 2, r * 2);
+      for (let i = 1; i <= 8; i++) {   // bufanda que ondea hacia atrás, del color complementario
+        const x = 11 - i * 1.7, y = 8.5 + Math.sin(t * 0.7 - i * 0.75) * i * 0.32 + i * 0.12, col = hslHex(h + 180 + i * 12, 90, 58 + (i % 2) * 10);
+        P_(c, rgbaHex("#000000", 0.5), ox, oy, sc, x - 0.3, y - 0.3, 2.6, 2.6); P_(c, col, ox, oy, sc, x, y, 2, 2);
+        if (i === 8) P_(c, hslHex(h + 180, 100, 85), ox, oy, sc, x - 1, y + 0.5, 1, 1);
+      }
+    },
+    front(c, ox, oy, sc, t) {   // halo y tres gemas en órbita
+      const h = PRISM.hue, bob = Math.sin(t * 0.5) * 0.8;
+      c.strokeStyle = hslHex(h + 60, 100, 75); c.lineWidth = Math.max(1, sc * 0.9); c.globalAlpha = 0.9;
+      c.beginPath(); c.ellipse((ox + 16.5) * sc, (oy - 3 + bob) * sc, 4.5 * sc, 1.3 * sc, 0, 0, Math.PI * 2); c.stroke();
+      c.globalAlpha = 0.35; c.lineWidth = sc * 2.2; c.stroke(); c.globalAlpha = 1;
+      for (let k = 0; k < 3; k++) {
+        const a = t * 0.22 + k * Math.PI * 2 / 3, x = 12 + Math.cos(a) * 14, y = 10 + Math.sin(a) * 4.5, front = Math.sin(a) > 0, col = hslHex(h + k * 120, 95, front ? 66 : 45);
+        c.globalAlpha = front ? 1 : 0.55;
+        P_(c, col, ox, oy, sc, x, y - 1); P_(c, col, ox, oy, sc, x - 1, y); P_(c, "#ffffff", ox, oy, sc, x, y); P_(c, col, ox, oy, sc, x + 1, y); P_(c, col, ox, oy, sc, x, y + 1);
+      }
+      c.globalAlpha = 1;
+      if (t % 6 < 2) P_(c, "#ffffff", ox, oy, sc, 19 + (t % 3), -1 + bob);   // destello en el halo
+    },
+  },
+  "eclipse-prisma": {
+    back(c, ox, oy, sc, t) {
+      const cx = (ox + 13) * sc, cy = (oy + 9) * sc, r = 14 * sc, g = c.createRadialGradient(cx, cy, 3 * sc, cx, cy, r);
+      g.addColorStop(0, "rgba(255,92,225,0.32)"); g.addColorStop(1, "rgba(65,225,255,0)"); c.fillStyle = g; c.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+    },
+    front(c, ox, oy, sc, t) {   // corona de eclipse: aro negro con borde de luz y luna en órbita
+      const bob = Math.sin(t * 0.5) * 0.6;
+      c.fillStyle = "#ffd23f"; c.beginPath(); c.arc((ox + 17) * sc, (oy - 4 + bob) * sc, 3.2 * sc, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#05020c"; c.beginPath(); c.arc((ox + 17.6) * sc, (oy - 4.3 + bob) * sc, 2.8 * sc, 0, Math.PI * 2); c.fill();
+      const a = t * 0.3, mx = 12 + Math.cos(a) * 13, my = 9 + Math.sin(a) * 4;
+      c.globalAlpha = Math.sin(a) > 0 ? 1 : 0.5; P_(c, "#e8e0ff", ox, oy, sc, mx, my, 2, 2); P_(c, "#7b5cff", ox, oy, sc, mx + 1, my, 1, 1); c.globalAlpha = 1;
+    },
+  },
+  "cristal-temporada": {
+    front(c, ox, oy, sc, t) {   // fragmento de cristal flotando sobre la cabeza
+      const y = -5 + Math.sin(t * 0.45) * 1.2, cols = ["#7df9ff", "#ffd0f0", "#fff6b0"], col = cols[Math.floor(t / 4) % 3];
+      P_(c, "#1a1430", ox, oy, sc, 16, y - 1, 3, 5); P_(c, col, ox, oy, sc, 16.5, y - 0.5, 2, 4); P_(c, "#ffffff", ox, oy, sc, 16.5, y, 1, 1);
+    },
+  },
+};
 // =====================================================================
 //  Rugidos especiales: los skins Épicos, Legendarios, Supremos y exclusivos rugen con su propio efecto
 //  y hacen una pose animada (se alzan con un aura). Los diseños heredan el rugido del efecto elegido.
@@ -1771,6 +1971,9 @@ const ROAR_STYLES = {
   "magma-negro":      { name: "Rugido de magma negro", type: "fire",  colors: ["#ff8ac0", "#ff3b8a", "#c04bff"] },
   "dragon-jade":      { name: "Rugido del dragón",   type: "fire",    colors: ["#e0ffe8", "#a0ffd0", "#2ac07a", "#ffe14d"], wings: true },
   "aurora":           { name: "Rugido boreal",       type: "ice",     colors: ["#3ddc84", "#41e1ff", "#8a5cff"] },
+  "prisma-celestial": { name: "Rugido prismático",   type: "prism",   colors: ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff", "#ff5ce1"], flash: true, wings: true },
+  "eclipse-prisma":   { name: "Rugido del eclipse",  type: "stars",   colors: ["#ffd23f", "#ff5ce1", "#7b5cff", "#41e1ff"], flash: true, wings: true },
+  "cristal-temporada": { name: "Rugido de cristal prismático", type: "shards", colors: ["#7df9ff", "#ffd0f0", "#fff6b0", "#c8b8ff"] },
   "nebulosa":         { name: "Rugido de nebulosa",  type: "stars",   colors: ["#ffffff", "#ff8fd8", "#5ce1ff", "#c8a0ff"], flash: true },
 };
 function roarStyle(id) {
@@ -1780,8 +1983,9 @@ function roarStyle(id) {
 // Onda del rugido con el estilo del skin. (ox, oy) = boca del raptor; r = radio actual; coordenadas locales (y hacia abajo)
 function drawRoarFx(c, style, ox, oy, r, alpha, t) {
   const C = style ? style.colors : ["#ffd2a0", "#ffe0c0", "#fff0e0"];
-  for (let k = 0; k < (style && style.type === "rainbow" ? 6 : 3); k++) {
-    const rr = r - k * (style && style.type === "rainbow" ? 8 : 26); if (rr <= 4) continue;
+  const multi = style && (style.type === "rainbow" || style.type === "prism");
+  for (let k = 0; k < (multi ? C.length : 3); k++) {
+    const rr = r - k * (multi ? 8 : 26); if (rr <= 4) continue;
     c.strokeStyle = style ? rgbaHex(C[k % C.length], alpha * (0.95 - k * 0.12)) : `rgba(255,${200 + k * 20},${140 + k * 40},${alpha * (0.9 - k * 0.25)})`;
     c.lineWidth = style ? (style.type === "sun" ? 9 - k : 6 - k * 0.6) : 5 - k;
     c.beginPath(); c.arc(ox, oy, rr, -0.9, 0.9); c.stroke();
@@ -1800,6 +2004,11 @@ function drawRoarFx(c, style, ox, oy, r, alpha, t) {
       case "ghost": c.globalAlpha = alpha * 0.5; R(px - 6, py - 6, 12, 12, col); c.globalAlpha = alpha; break;
       case "sun": R(px - 4, py - 4, 8, 8, col); c.strokeStyle = rgbaHex(C[1], alpha * 0.6); c.lineWidth = 2; c.beginPath(); c.moveTo(ox, oy); c.lineTo(px, py); c.stroke(); break;
       case "rainbow": R(px - 3, py - 3, 6, 6, col); break;
+      case "prism": {   // prismas que giran y rayos de luz de todos los colores
+        c.save(); c.translate(px, py); c.rotate(t * 5 + i); R(-5, -5, 10, 10, col); R(-2, -8, 4, 16, "#ffffff"); c.restore();
+        c.strokeStyle = rgbaHex(C[(i + 3) % C.length], alpha * 0.7); c.lineWidth = 2; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + Math.cos(a) * r * 1.15, oy + Math.sin(a) * r * 1.15); c.stroke();
+        break;
+      }
     }
   }
   c.globalAlpha = 1;
@@ -1950,6 +2159,7 @@ class Sfx {
     else if (type === "bolt") { this.noise(0.3, 0.2, 5000, "highpass"); this.tone(1200, 200, 0.3, "sawtooth", 0.04); }
     else if (type === "stars" || type === "rainbow") [1047, 1319, 1568, 2093].forEach((f, i) => this.tone(f, null, 0.1, "square", 0.03, 0.05 + i * 0.05));
     else if (type === "ghost") this.tone(600, 200, 0.7, "sine", 0.06);
+    else if (type === "prism") { [523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => this.tone(f, f * 1.5, 0.3, i % 2 ? "triangle" : "square", 0.04, i * 0.05)); this.noise(0.6, 0.1, 7000, "highpass", 0.05); }
     else if (type === "sun") { [523, 784, 1047, 1568].forEach((f, i) => this.tone(f, null, 0.25, "triangle", 0.05, i * 0.04)); this.noise(0.5, 0.12, 6000, "highpass"); }
   }
 
@@ -2010,7 +2220,7 @@ const MUSIC = {
 class SaveManager {
   constructor() {
     this.data = {
-      records: { normal: 0, easy: 0, hard: 0 }, coins: 0, owned: [CONFIG.DEFAULT_SKIN], equipped: CONFIG.DEFAULT_SKIN,
+      records: { normal: 0, easy: 0, hard: 0, random: 0 }, coins: 0, owned: [CONFIG.DEFAULT_SKIN], equipped: CONFIG.DEFAULT_SKIN,
       completed: 0, checkpoints: [], lastFreeSpin: "", muted: false, lastMode: "normal",
       bossesDefeated: [], editor: false, eggWallet: 0, eggsMigrated: true, designs: Array(CONFIG.EDITOR_SLOTS).fill(null),
       ach: { unlocked: {}, stats: {} },
@@ -2019,6 +2229,7 @@ class SaveManager {
       version: 1, firstPlay: new Date().toISOString(), lastExport: "",
       stats: {}, tree: {}, fossils: 0, treeResets: 0, lastWeeklySpin: "",
       tips: { seen: {}, off: false }, tutorialDone: false, tutorialRewarded: false,
+      season: { id: 1, xp: 0, tier: 0, seen: 0 },
     };
     this.load();
     if (DEBUG) {
@@ -2032,7 +2243,7 @@ class SaveManager {
       const raw = localStorage.getItem(SAVE_KEY);
       if (raw) {
         const d = JSON.parse(raw), num = v => Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
-        if (d.records) { this.data.records.normal = num(d.records.normal); this.data.records.easy = num(d.records.easy); this.data.records.hard = num(d.records.hard); }
+        if (d.records) { this.data.records.normal = num(d.records.normal); this.data.records.easy = num(d.records.easy); this.data.records.hard = num(d.records.hard); this.data.records.random = num(d.records.random); }
         else if (Number.isFinite(d.hi)) this.data.records.normal = num(d.hi);
         this.data.coins = num(d.coins);                                   // las monedas se conservan siempre
         this.data.completed = num(d.completed);
@@ -2055,6 +2266,7 @@ class SaveManager {
         if (obj(d.tree)) for (const n of TREE_NODES) if (Number.isInteger(d.tree[n.id])) this.data.tree[n.id] = clamp(d.tree[n.id], 0, n.max);
         this.data.fossils = num(d.fossils); this.data.treeResets = num(d.treeResets);
         if (obj(d.tips)) this.data.tips = { seen: obj(d.tips.seen) ? d.tips.seen : {}, off: !!d.tips.off };
+        if (obj(d.season)) this.data.season = { id: num(d.season.id) || 1, xp: num(d.season.xp), tier: Math.min(num(d.season.tier), 30), seen: num(d.season.seen) };
         this.data.tutorialDone = !!d.tutorialDone; this.data.tutorialRewarded = !!d.tutorialRewarded;
         if (Array.isArray(d.buildHistory)) this.data.buildHistory = d.buildHistory.filter(r => r && typeof r === "object").slice(0, 20);
         if (d.album && typeof d.album === "object") for (const k of ["ups", "syn", "pacts"]) if (d.album[k] && typeof d.album[k] === "object") this.data.album[k] = d.album[k];
@@ -2182,6 +2394,7 @@ class Player {
   }
   changeLane(dir) {
     if (this.game.versus) return;   // en multijugador cada raptor tiene su carril
+    if (this.game.stat("swapLanes")) dir = -dir;   // modo Aleatorio: carriles cruzados
     const target = clamp(this.lane + dir, 0, 1), M = this.mount;
     if (target === this.lane || (M && !M.canChangeLane())) return;
     this.laneTime = M ? M.laneTime : CONFIG.LANE_SWITCH_TIME;
@@ -2214,7 +2427,7 @@ class Player {
       // Planeo: mantener W tras el último salto hace caer despacio (máx. 1,5 s)
       const gliding = !g.versus && g.stat("glide") && this.upHeld && this.vy < 0 && this.jumps >= this.maxJumps && this.glideT < 1.5;
       if (gliding) { this.glideT += dt; this.vy = Math.max(this.vy - CONFIG.GRAVITY * 0.15 * dt, -110); }
-      else this.vy -= CONFIG.GRAVITY * (this.fastFall ? CONFIG.FAST_FALL_MULT : 1) * dt;
+      else this.vy -= CONFIG.GRAVITY * (this.fastFall ? CONFIG.FAST_FALL_MULT : 1) * (g.versus ? 1 : g.stat("gravityMult")) * dt;
       this.y += this.vy * dt;
       if (this.y <= 0) {
         const stomp = this.fastFall;
@@ -2346,7 +2559,7 @@ function drawTrapIcon(c, id, x, y) {
 //  el árbol de mejoras, las mejoras de la partida, las sinergias y los pactos.
 // =====================================================================
 const STAT_ONE = new Set(["jumpMult", "slideMult", "powerupDurMult", "furyRate", "coinMult", "eggMult", "bossCoinMult", "bossVulnMult",
-  "bossHpMult", "mountDurMult", "obstacleFreq", "speedMult", "scoreMult", "unmountedSpeed", "graceMult", "teleMult", "superRoarUses", "airJumps"]);
+  "bossHpMult", "mountDurMult", "obstacleFreq", "speedMult", "scoreMult", "unmountedSpeed", "graceMult", "teleMult", "superRoarUses", "airJumps", "gravityMult", "powerupFreq"]);
 function statBase(g, k) {
   switch (k) {
     case "roarRange": return CONFIG.ROAR_RANGE;
@@ -2388,6 +2601,7 @@ class RunBuild {
     for (const id in this.levels) yield [UPGRADE_BY_ID[id].mod, this.levels[id]];
     for (const id of this.synergies) yield [SYNERGIES.find(s => s.id === id).mod, 1];
     for (const id of this.pacts) yield [PACT_BY_ID[id].mod, 1];
+    if (g.randomMod && !g.versus) yield [g.randomMod.mod, 1];   // modo Aleatorio: regla del nivel
   }
   stat(k) {
     if (k in this.cache) return this.cache[k];
@@ -3413,7 +3627,7 @@ class Spawner {
     // Extras en el hueco hasta el siguiente patrón (zona libre de obstáculos)
     const midX = SPAWN_X + end + gap * 0.5;
     let puLane = -1;
-    if (!g.versus && g.distScore >= CONFIG.POWERUP_MIN_SCORE && Math.random() < Math.min(0.6, L.powerupChance() * g.mode.powerupChanceMult)) {
+    if (!g.versus && g.distScore >= CONFIG.POWERUP_MIN_SCORE && Math.random() < Math.min(0.6, L.powerupChance() * g.mode.powerupChanceMult * (g.versus ? 1 : g.stat("powerupFreq")))) {
       const types = POWERUP_TYPES.filter(t => g.effects[t] <= 0 && !g.powerups.some(pu => pu.type === t) && !(t === "shield" && g.stat("noShieldPowerup")));
       if (types.length) { puLane = randInt(0, 1); g.powerups.push(new PowerUp(choice(types), puLane, midX)); }
     }
@@ -6214,6 +6428,7 @@ class UI {
     bind("btnBackup", () => game.openBackup());
     bind("btnStats", () => game.openStats());
     bind("btnTree", () => game.openTree());
+    bind("btnSeason", () => game.openSeason());
     bind("btnTutorial", () => game.startTutorial());
     bind("btnTips", () => { game.tips.toggle(); this.updateTips(); });
     bind("btnTipsReset", () => { game.tips.resetSeen(); this.$("btnTipsReset").querySelector("b").textContent = "✔ Consejos reiniciados"; });
@@ -6240,6 +6455,7 @@ class UI {
     $("descEasy").textContent = `${E.LIVES} vidas, ${Math.round((1 - E.START_SPEED_MULT) * 100)} % más lento, bosses con ${Math.round(E.BOSS_HP_MULT * 100)} % de vida. Monedas y huevos ×${fmtNum(E.COIN_VALUE)}.`;
     const H = CONFIG.HARD;
     $("descHard").textContent = `Para expertos: ${Math.round((H.START_SPEED_MULT - 1) * 100)} % más rápido, menos power-ups, rugido de ${H.ROAR_COOLDOWN} s y bosses con ${Math.round(H.BOSS_HP_MULT * 100)} % de vida. Monedas y huevos ×${fmtNum(H.COIN_VALUE)}.`;
+    $("descRandom").textContent = `Dificultad Normal, pero cada nivel trae una regla sorpresa (${RANDOM_MODS.length} posibles): gravedad lunar, niebla, carriles cruzados, lluvia de oro… Récord propio.`;
     this.descN = $("descNormal").textContent; this.descE = $("descEasy").textContent; this.descH = $("descHard").textContent;
     this.selMode = game.mode.id; this.selLevel = 1;
     this.updateMute();
@@ -6260,10 +6476,10 @@ class UI {
   }
   showMenu(keepSub = false) {
     const g = this.game, s = g.save.data, sk = SkinCatalog.get(g.skinId);
-    this.$("menuHiN").textContent = s.records.normal; this.$("menuHiE").textContent = s.records.easy; this.$("menuHiH").textContent = s.records.hard;
+    this.$("menuHiN").textContent = s.records.normal; this.$("menuHiE").textContent = s.records.easy; this.$("menuHiH").textContent = s.records.hard; this.$("menuHiR").textContent = s.records.random;
     this.$("menuCoins").textContent = s.coins; this.$("menuEggs").textContent = s.eggWallet; this.$("menuSkin").textContent = sk ? sk.name : "—";
     this.$("menuAch").textContent = `${g.ach.unlockedCount}/${ACHIEVEMENTS.length} conseguidos`;
-    this.$("menuBest").textContent = fmtInt(Math.max(s.records.normal, s.records.easy, s.records.hard));
+    this.$("menuBest").textContent = fmtInt(Math.max(s.records.normal, s.records.easy, s.records.hard, s.records.random));
     const al = s.album, nAl = Object.keys(al.ups).length + Object.keys(al.syn).length + Object.keys(al.pacts).length;
     this.$("menuAlbum").textContent = `${nAl}/${UPGRADES.length + SYNERGIES.length + PACTS.length} descubiertas`;
     // Avisos (puntos) en los submenús: giro gratis, nodo del árbol que puedes comprar, copia pendiente
@@ -6271,6 +6487,7 @@ class UI {
     this.$("menuSpin").textContent = spin ? "¡Giro gratis disponible!" : "Apuesta monedas del juego";
     this.$("menuTree").textContent = tree ? "¡Puedes comprar un nodo!" : `${s.fossils} fósiles`;
     for (const [id, on] of [["dotSpin", spin], ["dotShop", spin], ["dotTree", tree], ["dotProg", tree], ["dotBackup", bk]]) this.$(id).classList.toggle("hidden", !on);
+    const sd = g.season.d; this.$("menuSeason").textContent = `Nivel ${sd.tier}/${SEASON_CONFIG.TIERS}`; this.$("dotSeason").classList.toggle("hidden", sd.seen >= sd.tier);
     paintFossils(this.menu); this.menuPanel(keepSub && this.menuSub ? this.menuSub : "mmMain");
     this.$("menuFossils").textContent = s.fossils; this.updateTips();
     this.$("debugHint").classList.toggle("hidden", !DEBUG);
@@ -6286,6 +6503,8 @@ class UI {
     this.$("playTitle").textContent = versus ? "Multijugador · elige dificultad" : "Elige modo";
     this.$("vsHint").classList.toggle("hidden", !versus);
     this.$("startBox").classList.toggle("hidden", !!versus);
+    if (versus && this.selMode === "random") this.selMode = "normal";
+    this.play.querySelector(".mode.random").classList.toggle("hidden", !!versus);   // el multijugador no tiene modo Aleatorio
     this.play.querySelectorAll(".mode").forEach(b => b.classList.toggle("sel", b.dataset.mode === this.selMode));
     const box = this.$("startLevels"), levels = g.checkpoints.startLevels();
     box.innerHTML = "";
@@ -6312,7 +6531,7 @@ class UI {
     const g = this.game, s = g.save.data;
     this.$("overSolo").classList.toggle("hidden", g.versus); this.$("overVs").classList.toggle("hidden", !g.versus);
     this.$("overAchList").classList.toggle("hidden", g.versus);
-    this.$("overBuild").classList.toggle("hidden", g.versus); this.$("overFossils").classList.toggle("hidden", g.versus); this.$("btnHistory").classList.toggle("hidden", g.versus);
+    this.$("overBuild").classList.toggle("hidden", g.versus); this.$("overFossils").classList.toggle("hidden", g.versus); this.$("overSeason").classList.toggle("hidden", g.versus); this.$("btnHistory").classList.toggle("hidden", g.versus);
     if (g.versus) {   // resultado del multijugador
       const [a, b] = [g.player, g.p2], win = a.score === b.score ? 0 : a.score > b.score ? 1 : 2;
       this.$("overTitle").textContent = win ? `¡GANA EL JUGADOR ${win}!` : "¡EMPATE!";
@@ -6327,6 +6546,8 @@ class UI {
     const F = g.runFossils, of = this.$("overFossils");
     of.innerHTML = F && F.total ? `${fossilHtml()} +${F.total} fósiles <small>(${F.lines.map(([t, n]) => `${t} ${n >= 0 ? "+" : ""}${n}`).join(" · ")})</small>` : `${fossilHtml()} Sin fósiles esta vez <small>(completa niveles y derrota jefes)</small>`;
     paintFossils(of);
+    const sp = this.$("overSeason"), sd = g.season.d;
+    sp.innerHTML = `🎟️ +${g.runXP || 0} XP del pase · nivel ${sd.tier}/${SEASON_CONFIG.TIERS}${(g.runSeason || []).length ? ` · <b>¡${g.runSeason.map(x => x.txt).join(", ")}!</b>` : ""}`;
     const ob = this.$("overBuild"); ob.innerHTML = `<h3>Build final</h3><div class="build-row">${buildIconsHtml(g.build)}</div>`; paintBuildIcons(ob); this.$("overLevel").textContent = g.level.level;
     this.$("overCoins").textContent = g.runCoinsInt; this.$("overWallet").textContent = s.coins; this.$("overHi").textContent = s.records[g.mode.id];
     this.$("overRecord").classList.toggle("hidden", !g.newRecord);
@@ -6433,6 +6654,7 @@ class UI {
       const left = B.nextAt - g.distScore, lvl = Math.floor(B.nextAt / CONFIG.POINTS_PER_LEVEL) + 1;
       if (!B.active && !g.tutorial && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
     }
+    if (g.randomMod) this.pill(c, `🎲 ${g.randomMod.name.toUpperCase()}`, W / 2, B.boss && B.boss.state !== "leave" ? 98 : 74, 10, "#e4d0ff", "rgba(80,40,140,0.85)");
     if (DEBUG) this.text(c, "DEBUG · 1–9, 0 nivel · B boss", W / 2, H - 42, 10, "#ff8a8a", "center");
 
     // Modo: vidas (Fácil) o aviso (Difícil)
@@ -6567,6 +6789,7 @@ class Shop {
     // Skins de la tienda, en el orden del kit (DinoSkinsEngine.skins)
     for (const skin of SkinCatalog.shop) this.makeCard($("skinGrid"), skin.id, "shop");
     for (const skin of EXCLUSIVE_SKINS) this.makeCard($("exclGrid"), skin.id, "exclusive");
+    for (const skin of SEASON_SKINS) this.makeCard($("seasonGrid"), skin.id, "season");
     for (const skin of EGG_SKINS) this.makeCard($("eggSkinGrid"), skin.id, "egg");
     this.eggs = new EggShop(game, this);
     this.designGrid = $("designGrid");
@@ -6584,6 +6807,7 @@ class Shop {
       ${roarStyle(id) ? `<div class="fx-label roar-label">🔊 ${roarStyle(id).name}</div>` : ""}
       ${kind === "shop" ? `<div class="skin-price">${skin.price ? `<span class="coin"></span> ${skin.price}` : "Gratis"}</div>` : ""}
       ${ach ? `<div class="skin-lock">🔒 Consíguela con el logro «${ach.name}»</div>` : ""}
+      ${kind === "season" ? `<div class="skin-lock">🎟️ Nivel ${skin.season} del pase de temporada</div>` : ""}
       ${kind === "egg" ? `<div class="skin-lock">🥚 Sale de: ${EGG_TYPES.filter(t => t.odds[skin.tier - 1] > 0).map(t => t.name.replace(/^Huevo (de )?/, "")).join(", ")}</div>` : ""}
       <button class="btn small"></button><div class="toast">¡Comprada!</div>`;
     const canvas = card.querySelector("canvas"), btn = card.querySelector("button"), ctx = canvas.getContext("2d");
@@ -6636,7 +6860,7 @@ class Shop {
     this.walletNum.textContent = s.data.coins;
     for (const e of this.cards) {
       const skin = SkinCatalog.get(e.id); if (!skin) continue;
-      const owned = s.owns(e.id), equipped = eq === e.id, affordable = s.data.coins >= skin.price, excl = e.kind === "exclusive" || e.kind === "egg";
+      const owned = s.owns(e.id), equipped = eq === e.id, affordable = s.data.coins >= skin.price, excl = e.kind === "exclusive" || e.kind === "egg" || e.kind === "season";
       e.card.classList.toggle("equipped", equipped);
       e.card.classList.toggle("locked", !owned && (excl || !affordable));
       e.btn.classList.toggle("primary", owned && !equipped);
@@ -7177,9 +7401,10 @@ const ACH_ICONS = {   // iconos pixel art 8 × 8 por categoría (o = contorno, a
   monturas:  ["........", "....oo..", "...oaao.", "oooaaaao", "oaaaabao", "oaaaaaao", ".oo..oo.", ".oo..oo."],
   roguelike: ["..oooo..", ".oaaaao.", "oaoaaoao", "oaaaaaao", "oaobboao", ".oaaaao.", "..oaao..", "...oo..."],
   arbol:     ["...oo...", "..oaao..", ".oaaaao.", "oaabaaao", ".oaaaao.", "...oo...", "...oo...", "..oooo.."],
+  pase:      ["oooooooo", "oaaaaaao", "oabaabao", "oaaaaaao", "oaaaaaao", "oabaabao", "oaaaaaao", "oooooooo"],
   secretos:  ["..oooo..", ".oaaaao.", ".oo..oao", "....oao.", "...oao..", "...oo...", "........", "...oo..."],
 };
-const ACH_COLORS = { carrera: "#9be07a", jefes: "#ff6b6b", habilidad: "#41b8ff", coleccion: "#ffd23f", ruleta: "#c9a6ff", modos: "#ff9de6", monturas: "#7df9ff", roguelike: "#ffb938", arbol: "#5fd15a", secretos: "#ff8a3d" };
+const ACH_COLORS = { carrera: "#9be07a", jefes: "#ff6b6b", habilidad: "#41b8ff", coleccion: "#ffd23f", ruleta: "#c9a6ff", modos: "#ff9de6", monturas: "#7df9ff", roguelike: "#ffb938", pase: "#ff5ce1", arbol: "#5fd15a", secretos: "#ff8a3d" };
 function drawAchIcon(c, cat, sc) {
   const rows = ACH_ICONS[cat], col = ACH_COLORS[cat];
   rows.forEach((r, y) => { for (let x = 0; x < 8; x++) { const ch = r[x]; if (ch === ".") continue;
@@ -7327,7 +7552,7 @@ class AchievementManager {
     if (this.toastT > 0) { this.toastT -= dt; if (this.toastT <= 0) this.toastBox.innerHTML = ""; return; }
     const a = this.queue.shift(); if (!a) return;
     this.toastT = 2.8;
-    this.toastBox.innerHTML = `<div class="ach-toast"><canvas width="24" height="24"></canvas><div><small>¡Logro desbloqueado!</small><b>${a.name}</b><span>+${a.reward} monedas${a.skin ? " · skin exclusivo" : ""}</span></div></div>`;
+    this.toastBox.innerHTML = `<div class="ach-toast"><canvas width="24" height="24"></canvas><div><small>${a.title || "¡Logro desbloqueado!"}</small><b>${a.name}</b><span>${a.line || `+${a.reward} monedas${a.skin ? " · skin exclusivo" : ""}`}</span></div></div>`;
     drawAchIcon(this.toastBox.querySelector("canvas").getContext("2d"), a.cat, 3);
     this.game.sfx.perfect();
   }
@@ -8348,11 +8573,11 @@ class StatsManager {
     const s = this.s, g = this.g;
     document.querySelectorAll("#stTabs .tab").forEach(b => b.classList.toggle("active", b.dataset.t === this.tab));
     this.resetBtn.textContent = "Reiniciar estadísticas";
-    const games = this.o("games"), total = (games.normal || 0) + (games.easy || 0) + (games.hard || 0), best = this.o("best"), sp = this.o("spent"), mv = this.o("move");
+    const games = this.o("games"), total = (games.normal || 0) + (games.easy || 0) + (games.hard || 0) + (games.random || 0), best = this.o("best"), sp = this.o("spent"), mv = this.o("move");
     let html = "";
     if (this.tab === "general") {
       html = `<div class="stats st-big">${this.big("PARTIDAS", fmtInt(total))}${this.big("TIEMPO JUGADO", fmtTime(s.time))}${this.big("DISTANCIA", fmtInt(s.distance) + " pts")}${this.big("NIVEL MÁS ALTO", s.maxLevel || 1)}
-        ${this.big("MEJOR NORMAL", fmtInt(best.normal), UI_T.go)}${this.big("MEJOR FÁCIL", fmtInt(best.easy), UI_T.info)}${this.big("MEJOR DIFÍCIL", fmtInt(best.hard), UI_T.danger)}
+        ${this.big("MEJOR NORMAL", fmtInt(best.normal), UI_T.go)}${this.big("MEJOR FÁCIL", fmtInt(best.easy), UI_T.info)}${this.big("MEJOR DIFÍCIL", fmtInt(best.hard), UI_T.danger)}${this.big("MEJOR ALEATORIO", fmtInt(best.random), "#c9a6ff")}
         ${this.big("MONEDAS GANADAS", fmtInt(s.coinsEarned), UI_T.gold)}${this.big("MONEDAS GASTADAS", fmtInt((sp.shop || 0) + (sp.roulette || 0) + (sp.reroll || 0)), UI_T.gold)}${this.big("HUEVOS", fmtInt(s.eggs))}</div>
         <p class="touch-hint">Gastadas: tienda ${fmtInt(sp.shop)} · ruleta ${fmtInt(sp.roulette)} · barajar cartas ${fmtInt(sp.reroll)}</p>
         <h3>Puntuación de las últimas 20 partidas</h3><canvas class="st-chart" data-chart="last" width="760" height="170"></canvas>
@@ -8703,6 +8928,86 @@ class TipManager {
   toggle() { this.d.off = !this.d.off; this.g.save.save(); }
 }
 
+// =====================================================================
+//  SeasonPass: pase de temporada gratuito. Cada partida da XP; cada nivel del pase entrega su recompensa
+//  automáticamente (monedas, huevos, fósiles y, en los niveles 10, 20 y 30, las skins exclusivas).
+// =====================================================================
+class SeasonPass {
+  constructor(game) {
+    this.g = game; const $ = id => document.getElementById(id);
+    this.el = $("season"); this.track = $("seasonTrack"); this.bar = $("seasonBar"); this.lvlEl = $("seasonLvl"); this.xpEl = $("seasonXp"); this.prev = $("seasonPreview"); this.info = $("seasonInfo");
+    $("seasonBack").addEventListener("click", e => { e.currentTarget.blur(); game.sfx.click(); this.close(); });
+    this.st = { tick: 0, speed: 2, trail: null, acc: 0, advance: true };
+  }
+  get d() { const s = this.g.save.data; if (!s.season || s.season.id !== SEASON_CONFIG.ID) s.season = { id: SEASON_CONFIG.ID, xp: 0, tier: 0, seen: 0 }; return s.season; }
+  get visible() { return !this.el.classList.contains("hidden"); }
+  get tier() { return this.d.tier; }
+  // XP que falta para el siguiente nivel
+  need(t = this.d.tier) { return SEASON_CONFIG.XP_TIER(t + 1); }
+  // XP de una partida (la llama Game.bankRun)
+  xpForRun(g) {
+    const X = SEASON_CONFIG.XP;
+    if (g.versus) return Math.floor(g.distScore / X.VERSUS_PER_POINTS);
+    const levels = Math.max(0, g.level.level - g.startLevel);
+    const xp = g.score / X.PER_POINTS + g.runBosses * X.BOSS + levels * X.LEVEL + g.runEggs * X.EGG + g.build.synergies.length * X.SYNERGY;
+    return Math.round(xp * (SEASON_CONFIG.MODE_MULT[g.mode.id] || 1));
+  }
+  addXP(n) {
+    const d = this.d, got = []; if (n <= 0 || d.tier >= SEASON_CONFIG.TIERS) return got;
+    d.xp += n;
+    while (d.tier < SEASON_CONFIG.TIERS && d.xp >= this.need()) { d.xp -= this.need(); d.tier++; got.push(this.grant(d.tier)); }
+    if (d.tier >= SEASON_CONFIG.TIERS) d.xp = 0;
+    this.g.save.save(); return got;
+  }
+  grant(t) {
+    const s = this.g.save, r = seasonReward(t);
+    if (r.kind === "coins") s.data.coins += r.n;
+    else if (r.kind === "eggs") s.data.eggWallet += r.n;
+    else if (r.kind === "fossils") s.data.fossils += r.n;
+    else if (r.kind === "skin") s.give(r.id);
+    const txt = this.rewardText(r);
+    this.g.ach.queue.push({ title: `Pase · nivel ${t}`, name: txt, line: r.kind === "skin" ? "¡Equípala en la tienda!" : "Recompensa del pase de temporada", cat: "pase" });
+    if (t >= SEASON_CONFIG.TIERS) this.g.ach.unlock("era-prismatica");
+    return { t, r, txt };
+  }
+  rewardText(r) {
+    if (r.kind === "coins") return `${r.n} monedas`;
+    if (r.kind === "eggs") return `${r.n} huevos`;
+    if (r.kind === "fossils") return `${r.n} fósiles`;
+    const sk = SkinCatalog.get(r.id); return `Skin «${sk ? sk.name : r.id}»`;
+  }
+  // ----- Pantalla -----
+  open() {
+    const d = this.d; d.seen = d.tier; this.g.save.save();
+    this.lvlEl.textContent = `Nivel ${d.tier}/${SEASON_CONFIG.TIERS}`;
+    const max = d.tier >= SEASON_CONFIG.TIERS;
+    this.xpEl.textContent = max ? "¡Pase completado!" : `${d.xp} / ${this.need()} XP para el nivel ${d.tier + 1}`;
+    this.bar.style.width = `${max ? 100 : Math.round(d.xp / this.need() * 100)}%`;
+    this.track.innerHTML = "";
+    for (let t = 1; t <= SEASON_CONFIG.TIERS; t++) {
+      const r = seasonReward(t), got = t <= d.tier, el = document.createElement("div");
+      el.className = "ss-tier" + (got ? " got" : "") + (t === d.tier + 1 ? " next" : "") + (r.kind === "skin" ? " skin" : "");
+      const ico = r.kind === "coins" ? `<span class="coin"></span>` : r.kind === "eggs" ? `<span class="egg-ico"></span>` : r.kind === "fossils" ? `<canvas class="fossil-ico" width="16" height="16" data-fossil="1"></canvas>` : `<canvas class="ss-skin" width="96" height="60" data-skin="${r.id}"></canvas>`;
+      el.innerHTML = `<small>${t}</small>${ico}<b>${r.kind === "skin" ? SkinCatalog.get(r.id).name : this.rewardText(r)}</b>${got ? `<i>✔</i>` : ""}`;
+      this.track.appendChild(el);
+    }
+    paintFossils(this.track);
+    this.skinCards = [...this.track.querySelectorAll("canvas[data-skin]")].map(cv => ({ cv, id: cv.dataset.skin, st: { tick: randInt(0, 7), speed: 2, trail: null, acc: 0, advance: true } }));
+    const final = SkinCatalog.get("prisma-celestial");
+    this.info.innerHTML = `<b>${final.name}</b><small>${final.fx.label}</small><small>🔊 ${roarStyle("prisma-celestial").name}</small><small>${this.g.save.owns("prisma-celestial") ? "✔ ¡Ya es tuya!" : `Recompensa del nivel ${SEASON_CONFIG.TIERS}`}</small>`;
+    this.el.classList.remove("hidden");
+    const nx = this.track.querySelector(".next") || this.track.lastElementChild; if (nx) nx.scrollIntoView({ inline: "center", block: "nearest" });
+  }
+  close() { this.el.classList.add("hidden"); this.g.showMenu(); }
+  update(dt) {
+    if (!this.visible) return;
+    tickStates([this.st, ...(this.skinCards || []).map(s => s.st)], dt);
+    const c = this.prev.getContext("2d"); c.imageSmoothingEnabled = false;
+    drawSkinPreview(c, "prisma-celestial", this.st, this.prev.width, this.prev.height, 7);
+    for (const s of this.skinCards || []) { const x = s.cv.getContext("2d"); x.imageSmoothingEnabled = false; drawSkinPreview(x, s.id, s.st, s.cv.width, s.cv.height, 2); }
+  }
+}
+
 // Causa de un golpe (estadística «qué te mata más»)
 function obstacleCause(o) {
   if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
@@ -8742,7 +9047,7 @@ class Game {
     this.ach = new AchievementManager(this);
     this.ui = new UI(this); this.shop = new Shop(this); this.roulette = new Roulette(this); this.manual = new Manual(this);
     this.rogue = new RogueManager(this); this.history = new BuildHistory(this); this.album = new UpgradeAlbum(this);
-    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this); this.tips = new TipManager(this);
+    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this); this.tips = new TipManager(this); this.season = new SeasonPass(this);
     this.tutSkip = document.getElementById("tutSkip");
     this.tutSkip.addEventListener("click", e => { e.currentTarget.blur(); this.sfx.click(); this.skipTutorial(); });
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
@@ -8755,9 +9060,11 @@ class Game {
     this.ach.wallet();
   }
   // El canvas se dibuja a la resolución real de la pantalla (no se estira una imagen de 900 × 360)
+  // Rendimiento: la resolución interna tiene un tope (RENDER.MAX_PX) y baja sola si el equipo no llega a 60 fps
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 3), cssW = this.canvas.clientWidth || W;
-    const px = Math.round(clamp(cssW * dpr, W, 3600));
+    const q = RENDER.LEVELS[this.quality || 0];
+    const px = Math.round(clamp(cssW * dpr, W, RENDER.MAX_PX) * q);
     if (this.canvas.width !== px) { this.canvas.width = px; this.canvas.height = Math.round(px * H / W); }
     this.dpr = this.canvas.width / W; this.cssW = cssW;
   }
@@ -8775,7 +9082,7 @@ class Game {
     // Roguelike, furia y monturas
     this.build.reset(); this.fury.reset(this.versus ? 0 : this.stat("furyStart")); this.mounts.reset();
     this.bossHearts = 0; this.pendingHeart = 0; this.bonusScore = 0; this.timeCd = 0; this.echoT = 0; this.echoWave = null; this.superWave = null;
-    this.ghosts = [{ x: 120, cd: 0 }, { x: 200, cd: 0 }];
+    this.ghosts = [{ x: 120, cd: 0 }, { x: 200, cd: 0 }]; this.randomMod = null;
     if (this.rogue) { this.rogue.reset(); this.rogue.screen.el.classList.add("hidden"); }
   }
   stat(k) { return this.build.stat(k); }
@@ -8812,11 +9119,11 @@ class Game {
   // ----- Estados -----
   closeScreens() {
     this.ui.hideAll();
-    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el]) el.classList.add("hidden");
+    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el, this.season.el]) el.classList.add("hidden");
   }
   showMenu() {
     if (["playing", "paused", "choice", "tip"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
-    const fromSub = ["shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree"].includes(this.state) || this.history.visible;   // vuelve al submenú de donde vino
+    const fromSub = ["shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season"].includes(this.state) || this.history.visible;   // vuelve al submenú de donde vino
     this.versus = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
   }
   // ----- Tutorial (nivel de práctica) -----
@@ -8883,6 +9190,7 @@ class Game {
   openRoulette(from) { this.state = "roulette"; this.closeScreens(); this.roulette.open(from); }
   openManual(from) { if (from !== "pause") this.state = "manual"; this.closeScreens(); this.manual.open(from); }
   openHistory(from) { this.closeScreens(); this.history.open(from); }
+  openSeason() { this.state = "season"; this.closeScreens(); this.season.open(); }
   openTree() { this.state = "tree"; this.closeScreens(); this.tree.open(); }
   openStats() { this.state = "stats"; this.closeScreens(); this.statsMgr.open(); }
   openBackup() { this.state = "backup"; this.closeScreens(); this.backup.open(); }
@@ -9053,6 +9361,11 @@ class Game {
   }
   // Al empezar cada nivel (y la partida)
   onLevelStart(level) {
+    if (this.mode.id === "random" && !this.versus && !this.tutorial) {   // modo Aleatorio: nueva regla sorpresa
+      const pool = RANDOM_MODS.filter(m => !this.randomMod || m.id !== this.randomMod.id);
+      this.randomMod = choice(pool); this.build.cache = {};
+      this.level.bannerSub = `${this.randomMod.icon} ${this.randomMod.name}: ${this.randomMod.desc}`;
+    }
     const sh = this.versus ? 0 : this.stat("startShield");   // Escudo inicial
     if (sh > 0) { this.effects.shield = this.effectMax.shield = sh; }
     this.mounts.planLevel(level);
@@ -9123,6 +9436,7 @@ class Game {
     const s = this.save.data, earned = this.runCoinsInt;
     s.coins += earned; s.eggWallet += this.runEggs;   // los huevos recogidos se gastan en la tienda de huevos
     this.statsMgr.runEnd();
+    this.runXP = this.tutorial ? 0 : this.season.xpForRun(this); this.runSeason = this.season.addXP(this.runXP);   // pase de temporada
     if (this.versus) { this.save.save(); return; }   // en multijugador no hay récords ni logros
     if (this.tutorial) { this.save.save(); return; }
     this.rogue.recordRun();
@@ -9146,6 +9460,7 @@ class Game {
   // ----- Actualización (dt en segundos) -----
   update(dt) {
     this.time += dt;
+    updatePrismSkins(this.time); this.season.update(dt);
     this.level.tick(dt);
     this.ach.update(dt);
     if (this.roulette.visible) this.roulette.update(dt);
@@ -9164,7 +9479,7 @@ class Game {
     if (this.shake > 0) { this.shake -= dt; if (this.shake <= 0) this.shakeMag = 0; }
     this.updateAmbient(this.state === "paused" ? 0 : dt);
 
-    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup", "stats", "tree"].includes(this.state)) {
+    if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season"].includes(this.state)) {
       this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt);
       if (this.state === "menu" && (this.menuT = (this.menuT || 0) + dt) > 8) { this.menuT = 0; this.level.setBiome((this.level.cur + 1) % this.level.biomes.length); }   // la portada recorre los biomas
       return;
@@ -9345,7 +9660,7 @@ class Game {
   // ----- Dibujo -----
   // Fondo de la portada: el bioma (cambia cada pocos segundos) y el raptor corriendo, a pantalla completa
   drawMenuBg() {
-    const cv = this.ui.menuBg, dpr = Math.min(window.devicePixelRatio || 1, 1.5), cw = Math.round(innerWidth * dpr), ch = Math.round(innerHeight * dpr);
+    const cv = this.ui.menuBg, k = Math.min((window.devicePixelRatio || 1) * 1.5, RENDER.MENU_MAX_PX / innerWidth) * RENDER.LEVELS[this.quality || 0], cw = Math.round(innerWidth * k), ch = Math.round(innerHeight * k);
     if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
     const c = cv.getContext("2d"), s = Math.max(cw / W, ch / H), tx = clamp(cw / 2 - 200 * s, cw - W * s, 0), ty = ch - H * s;
     c.setTransform(s, 0, 0, s, tx, ty); c.imageSmoothingEnabled = false;
@@ -9353,6 +9668,16 @@ class Game {
     const p = this.player; this.drawEntity(c, p.laneT, p.x, () => p.draw(c));
     for (const a of this.ambient) { c.fillStyle = a.color; c.globalAlpha = 0.8; c.fillRect(Math.round(a.x), Math.round(a.y), a.size, a.size); }
     c.globalAlpha = 1;
+  }
+  // Calidad automática: mide el tiempo entre fotogramas y ajusta la resolución
+  frameStat(dtMs) {
+    const R = RENDER; this.fAcc = (this.fAcc || 0) + dtMs; this.fN = (this.fN || 0) + 1;
+    if (this.fN < R.SAMPLE) return;
+    const avg = this.fAcc / this.fN; this.fAcc = 0; this.fN = 0; this.fpsAvg = 1000 / avg;
+    const q = this.quality || 0;
+    if (avg > R.SLOW_MS && q < R.LEVELS.length - 1) { this.quality = q + 1; this.fastRuns = 0; this.resize(); }
+    else if (avg < R.FAST_MS && q > 0) { if (++this.fastRuns >= R.UP_AFTER) { this.quality = q - 1; this.fastRuns = 0; this.resize(); } }
+    else this.fastRuns = 0;
   }
   draw() {
     const bgOn = this.state === "menu" || this.state === "play";
@@ -9387,12 +9712,17 @@ class Game {
     c.globalAlpha = 1;
     c.restore();
 
-    { const v = c.createRadialGradient(W / 2, H * 0.55, H * 0.45, W / 2, H * 0.55, W * 0.62);   // viñeta suave
-      v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.28)"); c.fillStyle = v; c.fillRect(0, 0, W, H); }
+    if (!this.vignette) { const v = c.createRadialGradient(W / 2, H * 0.55, H * 0.45, W / 2, H * 0.55, W * 0.62);   // viñeta suave (se crea una vez)
+      v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.28)"); this.vignette = v; }
+    c.fillStyle = this.vignette; c.fillRect(0, 0, W, H);
     if (this.effects.slowmo > 0) {
       const g = c.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, W * 0.65);
       g.addColorStop(0, "rgba(120,90,255,0.05)"); g.addColorStop(1, "rgba(80,50,200,0.35)");
       c.fillStyle = g; c.fillRect(0, 0, W, H);
+    }
+    if (!this.versus && this.stat("fog") && ["playing", "paused", "choice", "tip"].includes(this.state)) {   // Niebla
+      if (!this.fogGrad) { const f = c.createLinearGradient(380, 0, 700, 0); f.addColorStop(0, "rgba(200,205,215,0)"); f.addColorStop(1, "rgba(200,205,215,0.93)"); this.fogGrad = f; }
+      c.fillStyle = this.fogGrad; c.fillRect(380, 0, W - 380, H);
     }
     if (this.flashT > 0) { c.fillStyle = `rgba(255,240,180,${this.flashT * 1.6})`; c.fillRect(0, 0, W, H); }   // destello del rugido solar
     if (this.effects.turbo > 0 && this.state === "playing") {
@@ -9598,6 +9928,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && gam
 let last = performance.now();
 function loop(now) {
   const dt = Math.min((now - last) / 1000, 0.05);   // limita saltos grandes (pestaña en segundo plano)
+  if (!document.hidden) game.frameStat(now - last);
   last = now;
   game.update(dt);
   game.draw();
