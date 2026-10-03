@@ -6,7 +6,7 @@ El raptor viene del kit **Dino Runner**: `skins-engine.js` (`DinoSkinsEngine`, 1
 
 ## Cómo jugar
 
-Menú: **Jugar** (modo Normal, Fácil o Difícil y nivel inicial si tienes checkpoints), **Tienda**, **Ruleta**, **Logros**, **Álbum**, **Historial**, **Árbol**, **Estadísticas**, **Guardar / Cargar**, **Manual**, **Multijugador**, **Tutorial**, consejos y silenciar. La primera vez que pulsas Jugar empieza el **tutorial**.
+La portada ocupa toda la pantalla, con el escenario del juego animado de fondo (recorre los biomas). Solo muestra **Jugar**, **Multijugador** y tres submenús: **Tienda y ruleta**, **Progreso** (récords, logros, árbol, estadísticas, álbum e historial) y **Opciones** (manual, tutorial, guardar / cargar, sonido y consejos). Arriba se ven las monedas, los huevos y los fósiles; un punto rojo avisa de giros gratis, nodos del árbol que puedes comprar o copias de seguridad pendientes. Se navega con el ratón, con las flechas e Intro (Esc vuelve atrás) o pulsando W para jugar. La primera vez que pulsas Jugar empieza el **tutorial**.
 
 | Acción | Teclado | Móvil |
 |---|---|---|

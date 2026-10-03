@@ -472,6 +472,61 @@
   .tip-box p { margin: 4px 0 8px; font-size: 15px; line-height: 20px; }
   .tip-box .btn { font-size: 10px; line-height: 10px; padding: 10px 12px 12px; min-width: 0; }
   @media (max-width: 640px) { .tip-box canvas { display: none; } }
+  /* ===== Portada a pantalla completa ===== */
+  #menuBg { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 9; image-rendering: pixelated; display: block; }
+  #menuBg.hidden { display: none; }
+  .overlay.mm { padding: 0; flex-direction: column; justify-content: space-between; align-items: stretch;
+    background: radial-gradient(ellipse 70% 80% at 50% 45%, rgba(14,11,22,.25), rgba(14,11,22,.78)); }
+  .mm-top, .mm-bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 18px; flex-wrap: wrap; }
+  .mm-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mm-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-title); font-size: 10px; color: var(--text);
+    background: rgba(35,27,56,.85); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 3px 3px 0 var(--line); padding: 6px 10px; }
+  .mm-chip b { font-weight: 400; font-size: 15px; color: var(--weak); } .mm-chip .coin { width: 12px; height: 12px; display: inline-block; }
+  .mm-skin b { color: var(--text); font-size: 10px; }
+  .mm-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 0 16px; min-height: 0; overflow-y: auto; }
+  .mm-title { margin: 0; display: flex; flex-direction: column; align-items: center; line-height: .95; letter-spacing: 4px; font-size: clamp(44px, 9vw, 104px);
+    color: var(--gold); text-shadow: 6px 6px 0 var(--line), 0 0 30px rgba(255,185,56,.35); animation: mmfloat 3.2s ease-in-out infinite; }
+  .mm-title span:last-child { color: var(--go); font-size: .78em; }
+  @keyframes mmfloat { 50% { transform: translateY(-6px); } }
+  .mm-sub { margin: 4px 0 18px; font-family: var(--f-title); font-size: 10px; letter-spacing: 6px; color: var(--text); text-shadow: 2px 2px 0 var(--line); text-transform: uppercase; }
+  .mm-panel { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: min(360px, 100%); animation: mmin .25s ease-out; }
+  .mm-sub-panel { width: min(640px, 100%); }
+  @keyframes mmin { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+  .mm-btn { position: relative; display: flex; align-items: center; gap: 12px; font-family: var(--f-title); font-size: 15px; line-height: 20px; color: var(--text); text-align: left;
+    background: rgba(35,27,56,.9); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); padding: 12px 18px; cursor: pointer; transition: transform .08s, background .08s; }
+  .mm-btn i { font-style: normal; width: 24px; text-align: center; }
+  .mm-btn:hover, .mm-btn:focus-visible, .mm-tile:hover, .mm-tile:focus-visible { background: var(--surface-3); transform: translateX(4px); outline: 2px solid var(--weak); outline-offset: 2px; }
+  .mm-play { justify-content: center; flex-direction: column; gap: 2px; font-size: 26px; line-height: 30px; padding: 16px 18px 12px; color: #16111f; text-align: center;
+    background: var(--go); box-shadow: inset 0 -5px 0 rgba(0,0,0,.25), inset 0 3px 0 rgba(255,255,255,.45), 5px 5px 0 var(--line); animation: mmpulse 1.8s ease-in-out infinite; }
+  .mm-play:hover, .mm-play:focus-visible { background: #77e070; transform: translateY(-2px); }
+  .mm-play small { font-family: var(--f-text); font-size: 12px; color: #1d3a1a; } .mm-play small b { font-weight: 400; }
+  @keyframes mmpulse { 50% { box-shadow: inset 0 -5px 0 rgba(0,0,0,.25), inset 0 3px 0 rgba(255,255,255,.45), 5px 5px 0 var(--line), 0 0 22px rgba(95,209,90,.55); } }
+  .mm-hint { margin: 6px 0 0; text-align: center; font-size: 10px; color: var(--text-dim); animation: blink 1.4s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  .mm-dot { position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: var(--danger); border: 2px solid var(--line); animation: synpulse 1s ease-in-out infinite; }
+  .mm-back { align-self: flex-start; font-family: var(--f-title); font-size: 15px; color: var(--weak); background: none; border: none; cursor: pointer; padding: 4px 0 8px; text-shadow: 2px 2px 0 var(--line); }
+  .mm-back:hover, .mm-back:focus-visible { color: var(--text); outline: none; }
+  .mm-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .mm-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 120px; padding: 14px 10px; cursor: pointer; color: var(--text);
+    background: rgba(35,27,56,.92); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); transition: transform .08s, background .08s; }
+  .mm-tile i { font-style: normal; font-size: 30px; line-height: 34px; }
+  .mm-tile b { font-family: var(--f-title); font-weight: 400; font-size: 10px; line-height: 16px; text-align: center; }
+  .mm-tile small { font-size: 11px; line-height: 14px; color: var(--text-dim); text-align: center; }
+  .mm-records { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
+  .mm-records span { font-family: var(--f-title); font-size: 10px; color: var(--text-dim); background: rgba(35,27,56,.85); border: 2px solid var(--line); padding: 6px 10px; }
+  .mm-records b { font-weight: 400; color: var(--weak); margin-left: 6px; }
+  .mm-bottom { justify-content: center; font-size: 10px; color: var(--text-dim); }
+  .mm-bottom .bk-remind { margin: 0; background: rgba(35,27,56,.9); border: 2px solid var(--weak); color: var(--weak); padding: 6px 10px; cursor: pointer; font-family: var(--f-title); font-size: 10px; }
+  .mm-ver { opacity: .7; }
+  @media (max-width: 640px) {
+    .mm-top { padding: 10px; } .mm-chip { padding: 4px 7px; } .mm-chip b { font-size: 12px; } .mm-skin { display: none; }
+    .mm-sub { margin-bottom: 12px; letter-spacing: 3px; }
+    .mm-btn { font-size: 12px; padding: 11px 14px; } .mm-play { font-size: 20px; }
+    .mm-tiles { grid-template-columns: 1fr 1fr; gap: 8px; } .mm-tile { min-height: 96px; } .mm-tile i { font-size: 24px; }
+    .mm-hint { display: none; }
+  }
+  @media (max-height: 560px) { .mm-title { font-size: 40px; } .mm-sub { margin-bottom: 8px; } .mm-panel { gap: 6px; } .mm-btn { padding: 8px 14px; } .mm-tile { min-height: 80px; } }
+  .mm-tile, .mm-tile small, .mm-btn small, .mm-hint { font-family: var(--f-text); }
 </style>
 </head>
 <body>
@@ -490,45 +545,72 @@
 </p>
 <div id="toasts"></div>
 
-<!-- Menú principal -->
-<div id="menu" class="overlay">
-  <div class="card">
-    <h1>DINO RUNNER</h1>
-    <p class="sub">Corre, salta y ruge a través de 10 niveles… y vence a sus bosses</p>
-    <p class="touch-hint" style="margin:-8px 0 10px">Versión 12 · Monturas, roguelike, árbol, estadísticas y tutorial (equilibrado)</p>
-    <div class="stats">
-      <div><small>RÉCORD NORMAL</small><b id="menuHiN">0</b></div>
-      <div><small>RÉCORD FÁCIL</small><b id="menuHiE">0</b></div>
-      <div><small>RÉCORD DIFÍCIL</small><b id="menuHiH">0</b></div>
-      <div><small>MONEDAS</small><b><span class="coin"></span> <span id="menuCoins">0</span></b></div>
-      <div><small>HUEVOS</small><b><span class="egg-ico"></span> <span id="menuEggs">0</span></b></div>
-      <div><small>SKIN</small><b id="menuSkin">—</b></div>
-      <div><small>LOGROS</small><b id="menuAch">0</b></div>
-      <div><small>FÓSILES</small><b id="menuFossils">0</b></div>
+<!-- Fondo animado a pantalla completa (menú y elección de modo) -->
+<canvas id="menuBg" class="hidden"></canvas>
+
+<!-- Menú principal: portada a pantalla completa con submenús -->
+<div id="menu" class="overlay mm hidden">
+  <div class="mm-top">
+    <div class="mm-chips">
+      <span class="mm-chip" title="Monedas"><span class="coin"></span><b id="menuCoins">0</b></span>
+      <span class="mm-chip" title="Huevos"><span class="egg-ico"></span><b id="menuEggs">0</b></span>
+      <span class="mm-chip" title="Fósiles"><canvas class="fossil-ico" width="16" height="16" data-fossil="1"></canvas><b id="menuFossils">0</b></span>
     </div>
-    <div class="actions">
-      <button class="btn primary" id="btnPlay">► Jugar</button>
-      <button class="btn gold" id="btnShop">Tienda</button>
-      <button class="btn purple" id="btnRoulette">Ruleta</button>
-      <button class="btn" id="btnAch">🏆 Logros</button>
-      <button class="btn" id="btnAlbum">📖 Álbum</button>
-      <button class="btn" id="btnMenuHistory">Historial</button>
-      <button class="btn gold" id="btnTree">🌳 Árbol</button>
-      <button class="btn" id="btnStats">📊 Estadísticas</button>
-      <button class="btn" id="btnBackup">💾 Guardar / Cargar</button>
-      <button class="btn" id="btnManual">Manual</button>
-      <button class="btn purple" id="btnVersus">👥 Multijugador</button>
-    </div>
-    <div class="keys">
-      <span><kbd>W</kbd> saltar / doble salto</span><span><kbd>S</kbd> deslizarse / caída rápida</span>
-      <span><kbd>A</kbd> carril de arriba</span><span><kbd>D</kbd> carril de abajo</span>
-      <span><kbd>E</kbd> rugido</span><span><kbd>P</kbd> pausa</span>
-    </div>
-    <p class="touch-hint">Multijugador (2 jugadores, mismo teclado, sin jefes): J1 corre arriba con <kbd>W</kbd> saltar, <kbd>S</kbd> deslizarse y <kbd>E</kbd> rugido y <kbd>A</kbd> trampa · J2 corre abajo con <kbd>↑</kbd> saltar, <kbd>↓</kbd> deslizarse, <kbd>→</kbd> rugido y <kbd>←</kbd> trampa. Gana quien aguante más.</p>
-    <p class="touch-hint">Bosses: cada uno se vence de una forma distinta (la verás abajo en la pantalla). Móvil: toca para saltar, desliza ↓ para deslizarte y usa los botones para carril y rugido.</p>
-    <div class="actions" style="margin:10px 0 0"><button class="btn ghost" id="btnMute">Sonido: SÍ</button><button class="btn ghost" id="btnTips">💡 Consejos: SÍ</button><button class="btn ghost" id="btnTipsReset">Volver a ver los consejos</button><button class="btn ghost" id="btnTutorial">🎓 Tutorial</button></div>
-    <p class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso (Guardar / Cargar)</p>
-    <p class="touch-hint hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: teclas 1–9 y 0 = nivel 1–10 · B = boss del nivel actual</p>
+    <span class="mm-chip mm-skin" title="Skin equipado">🦖 <b id="menuSkin">—</b></span>
+  </div>
+
+  <div class="mm-center">
+    <h1 class="mm-title"><span>DINO</span><span>RUNNER</span></h1>
+    <p class="mm-sub">Corre · salta · ruge</p>
+
+    <nav id="mmMain" class="mm-panel">
+      <button class="mm-btn mm-play" id="btnPlay">► JUGAR<small>Récord <b id="menuBest">0</b></small></button>
+      <button class="mm-btn" id="btnVersus"><i>👥</i>Multijugador</button>
+      <button class="mm-btn" data-sub="mmShop"><i>🛒</i>Tienda y ruleta<em class="mm-dot hidden" id="dotShop"></em></button>
+      <button class="mm-btn" data-sub="mmProg"><i>🏆</i>Progreso<em class="mm-dot hidden" id="dotProg"></em></button>
+      <button class="mm-btn" data-sub="mmOpts"><i>⚙️</i>Opciones</button>
+      <p class="mm-hint">Pulsa <kbd>W</kbd> para jugar</p>
+    </nav>
+
+    <section id="mmShop" class="mm-panel mm-sub-panel hidden">
+      <button class="mm-back" data-back>← Tienda y ruleta</button>
+      <div class="mm-tiles">
+        <button class="mm-tile" id="btnShop"><i>🛒</i><b>Tienda</b><small>Skins, checkpoints, editor y huevos</small></button>
+        <button class="mm-tile" id="btnRoulette"><i>🎡</i><b>Ruleta</b><small id="menuSpin">Apuesta monedas del juego</small><em class="mm-dot hidden" id="dotSpin"></em></button>
+      </div>
+    </section>
+
+    <section id="mmProg" class="mm-panel mm-sub-panel hidden">
+      <button class="mm-back" data-back>← Progreso</button>
+      <div class="mm-records">
+        <span>Normal <b id="menuHiN">0</b></span><span>Fácil <b id="menuHiE">0</b></span><span>Difícil <b id="menuHiH">0</b></span>
+      </div>
+      <div class="mm-tiles">
+        <button class="mm-tile" id="btnAch"><i>🏆</i><b>Logros</b><small id="menuAch">0/0</small></button>
+        <button class="mm-tile" id="btnTree"><i>🌳</i><b>Árbol</b><small id="menuTree">Mejoras permanentes</small><em class="mm-dot hidden" id="dotTree"></em></button>
+        <button class="mm-tile" id="btnStats"><i>📊</i><b>Estadísticas</b><small>Tus números</small></button>
+        <button class="mm-tile" id="btnAlbum"><i>📖</i><b>Álbum</b><small id="menuAlbum">Mejoras descubiertas</small></button>
+        <button class="mm-tile" id="btnMenuHistory"><i>📜</i><b>Historial</b><small>Tus últimas builds</small></button>
+      </div>
+    </section>
+
+    <section id="mmOpts" class="mm-panel mm-sub-panel hidden">
+      <button class="mm-back" data-back>← Opciones</button>
+      <div class="mm-tiles">
+        <button class="mm-tile" id="btnManual"><i>📘</i><b>Manual</b><small>Todo sobre el juego</small></button>
+        <button class="mm-tile" id="btnTutorial"><i>🎓</i><b>Tutorial</b><small>Nivel de práctica</small></button>
+        <button class="mm-tile" id="btnBackup"><i>💾</i><b>Guardar / Cargar</b><small>Copia de tu progreso</small><em class="mm-dot hidden" id="dotBackup"></em></button>
+        <button class="mm-tile" id="btnMute"><i>🔊</i><b>Sonido: SÍ</b></button>
+        <button class="mm-tile" id="btnTips"><i>💡</i><b>Consejos: SÍ</b></button>
+        <button class="mm-tile" id="btnTipsReset"><i>↺</i><b>Volver a ver los consejos</b></button>
+      </div>
+    </section>
+  </div>
+
+  <div class="mm-bottom">
+    <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
+    <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
+    <span class="mm-ver">Versión 13</span>
   </div>
 </div>
 
@@ -6134,7 +6216,11 @@ class UI {
     bind("btnTree", () => game.openTree());
     bind("btnTutorial", () => game.startTutorial());
     bind("btnTips", () => { game.tips.toggle(); this.updateTips(); });
-    bind("btnTipsReset", () => { game.tips.resetSeen(); this.$("btnTipsReset").textContent = "✔ Consejos reiniciados"; });
+    bind("btnTipsReset", () => { game.tips.resetSeen(); this.$("btnTipsReset").querySelector("b").textContent = "✔ Consejos reiniciados"; });
+    this.menu.querySelectorAll("[data-sub]").forEach(b => b.addEventListener("click", e => { game.sfx.unlock(); game.sfx.click(); e.currentTarget.blur(); this.menuPanel(b.dataset.sub); }));
+    this.menu.querySelectorAll("[data-back]").forEach(b => b.addEventListener("click", e => { e.currentTarget.blur(); this.menuBack(); }));
+    bind("bkRemind", () => game.openBackup());
+    this.menuBg = $("menuBg");
     bind("btnHistory", () => game.openHistory("over"));
     bind("btnMenuHistory", () => game.openHistory("menu"));
     bind("btnManual", () => game.openManual("menu"));
@@ -6158,13 +6244,34 @@ class UI {
     this.selMode = game.mode.id; this.selLevel = 1;
     this.updateMute();
   }
-  updateTips() { const off = this.game.save.data.tips.off; this.$("btnTips").textContent = off ? "💡 Consejos: NO" : "💡 Consejos: SÍ"; this.$("btnTipsReset").textContent = "Volver a ver los consejos"; }
-  updateMute() { this.$("btnMute").textContent = this.game.sfx.muted ? "🔇 Sonido: NO" : "🔊 Sonido: SÍ"; }
-  showMenu() {
+  updateTips() { const off = this.game.save.data.tips.off; this.$("btnTips").querySelector("b").textContent = off ? "Consejos: NO" : "Consejos: SÍ"; this.$("btnTipsReset").querySelector("b").textContent = "Volver a ver los consejos"; }
+  updateMute() { const m = this.game.sfx.muted; this.$("btnMute").querySelector("b").textContent = m ? "Sonido: NO" : "Sonido: SÍ"; this.$("btnMute").querySelector("i").textContent = m ? "🔇" : "🔊"; }
+  // Submenús de la portada
+  menuPanel(id = "mmMain") {
+    for (const p of this.menu.querySelectorAll(".mm-panel")) p.classList.toggle("hidden", p.id !== id);
+    this.menuSub = id === "mmMain" ? null : id;
+    const first = this.menu.querySelector(`#${id} .mm-btn, #${id} .mm-tile`); if (first && this.game.state === "menu" && id !== "mmMain") first.focus({ preventScroll: true });
+  }
+  menuBack() { if (this.menuSub) { this.game.sfx.click(); this.menuPanel(); } }
+  menuFocus(d) {   // flechas: moverse entre los botones visibles
+    const list = [...this.menu.querySelectorAll(".mm-panel:not(.hidden) button")], i = list.indexOf(document.activeElement);
+    const n = list[(i < 0 ? (d > 0 ? -1 : 0) : i) + d < 0 ? list.length - 1 : ((i < 0 ? (d > 0 ? -1 : 0) : i) + d) % list.length];
+    if (n) n.focus();
+  }
+  showMenu(keepSub = false) {
     const g = this.game, s = g.save.data, sk = SkinCatalog.get(g.skinId);
     this.$("menuHiN").textContent = s.records.normal; this.$("menuHiE").textContent = s.records.easy; this.$("menuHiH").textContent = s.records.hard;
     this.$("menuCoins").textContent = s.coins; this.$("menuEggs").textContent = s.eggWallet; this.$("menuSkin").textContent = sk ? sk.name : "—";
-    this.$("menuAch").textContent = `${g.ach.unlockedCount}/${ACHIEVEMENTS.length}`;
+    this.$("menuAch").textContent = `${g.ach.unlockedCount}/${ACHIEVEMENTS.length} conseguidos`;
+    this.$("menuBest").textContent = fmtInt(Math.max(s.records.normal, s.records.easy, s.records.hard));
+    const al = s.album, nAl = Object.keys(al.ups).length + Object.keys(al.syn).length + Object.keys(al.pacts).length;
+    this.$("menuAlbum").textContent = `${nAl}/${UPGRADES.length + SYNERGIES.length + PACTS.length} descubiertas`;
+    // Avisos (puntos) en los submenús: giro gratis, nodo del árbol que puedes comprar, copia pendiente
+    const spin = g.roulette.freeAvailable, tree = TREE_NODES.some(n => { const c = g.tree.cost(n); return c != null && g.tree.reachable(n) && s.fossils >= c; }), bk = g.backup.needsReminder();
+    this.$("menuSpin").textContent = spin ? "¡Giro gratis disponible!" : "Apuesta monedas del juego";
+    this.$("menuTree").textContent = tree ? "¡Puedes comprar un nodo!" : `${s.fossils} fósiles`;
+    for (const [id, on] of [["dotSpin", spin], ["dotShop", spin], ["dotTree", tree], ["dotProg", tree], ["dotBackup", bk]]) this.$(id).classList.toggle("hidden", !on);
+    paintFossils(this.menu); this.menuPanel(keepSub && this.menuSub ? this.menuSub : "mmMain");
     this.$("menuFossils").textContent = s.fossils; this.updateTips();
     this.$("debugHint").classList.toggle("hidden", !DEBUG);
     this.$("bkRemind").classList.toggle("hidden", !g.backup.needsReminder());
@@ -8709,7 +8816,8 @@ class Game {
   }
   showMenu() {
     if (["playing", "paused", "choice", "tip"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
-    this.versus = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu();
+    const fromSub = ["shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree"].includes(this.state) || this.history.visible;   // vuelve al submenú de donde vino
+    this.versus = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
   }
   // ----- Tutorial (nivel de práctica) -----
   get firstTime() { const s = this.save.data; return !s.tutorialDone && !s.records.normal && !s.records.easy && !s.records.hard; }
@@ -9057,7 +9165,9 @@ class Game {
     this.updateAmbient(this.state === "paused" ? 0 : dt);
 
     if (["menu", "shop", "play", "roulette", "manual", "achievements", "album", "backup", "stats", "tree"].includes(this.state)) {
-      this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt); return;
+      this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt);
+      if (this.state === "menu" && (this.menuT = (this.menuT || 0) + dt) > 8) { this.menuT = 0; this.level.setBiome((this.level.cur + 1) % this.level.biomes.length); }   // la portada recorre los biomas
+      return;
     }
     if (this.state === "over") {
       this.overTime += dt; this.updateParticles(dt);
@@ -9233,7 +9343,21 @@ class Game {
   }
 
   // ----- Dibujo -----
+  // Fondo de la portada: el bioma (cambia cada pocos segundos) y el raptor corriendo, a pantalla completa
+  drawMenuBg() {
+    const cv = this.ui.menuBg, dpr = Math.min(window.devicePixelRatio || 1, 1.5), cw = Math.round(innerWidth * dpr), ch = Math.round(innerHeight * dpr);
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    const c = cv.getContext("2d"), s = Math.max(cw / W, ch / H), tx = clamp(cw / 2 - 200 * s, cw - W * s, 0), ty = ch - H * s;
+    c.setTransform(s, 0, 0, s, tx, ty); c.imageSmoothingEnabled = false;
+    this.level.drawBackground(c);
+    const p = this.player; this.drawEntity(c, p.laneT, p.x, () => p.draw(c));
+    for (const a of this.ambient) { c.fillStyle = a.color; c.globalAlpha = 0.8; c.fillRect(Math.round(a.x), Math.round(a.y), a.size, a.size); }
+    c.globalAlpha = 1;
+  }
   draw() {
+    const bgOn = this.state === "menu" || this.state === "play";
+    if (bgOn !== this.menuBgOn) { this.menuBgOn = bgOn; this.ui.menuBg.classList.toggle("hidden", !bgOn); }
+    if (bgOn) { this.drawMenuBg(); if (this.state === "menu") return; }   // en la portada el canvas del juego queda tapado
     const c = this.ctx;
     if (this.canvas.clientWidth && this.canvas.clientWidth !== this.cssW) this.resize();
     c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.imageSmoothingEnabled = false;
@@ -9388,6 +9512,8 @@ addEventListener("keydown", e => {
   if (st === "menu") {
     if (k === "w") game.openPlay();
     else if (k === "t") game.openShop("menu");
+    else if (k === "Escape") game.ui.menuBack();
+    else if (k === "ArrowDown" || k === "ArrowUp" || k === "ArrowLeft" || k === "ArrowRight") { e.preventDefault(); game.ui.menuFocus(k === "ArrowDown" || k === "ArrowRight" ? 1 : -1); }
   } else if (st === "play") {
     if (k === "w") { if (game.ui.versusSel) game.startVersus(game.ui.selMode); else game.start(game.ui.selMode, game.ui.selLevel); }
     else if (k === "Escape") game.showMenu();
