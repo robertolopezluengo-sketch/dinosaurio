@@ -527,7 +527,7 @@
   }
   @media (max-height: 560px) { .mm-title { font-size: 40px; } .mm-sub { margin-bottom: 8px; } .mm-panel { gap: 6px; } .mm-btn { padding: 8px 14px; } .mm-tile { min-height: 80px; } }
   .mm-tile, .mm-tile small, .mm-btn small, .mm-hint { font-family: var(--f-text); }
-  canvas#game, #menuBg { image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: pixelated; }
+  #menuBg { image-rendering: pixelated; }
   /* Pase de temporada */
   .mm-season { background: linear-gradient(90deg, rgba(123,92,255,.92), rgba(255,92,225,.9)); }
   .mm-season small { margin-left: auto; font-family: var(--f-text); font-size: 11px; color: #fff3fb; }
@@ -647,7 +647,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 15</span>
+    <span class="mm-ver">Versión 16</span>
   </div>
 </div>
 
@@ -1027,9 +1027,10 @@
     } else if (tr.type === "stars") {
       p.push({ x: ox + R() * 5, y: oy + 6 + R() * 10, vx: 0, vy: 0, life: 34, max: 34, c: C[Math.floor(R() * C.length)], shape: R() < .35 ? "plus" : "px", blink: true });
     } else if (tr.type === "prism") {
-      var sh = Math.floor(t / 2) % C.length;
-      for (var pi = 0; pi < 6; pi++) p.push({ x: ox + 1, y: oy + 9 + pi + Math.round(Math.sin((t + pi) * 0.45) * 1.5), vx: 0, vy: 0, life: 22, max: 22, c: C[(pi + sh) % C.length], w: step + 1 });
-      if (t % 2 === 0) p.push({ x: ox + R() * 18, y: oy + R() * 16, vx: .35, vy: -.15 - R() * .35, life: 22, max: 22, c: R() < .5 ? "#ffffff" : C[Math.floor(R() * C.length)], shape: "plus", blink: true });
+      // Cinta arcoíris que nace en la punta de la cola (x < ox) y solo se alarga hacia atrás
+      var sh = Math.floor(t / 3) % C.length, wy = Math.round(Math.sin(t * 0.5) * 1);
+      for (var pi = 0; pi < 6; pi++) p.push({ x: ox - 2, y: oy + 7 + pi + wy, vx: 0, vy: 0, life: 11, max: 11, c: C[(pi + sh) % C.length], w: step + 1 });
+      if (t % 3 === 0) p.push({ x: ox - 3 - R() * 6, y: oy + 6 + R() * 8, vx: 0, vy: -.2 - R() * .2, life: 12, max: 12, c: R() < .5 ? "#ffffff" : C[Math.floor(R() * C.length)], shape: "plus", blink: true });
     } else if (tr.type === "aura") {
       p.push({ x: ox + 4 + R() * 18, y: oy + 18 - R() * 3, vx: step * .9, vy: -.35 - R() * .3, life: 18, max: 18, c: C[Math.floor(R() * C.length)], shape: R() < .3 ? "plus" : "px", blink: true });
       if (t % 2 === 0) p.push({ x: ox, y: oy + 8 + R() * 6, vx: 0, vy: 0, life: 20, max: 20, c: C[Math.floor(R() * C.length)], shape: "plus", blink: true });
@@ -1476,13 +1477,14 @@ const FURY_CONFIG = {
 
 // --- Rendimiento ---
 const RENDER = {
-  MAX_PX: 2400,             // ancho máximo del lienzo en píxeles reales (antes 3600)
-  MENU_MAX_PX: 1600,        // ancho máximo del fondo animado de la portada
-  LEVELS: [1, 0.8, 0.65, 0.5],   // escalas de calidad automática
-  SAMPLE: 90,               // fotogramas por medición
-  SLOW_MS: 19,              // si la media pasa de esto (< ~52 fps), baja la calidad
-  FAST_MS: 13.5,            // si va así de sobrado varias mediciones seguidas, la sube
-  UP_AFTER: 4,
+  MAX_PX: 2880,             // ancho máximo del lienzo en píxeles reales (resolución nativa hasta 4K)
+  MENU_MAX_PX: 3840,        // ancho máximo del fondo animado de la portada
+  LEVELS: [1, 0.8],         // calidad automática: como mucho baja al 80 % (antes llegaba al 50 % y se veía peor)
+  SAMPLE: 120,              // fotogramas por medición
+  SLOW_MS: 28,              // solo baja si va de verdad lento (< ~36 fps)…
+  SLOW_RUNS: 3,             // …durante 3 mediciones seguidas (así no se activa con pantallas a 30/50 Hz o tirones puntuales)
+  FAST_MS: 20,              // y vuelve a la máxima calidad en cuanto puede
+  UP_AFTER: 2,
 };
 
 // --- Monturas (una por bioma). duration en s; speed = multiplicador de la velocidad del juego ---
@@ -1716,9 +1718,7 @@ const SEASON_SKINS = [
       echo: { colors: ["#ff5ce1", "#7b5cff", "#41e1ff"], alpha: [0.45, 0.3, 0.16], gap: 5, every: 1 }, label: "Corona de eclipse, ecos y estela de estrellas" } },
   { id: "prisma-celestial", name: "Prisma Celestial", rarity: "Pase", season: 30, sprite: "raptor-supreme", run: ["run1s", "run2s", "run3s", "run4s"],
     pal: { o: "#140a2e", b: "#ff5ce1", s: "#c03aa8", l: "#ffd8f8", a: "#41e1ff", x: "#fff6b0", y: "#7b5cff", e: "#ffffff", p: "#140a2e" }, bg: "#0c0620", ground: "#ffffff",
-    fx: { trail: { type: "prism", colors: ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"] },
-      echo: { colors: ["#ff5ce1", "#41e1ff", "#ffd23f"], alpha: [0.5, 0.32, 0.18], gap: 5, every: 1 },
-      label: "Cambia de color sin parar · halo, bufanda y gemas en órbita · estela prismática" } },
+    fx: { label: "Cambia de color sin parar · halo, capa real y gemas en órbita · cinta arcoíris pegada a la cola" } },   // la cinta y las siluetas se dibujan en sus accesorios (siempre detrás)
 ];
 
 // =====================================================================
@@ -1935,35 +1935,72 @@ function updatePrismSkins(time) {
   const step = Math.floor(time * 9) % 48; if (step === PRISM.step) return;
   PRISM.step = step; const h = PRISM.hue = step * 7.5, s = SE.get("prisma-celestial"); if (!s) return;
   Object.assign(s.pal, { b: hslHex(h, 88, 62), s: hslHex(h, 80, 44), l: hslHex(h, 95, 86), a: hslHex(h + 150, 90, 58), x: hslHex(h + 60, 100, 78), y: hslHex(h + 210, 85, 62), o: hslHex(h + 250, 60, 12), p: hslHex(h + 250, 60, 12) });
-  const e = s.fx.echo; e.colors = [hslHex(h + 90, 95, 65), hslHex(h + 180, 95, 65), hslHex(h + 270, 95, 65)];
   s.bg = hslHex(h + 240, 55, 9);
 }
 const P_ = (c, col, ox, oy, sc, x, y, w = 1, h = 1) => { c.fillStyle = col; c.fillRect((ox + x) * sc, (oy + y) * sc, w * sc, h * sc); };
 const SKIN_ACCESSORIES = {
   "prisma-celestial": {
-    back(c, ox, oy, sc, t) {   // aura y bufanda (por detrás del raptor)
-      const h = PRISM.hue, cx = (ox + 13) * sc, cy = (oy + 10) * sc, r = (15 + Math.sin(t * 0.4) * 1.5) * sc;
-      const g = c.createRadialGradient(cx, cy, 2 * sc, cx, cy, r);
-      g.addColorStop(0, rgbaHex(hslHex(h + 30, 100, 70), 0.42)); g.addColorStop(1, rgbaHex(hslHex(h + 90, 100, 60), 0));
-      c.fillStyle = g; c.fillRect(cx - r, cy - r, r * 2, r * 2);
-      for (let i = 1; i <= 8; i++) {   // bufanda que ondea hacia atrás, del color complementario
-        const x = 11 - i * 1.7, y = 8.5 + Math.sin(t * 0.7 - i * 0.75) * i * 0.32 + i * 0.12, col = hslHex(h + 180 + i * 12, 90, 58 + (i % 2) * 10);
-        P_(c, rgbaHex("#000000", 0.5), ox, oy, sc, x - 0.3, y - 0.3, 2.6, 2.6); P_(c, col, ox, oy, sc, x, y, 2, 2);
-        if (i === 8) P_(c, hslHex(h + 180, 100, 85), ox, oy, sc, x - 1, y + 0.5, 1, 1);
-      }
-    },
-    front(c, ox, oy, sc, t) {   // halo y tres gemas en órbita
-      const h = PRISM.hue, bob = Math.sin(t * 0.5) * 0.8;
-      c.strokeStyle = hslHex(h + 60, 100, 75); c.lineWidth = Math.max(1, sc * 0.9); c.globalAlpha = 0.9;
-      c.beginPath(); c.ellipse((ox + 16.5) * sc, (oy - 3 + bob) * sc, 4.5 * sc, 1.3 * sc, 0, 0, Math.PI * 2); c.stroke();
-      c.globalAlpha = 0.35; c.lineWidth = sc * 2.2; c.stroke(); c.globalAlpha = 1;
-      for (let k = 0; k < 3; k++) {
-        const a = t * 0.22 + k * Math.PI * 2 / 3, x = 12 + Math.cos(a) * 14, y = 10 + Math.sin(a) * 4.5, front = Math.sin(a) > 0, col = hslHex(h + k * 120, 95, front ? 66 : 45);
-        c.globalAlpha = front ? 1 : 0.55;
-        P_(c, col, ox, oy, sc, x, y - 1); P_(c, col, ox, oy, sc, x - 1, y); P_(c, "#ffffff", ox, oy, sc, x, y); P_(c, col, ox, oy, sc, x + 1, y); P_(c, col, ox, oy, sc, x, y + 1);
+    // Por detrás: aura suave, capa real ondeando y las gemas que pasan por detrás de la órbita
+    back(c, ox, oy, sc, t, frame) {
+      const h = PRISM.hue;
+      // Cinta arcoíris: nace en la punta de la cola y se va estrechando hacia atrás; siempre sigue al raptor (también al saltar)
+      const RB6 = ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"], LEN = 20;
+      for (let j = 0; j < LEN; j += 1) {
+        const fade = 1 - j / LEN, wy = Math.sin(t * 0.55 - j * 0.45) * (0.3 + j * 0.06);
+        c.globalAlpha = 0.95 * fade;
+        for (let i = 0; i < 6; i++) P_(c, RB6[(i + Math.floor(t / 3)) % 6], ox, oy, sc, 1 - j, 7.5 + i * 0.75 + wy, 1, 0.75);
       }
       c.globalAlpha = 1;
-      if (t % 6 < 2) P_(c, "#ffffff", ox, oy, sc, 19 + (t % 3), -1 + bob);   // destello en el halo
+      for (let k = 0; k < 3; k++) { const q = (t * 2 + k * 7) % 20; c.globalAlpha = 1 - q / 20; const x = -2 - q, y = 6 + ((k * 5 + Math.floor(t / 4)) % 8);   // destellos sobre la cinta
+        P_(c, "#ffffff", ox, oy, sc, x - 1, y, 3, 1); P_(c, "#ffffff", ox, oy, sc, x, y - 1, 1, 3); }
+      c.globalAlpha = 1;
+      // Dos siluetas de colores justo detrás (velocidad), en el mismo fotograma y altura que el raptor
+      if (frame) for (let k = 2; k >= 1; k--) SE.drawSprite(c, "prisma-celestial", frame, ox - k * 3, oy, sc, t, { tint: hslHex(h + 120 * k, 95, 65), alpha: 0.32 / k });
+      const cx = (ox + 13) * sc, cy = (oy + 10) * sc, r = (14 + Math.sin(t * 0.4) * 1.2) * sc;
+      const g = c.createRadialGradient(cx, cy, 2 * sc, cx, cy, r);
+      g.addColorStop(0, rgbaHex(hslHex(h + 30, 100, 72), 0.3)); g.addColorStop(1, rgbaHex(hslHex(h + 90, 100, 60), 0));
+      c.fillStyle = g; c.fillRect(cx - r, cy - r, r * 2, r * 2);
+      // Capa real: forma suave que cae de los hombros y ondea con la carrera (degradado + ribete dorado)
+      const X = x => (ox + x) * sc, Y = y => (oy + y) * sc, w1 = Math.sin(t * 0.8) * 0.8, w2 = Math.sin(t * 0.8 - 1.4) * 1.2;
+      const top = [[12, 5], [8, 4.6 + w1 * 0.4], [4, 5.2 + w1], [0.5, 6.4 + w2]], bot = [[0, 9.6 + w2], [4, 9 + w1], [8, 8.4 + w1 * 0.4], [11.5, 8]];
+      const cg = c.createLinearGradient(X(12), Y(5), X(0), Y(10));
+      cg.addColorStop(0, hslHex(h + 200, 80, 38)); cg.addColorStop(1, hslHex(h + 240, 85, 58));
+      c.beginPath(); c.moveTo(X(top[0][0]), Y(top[0][1]));
+      for (let i = 1; i < top.length; i++) c.lineTo(X(top[i][0]), Y(top[i][1]));
+      for (const [x, y] of bot) c.lineTo(X(x), Y(y));
+      c.closePath(); c.fillStyle = cg; c.fill();
+      c.lineWidth = Math.max(1, sc * 0.6); c.strokeStyle = hslHex(h + 250, 60, 12); c.stroke();
+      c.beginPath(); c.moveTo(X(bot[0][0]), Y(bot[0][1])); for (const [x, y] of bot) c.lineTo(X(x), Y(y)); c.strokeStyle = "#ffd23f"; c.lineWidth = Math.max(1, sc * 0.7); c.stroke();
+      this.gems(c, ox, oy, sc, t, false);
+    },
+    // Delante: halo de dos tonos con destellos que giran, gemas de la parte delantera y brillo de la corona
+    front(c, ox, oy, sc, t) {
+      const h = PRISM.hue, bob = Math.sin(t * 0.5) * 0.7, hx = (ox + 16.5) * sc, hy = (oy - 3.2 + bob) * sc;
+      c.lineWidth = sc * 2.4; c.strokeStyle = rgbaHex(hslHex(h + 60, 100, 70), 0.35);
+      c.beginPath(); c.ellipse(hx, hy, 4.8 * sc, 1.4 * sc, 0, 0, Math.PI * 2); c.stroke();
+      c.lineWidth = Math.max(1, sc * 0.8); c.strokeStyle = hslHex(h + 60, 100, 82);
+      c.beginPath(); c.ellipse(hx, hy, 4.6 * sc, 1.25 * sc, 0, 0, Math.PI * 2); c.stroke();
+      for (let k = 0; k < 2; k++) {   // dos destellos que recorren el halo
+        const a = t * 0.35 + k * Math.PI; P_(c, "#ffffff", ox, oy, sc, 16 + Math.cos(a) * 4.6, -3.7 + bob + Math.sin(a) * 1.25, 1, 1);
+      }
+      this.gems(c, ox, oy, sc, t, true);
+      const tw = t % 8;   // destello en forma de estrella sobre la corona
+      if (tw < 3) { const k = tw === 1 ? 2 : 1, x = 15 + (Math.floor(t / 8) % 3) * 2, y = -0.5; P_(c, "#ffffff", ox, oy, sc, x - k, y, 2 * k + 1, 1); P_(c, "#ffffff", ox, oy, sc, x, y - k, 1, 2 * k + 1); }
+    },
+    gems(c, ox, oy, sc, t, front) {   // tres gemas en órbita (las de atrás quedan tapadas por el raptor)
+      const h = PRISM.hue;
+      for (let k = 0; k < 3; k++) {
+        const a = t * 0.22 + k * Math.PI * 2 / 3, inFront = Math.sin(a) > 0; if (inFront !== front) continue;
+        const x = 12 + Math.cos(a) * 14, y = 9 + Math.sin(a) * 4.5, col = hslHex(h + k * 120, 95, front ? 64 : 48);
+        c.globalAlpha = front ? 0.35 : 0.2;   // pequeña estela de la gema
+        for (let j = 1; j <= 2; j++) { const b = a - j * 0.12; P_(c, col, ox, oy, sc, 12 + Math.cos(b) * 14, 9 + Math.sin(b) * 4.5, 1, 1); }
+        c.globalAlpha = front ? 1 : 0.7;   // gema en rombo con contorno fino y brillo blanco
+        const gx = (ox + x + 0.5) * sc, gy = (oy + y + 0.5) * sc, R = 1.9 * sc;
+        c.beginPath(); c.moveTo(gx, gy - R); c.lineTo(gx + R * 0.8, gy); c.lineTo(gx, gy + R); c.lineTo(gx - R * 0.8, gy); c.closePath();
+        c.fillStyle = col; c.fill(); c.lineWidth = Math.max(1, sc * 0.45); c.strokeStyle = hslHex(h + k * 120, 70, 18); c.stroke();
+        P_(c, "#ffffff", ox, oy, sc, x - 0.2, y - 0.6, 0.7, 0.7);
+      }
+      c.globalAlpha = 1;
     },
   },
   "eclipse-prisma": {
@@ -9926,7 +9963,7 @@ class Game {
   // ----- Dibujo -----
   // Fondo de la portada: el bioma (cambia cada pocos segundos) y el raptor corriendo, a pantalla completa
   drawMenuBg() {
-    const cv = this.ui.menuBg, k = Math.min((window.devicePixelRatio || 1) * 1.5, RENDER.MENU_MAX_PX / innerWidth) * RENDER.LEVELS[this.quality || 0], cw = Math.round(innerWidth * k), ch = Math.round(innerHeight * k);
+    const cv = this.ui.menuBg, k = Math.min(window.devicePixelRatio || 1, RENDER.MENU_MAX_PX / innerWidth) * RENDER.LEVELS[this.quality || 0], cw = Math.round(innerWidth * k), ch = Math.round(innerHeight * k);
     if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
     const c = cv.getContext("2d"), s = Math.max(cw / W, ch / H), tx = clamp(cw / 2 - 200 * s, cw - W * s, 0), ty = ch - H * s;
     c.setTransform(s, 0, 0, s, tx, ty); c.imageSmoothingEnabled = false;
@@ -9937,12 +9974,13 @@ class Game {
   }
   // Calidad automática: mide el tiempo entre fotogramas y ajusta la resolución
   frameStat(dtMs) {
-    const R = RENDER; this.fAcc = (this.fAcc || 0) + dtMs; this.fN = (this.fN || 0) + 1;
+    const R = RENDER; this.slowRuns = this.slowRuns || 0; this.fAcc = (this.fAcc || 0) + dtMs; this.fN = (this.fN || 0) + 1;
     if (this.fN < R.SAMPLE) return;
     const avg = this.fAcc / this.fN; this.fAcc = 0; this.fN = 0; this.fpsAvg = 1000 / avg;
     const q = this.quality || 0;
-    if (avg > R.SLOW_MS && q < R.LEVELS.length - 1) { this.quality = q + 1; this.fastRuns = 0; this.resize(); }
-    else if (avg < R.FAST_MS && q > 0) { if (++this.fastRuns >= R.UP_AFTER) { this.quality = q - 1; this.fastRuns = 0; this.resize(); } }
+    if (avg > R.SLOW_MS && q < R.LEVELS.length - 1) { if (++this.slowRuns >= R.SLOW_RUNS) { this.quality = q + 1; this.slowRuns = 0; this.fastRuns = 0; this.resize(); } return; }
+    this.slowRuns = 0;
+    if (avg < R.FAST_MS && q > 0) { if (++this.fastRuns >= R.UP_AFTER) { this.quality = q - 1; this.fastRuns = 0; this.resize(); } }
     else this.fastRuns = 0;
   }
   draw() {
