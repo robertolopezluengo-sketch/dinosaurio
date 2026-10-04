@@ -37,6 +37,7 @@ La portada ocupa toda la pantalla, con el escenario del juego animado de fondo (
 - **Código secreto:** en Opciones → Código secreto. Lo desbloquea todo: todas las skins (tienda, logros, huevos y pase), editor, checkpoints, pase completo, logros, árbol y álbum, nivel secreto desde cualquier partida, 99 999 monedas, 999 huevos y 999 fósiles, y empezar cada partida con todas las mejoras (esto último se puede desactivar).
 - **Música por bioma:** cada uno de los 11 biomas tiene su propia melodía (y también la portada y el jefe secreto), generada con Web Audio.
 - **App instalable (PWA):** `manifest.webmanifest`, `sw.js` e iconos. Abriendo el juego desde una dirección web (por ejemplo GitHub Pages) se puede instalar en el móvil o el ordenador y jugar sin conexión, a pantalla completa y en horizontal (Opciones → Instalar app).
+- **Google Play:** en `store/` están las capturas, el gráfico destacado y `GOOGLE_PLAY.md` con los textos de la ficha y los pasos para publicarlo como app de Android (PWABuilder). Política de privacidad en `privacy.html`.
 - **Rendimiento:** resolución interna con tope y calidad automática si el equipo no llega a 60 fps; los sprites se cachean.
 - **Tienda:** 16 skins del kit, 3 exclusivas de logros, checkpoints y editor de skins propias (3 ranuras). Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un rugido especial con pose animada.
 - **Ruleta:** apuestas de 10 a 500 monedas del juego y un giro gratis diario.
