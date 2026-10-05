@@ -766,11 +766,45 @@
   .net-podium em { font-style: normal; font-family: var(--f-title); font-size: 16px; color: var(--weak); } .net-podium small { font-size: 11px; color: var(--text-dim); text-align: right; }
   .net-podium .me { outline: 2px solid var(--weak); } .net-podium .p1 { background: linear-gradient(90deg, rgba(255,210,63,.25), rgba(35,27,56,.92)); }
   @media (max-width: 640px) { .net-players { grid-template-columns: 1fr 1fr; } }
+  /* Modo espectador online */
+  .spec-bar { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 6; display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: rgba(22,17,31,.88); border: 2px solid var(--line); border-top: 4px solid var(--pc, var(--weak)); box-shadow: 4px 4px 0 var(--line); }
+  .spec-bar .btn { min-width: 0; padding: 6px 12px; }
+  .spec-bar .btn:disabled { opacity: .35; }
+  .spec-who { display: flex; flex-direction: column; align-items: center; min-width: 140px; line-height: 1.25; }
+  .spec-who small { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+  .spec-who b { font-family: var(--f-title); font-weight: 400; font-size: 14px; color: var(--pc, var(--text)); }
+  .spec-who em { font-style: normal; font-size: 11px; color: var(--weak); }
+  /* Controles */
+  .ctrl { max-width: 760px; }
+  .ctrl .tab.sel { background: var(--surface-2); color: var(--weak); }
+  .ctrl-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 14px; }
+  .ctrl-presets .btn { display: flex; flex-direction: column; gap: 4px; text-align: left; align-items: flex-start; padding: 10px 12px; }
+  .ctrl-presets .btn small { font-size: 10px; color: var(--text-dim); text-transform: none; letter-spacing: 0; }
+  .ctrl-presets .btn.sel { outline: 3px solid var(--weak); background: var(--surface-2); }
+  .ctrl-list { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl-row { display: grid; grid-template-columns: 1fr 130px 130px; gap: 8px; align-items: center; padding: 6px 10px; background: var(--surface-2); border: 2px solid var(--line); }
+  .ctrl-row span { font-size: 13px; text-align: left; }
+  .ctrl-key { font-family: var(--f-title); font-size: 12px; padding: 8px 6px; background: #241c38; color: var(--text); border: 2px solid var(--line); box-shadow: inset 0 -3px 0 rgba(0,0,0,.35); cursor: pointer; }
+  .ctrl-key:hover { border-color: var(--weak); }
+  .ctrl-key.empty { color: var(--text-dim); font-family: inherit; }
+  .ctrl-key.wait { background: var(--weak); color: #16111f; animation: ctrlPulse .8s ease-in-out infinite alternate; }
+  @keyframes ctrlPulse { to { filter: brightness(1.25); transform: scale(1.04); } }
+  .ctrl-vs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+  .ctrl-vs h3 { font-family: var(--f-title); font-weight: 400; font-size: 13px; margin: 0 0 8px; color: var(--weak); }
+  .ctrl-vs .ctrl-row { grid-template-columns: 1fr 92px 92px; }
+  @media (max-width: 700px) { .ctrl-presets, .ctrl-vs { grid-template-columns: 1fr; } .ctrl-row { grid-template-columns: 1fr 96px 96px; } }
+  /* Mascotas: estampados y auras */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 11px; padding: 5px 9px; background: #241c38; color: var(--text); border: 2px solid var(--line); cursor: pointer; }
+  .chip:hover { border-color: var(--weak); } .chip.sel { background: var(--weak); color: #16111f; }
+  .pet-ab { color: var(--go); }
+  .skin.item.pets { border-color: var(--rc, var(--line)); }
 </style>
 </head>
 <body>
 <div id="stage"><canvas id="game"></canvas><button class="btn ghost hidden" id="tutSkip">Saltar tutorial ⏭</button>
-  <div id="tip" class="tip-box hidden"><canvas id="tipCanvas" width="160" height="90"></canvas><div><small>CONSEJO</small><p id="tipText"></p><button class="btn primary" id="tipOk">Entendido <kbd>W</kbd></button></div></div>
+  <div id="tip" class="tip-box hidden"><canvas id="tipCanvas" width="160" height="90"></canvas><div><small>CONSEJO</small><p id="tipText"></p><button class="btn primary" id="tipOk">Entendido <kbd data-k="jump">W</kbd></button></div></div>
+  <div id="specBar" class="spec-bar hidden"><button class="btn" id="specPrev" title="Anterior">◀</button><div class="spec-who"><small>👁 ESPECTANDO</small><b id="specName"></b><em id="specInfo"></em></div><button class="btn" id="specNext" title="Siguiente">▶</button><button class="btn" id="specBoard" title="Clasificación">🏆</button></div>
 </div>
 <div id="touch">
   <button data-act="laneUp" class="t-lane"><b>▲</b><small>Carril</small></button>
@@ -780,8 +814,8 @@
   <button data-act="pause" class="t-pause"><b>❚❚</b></button>
 </div>
 <p class="help">
-  <kbd>W</kbd> saltar (doble salto en el aire) · <kbd>S</kbd> deslizarse / caída rápida ·
-  <kbd>A</kbd>/<kbd>D</kbd> carril de arriba / abajo · <kbd>E</kbd> rugido · <kbd>P</kbd> pausa
+  <kbd data-k="jump" data-all="1">W</kbd> saltar (doble salto en el aire) · <kbd data-k="slide" data-all="1">S</kbd> deslizarse / caída rápida ·
+  <kbd data-k="laneUp" data-all="1">A</kbd> / <kbd data-k="laneDown" data-all="1">D</kbd> carril de arriba / abajo · <kbd data-k="roar" data-all="1">E</kbd> rugido · <kbd data-k="pause">P</kbd> pausa · <a href="#" id="helpCtrl" style="color:inherit">cambiar teclas</a>
 </p>
 <div id="toasts"></div>
 
@@ -858,6 +892,7 @@
       <button class="mm-back" data-back>← Opciones</button>
       <div class="mm-tiles">
         <button class="mm-tile" id="btnManual"><i>📘</i><b>Manual</b><small>Todo sobre el juego</small></button>
+        <button class="mm-tile" id="btnControls"><i>🎮</i><b>Controles</b><small>Elige tus teclas</small></button>
         <button class="mm-tile" id="btnTutorial"><i>🎓</i><b>Tutorial</b><small>Nivel de práctica</small></button>
         <button class="mm-tile" id="btnBackup"><i>💾</i><b>Guardar / Cargar</b><small>Copia de tu progreso</small><em class="mm-dot hidden" id="dotBackup"></em></button>
         <button class="mm-tile" id="btnMute"><i>🔊</i><b>Sonido: SÍ</b></button>
@@ -878,7 +913,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 25 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 26 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -887,7 +922,7 @@
   <div class="card scr-card play-card">
     <button class="mm-back" id="playBack">← Volver</button>
     <h2 class="scr-title" id="playTitle">Elige modo</h2>
-    <p class="touch-hint hidden" id="vsHint" style="margin:-4px 0 12px">J1 (carril de arriba): <kbd>W</kbd> saltar · <kbd>S</kbd> deslizarse · <kbd>E</kbd> rugido · <kbd>A</kbd> trampa — J2 (carril de abajo): <kbd>↑</kbd> saltar · <kbd>↓</kbd> deslizarse · <kbd>→</kbd> rugido · <kbd>←</kbd> trampa. Cada 6 s ganas una trampa para el rival. Sin jefes; gana quien aguante más.</p>
+    <p class="touch-hint hidden" id="vsHint" style="margin:-4px 0 12px">J1 (carril de arriba): <kbd data-k="vs1.jump">W</kbd> saltar · <kbd data-k="vs1.slide">S</kbd> deslizarse · <kbd data-k="vs1.roar">E</kbd> rugido · <kbd data-k="vs1.trap">A</kbd> trampa — J2 (carril de abajo): <kbd data-k="vs2.jump">↑</kbd> saltar · <kbd data-k="vs2.slide">↓</kbd> deslizarse · <kbd data-k="vs2.roar">→</kbd> rugido · <kbd data-k="vs2.trap">←</kbd> trampa. Cada 6 s ganas una trampa para el rival. Sin jefes; gana quien aguante más.</p>
     <div class="modes">
       <button class="mode" data-mode="normal"><i>🦖</i><b>NORMAL</b><small id="descNormal"></small></button>
       <button class="mode" data-mode="easy"><i>🌱</i><b>FÁCIL</b><small id="descEasy"></small></button>
@@ -897,7 +932,7 @@
     <div id="startBox"><h3>Empezar desde</h3>
     <div id="startLevels" class="levels"></div></div>
     <p class="touch-hint" id="noCheckpoints">Compra checkpoints en la tienda para empezar en niveles más avanzados.</p>
-    <button class="mm-btn mm-play scr-go" id="btnGo">► ¡A CORRER!<small>o pulsa <kbd>W</kbd></small></button>
+    <button class="mm-btn mm-play scr-go" id="btnGo">► ¡A CORRER!<small>o pulsa <kbd data-k="jump">W</kbd></small></button>
   </div>
 </div>
 
@@ -908,8 +943,9 @@
     <p class="scr-sub" id="pauseInfo"></p>
     <div class="pause-cols">
       <nav class="mm-panel pause-btns">
-        <button class="mm-btn mm-play" id="btnResume">► CONTINUAR<small>o pulsa <kbd>P</kbd></small></button>
+        <button class="mm-btn mm-play" id="btnResume">► CONTINUAR<small>o pulsa <kbd data-k="pause">P</kbd></small></button>
         <button class="mm-btn" id="btnPauseManual"><i>📘</i>Manual</button>
+        <button class="mm-btn" id="btnPauseCtrl"><i>🎮</i>Controles</button>
         <button class="mm-btn" id="btnPauseMenu"><i>🏠</i>Salir al menú<small>Se guardan las monedas</small></button>
       </nav>
       <div id="pauseBuild" class="build-box"></div>
@@ -1024,7 +1060,7 @@
       <button class="btn" id="upSkip">Saltar</button>
       <div class="wallet"><span class="coin"></span> <span id="upCoins">0</span></div>
     </div>
-    <p class="touch-hint" style="margin:0"><kbd>A</kbd>/<kbd>D</kbd> elegir carta · <kbd>W</kbd> coger</p>
+    <p class="touch-hint" style="margin:0"><kbd data-k="laneUp">A</kbd>/<kbd data-k="laneDown">D</kbd> elegir carta · <kbd data-k="jump">W</kbd> coger</p>
     <div id="upBuild" class="build-row"></div>
   </div>
 </div>
@@ -1065,7 +1101,7 @@
         <div class="mm-tile net-join"><i>🔑</i><b>Unirse a una sala</b><input id="netCodeIn" maxlength="4" placeholder="CÓDIGO" autocomplete="off" spellcheck="false"><button class="btn small purple" id="netJoin">Entrar</button></div>
       </div>
       <div id="netSearching" class="net-searching hidden"><span class="net-spin"></span><b id="netSearchTxt">Buscando rival…</b><button class="btn small" id="netCancel">Cancelar</button></div>
-      <p class="touch-hint">De 2 a 4 jugadores. Todos corréis el mismo recorrido a la vez, sin jefes ni mejoras; los rivales se ven como fantasmas. Cada 8 s ganas una <b>trampa</b> (tecla <kbd>Q</kbd> o botón 🎯) que aparece delante del rival que va justo por delante de ti. Gana quien llegue más lejos.</p>
+      <p class="touch-hint">De 2 a 4 jugadores. Todos corréis el mismo recorrido a la vez, sin jefes ni mejoras; los rivales se ven como fantasmas. Cada 8 s ganas una <b>trampa</b> (tecla <kbd data-k="trap">Q</kbd> o botón 🎯) que aparece delante del rival que va justo por delante de ti. Gana quien llegue más lejos.</p>
     </div>
     <div id="netRoom" class="hidden">
       <div class="net-code">SALA <b id="netCode">ABCD</b><small>Pasa este código a tus amigos para que entren</small></div>
@@ -1082,6 +1118,7 @@
     <h2 class="scr-title" id="nrTitle">¡ELIMINADO!</h2>
     <p class="scr-sub" id="nrSub"></p>
     <div id="nrList" class="net-podium"></div>
+    <div class="actions"><button class="btn primary hidden" id="nrSpec">👁 Volver a espectar</button></div>
     <div class="actions" id="nrActions"><button class="btn primary" id="nrAgain">↻ Revancha (misma sala)</button><button class="btn" id="nrExit">Salir</button></div>
   </div>
 </div>
@@ -1124,6 +1161,15 @@
     <div id="treeBox" class="tree-box"><canvas id="treeLines"></canvas></div>
     <div id="treeInfo" class="tree-info"></div>
     <div class="actions"><button class="btn ghost" id="treeReset">Reiniciar árbol</button></div>
+  </div>
+</div>
+
+<!-- Controles -->
+<div id="ctrlScr" class="overlay scr hidden">
+  <div class="card achs ctrl">
+    <div class="shop-head"><h2>Controles</h2><button class="btn" id="ctrlBack">← Volver</button></div>
+    <div class="tabs" id="ctrlTabs"><button class="tab" data-t="solo">1 jugador y online</button><button class="tab" data-t="vs">Multijugador local</button></div>
+    <div id="ctrlBody"></div>
   </div>
 </div>
 
@@ -1185,7 +1231,7 @@
       <h3 class="shop-sec">📢 Rugidos</h3><div id="roarGrid" class="grid"></div>
     </div>
     <div id="petPane" class="hidden">
-      <p class="touch-hint">Tu mascota corre por el carril del medio, entre los dos carriles, y cada pocos segundos te trae una moneda que tengas cerca. Ponle nombre y colores.</p>
+      <p class="touch-hint">Tu mascota corre por el carril del medio y te ayuda: todas traen monedas y algunas también huevos o lanzan fuego a los obstáculos. Ponle nombre, colores, estampado y un aura.</p>
       <div id="petCustom" class="pet-custom hidden">
         <canvas id="petPreview" width="240" height="120"></canvas>
         <div class="pet-ctrl">
@@ -1193,6 +1239,8 @@
           <small class="touch-hint">Especie: <b id="petSpecies"></b></small>
           <div class="ed-row"><span class="ed-lbl">Cuerpo</span><div class="swatches" id="petBody"></div></div>
           <div class="ed-row"><span class="ed-lbl">Detalle</span><div class="swatches" id="petAccent"></div></div>
+          <div class="ed-row"><span class="ed-lbl">Estampado</span><div class="chips" id="petPattern"></div></div>
+          <div class="ed-row"><span class="ed-lbl">Aura</span><div class="chips" id="petAura"></div></div>
           <button class="btn ghost" id="petNone">Ir sin mascota</button>
         </div>
       </div>
@@ -2846,7 +2894,8 @@ class SaveManager {
         if (this.data.roars.includes(d.roar)) this.data.roar = d.roar;
         if (Array.isArray(d.pets)) this.data.pets = d.pets.filter(t => PET_BY_ID[t]);
         if (obj(d.pet) && this.data.pets.includes(d.pet.id)) { const hx = v => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
-          this.data.pet = { id: d.pet.id, body: hx(d.pet.body) ? d.pet.body : PET_BY_ID[d.pet.id].body, accent: hx(d.pet.accent) ? d.pet.accent : PET_BY_ID[d.pet.id].accent, name: String(d.pet.name || PET_BY_ID[d.pet.id].name).slice(0, 14) }; }
+          this.data.pet = { id: d.pet.id, body: hx(d.pet.body) ? d.pet.body : PET_BY_ID[d.pet.id].body, accent: hx(d.pet.accent) ? d.pet.accent : PET_BY_ID[d.pet.id].accent, name: String(d.pet.name || PET_BY_ID[d.pet.id].name).slice(0, 14),
+            pattern: PET_PATTERN_IDS.includes(d.pet.pattern) ? d.pet.pattern : "liso", aura: PET_AURA_IDS.includes(d.pet.aura) ? d.pet.aura : "none" }; }
         for (const k of ["nick", "cloudCode", "cloudAt"]) if (typeof d[k] === "string") this.data[k] = d[k].slice(0, 40);
         this.data.secretUnlocked = !!d.secretUnlocked;
         this.data.codeUsed = !!d.codeUsed; this.data.allUpgrades = !!d.allUpgrades;
@@ -2894,7 +2943,8 @@ class SaveManager {
     const own = id && this.data[kind].includes(id);
     if (kind === "trails") this.data.trail = own ? id : null;
     else if (kind === "roars") this.data.roar = own ? id : null;
-    else if (kind === "pets") { const sp = PET_BY_ID[id]; this.data.pet = own ? { id, body: sp.body, accent: sp.accent, name: (this.data.pet && this.data.pet.name && this.data.pet.id === id) ? this.data.pet.name : sp.name } : null; }
+    else if (kind === "pets") { const sp = PET_BY_ID[id]; const prev = this.data.pet || {};   // el estampado y el aura se conservan al cambiar de especie
+      this.data.pet = own ? { id, body: sp.body, accent: sp.accent, name: (prev.name && prev.id === id) ? prev.name : sp.name, pattern: prev.pattern || "liso", aura: prev.aura || "none" } : null; }
     this.syncCosmetics(); this.save();
   }
   addCoins(n) { this.data.coins += n; this.save(); }
@@ -7496,6 +7546,8 @@ class UI {
     bind("btnHistory", () => game.openHistory("over"));
     bind("btnMenuHistory", () => game.openHistory("menu"));
     bind("btnManual", () => game.openManual("menu"));
+    bind("btnControls", () => game.openControls());
+    $("helpCtrl").addEventListener("click", e => { e.preventDefault(); e.currentTarget.blur(); if (game.state === "over" && game.netRace) return; game.sfx.click(); game.openControls(); });
     bind("btnMute", () => game.toggleMute());
     bind("btnRetry", () => game.retry());
     bind("btnVersus", () => game.openPlay(true));
@@ -7506,6 +7558,7 @@ class UI {
     bind("playBack", () => game.showMenu());
     bind("btnResume", () => game.setPaused(false));
     bind("btnPauseManual", () => game.openManual("pause"));
+    bind("btnPauseCtrl", () => game.openControls("pause"));
     bind("btnPauseMenu", () => game.showMenu());
     this.play.querySelectorAll(".mode").forEach(b => b.addEventListener("click", () => { game.sfx.click(); this.selMode = b.dataset.mode; this.showPlay(true); }));
     const E = CONFIG.EASY;
@@ -7754,7 +7807,7 @@ class UI {
       this.text(c, `NIVEL ${L.level} · ${L.biome.name.toUpperCase()}`, W / 2, 22, 16, L.biome.accent, "center");
       // Cuenta atrás hasta el boss del nivel
       const left = B.nextAt - g.distScore, lvl = Math.floor(B.nextAt / CONFIG.POINTS_PER_LEVEL) + 1;
-      if (!B.active && !g.tutorial && (!g.netRace || g.netCoop) && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
+      if (!B.active && !g.tutorial && (!g.netRace || g.netCoop) && !g.net.spec && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
     }
     if (g.randomMod) this.pill(c, `${g.daily ? "📅 DIARIA · " + g.randomMod.icon : "🎲"} ${g.randomMod.name.toUpperCase()}`, W / 2, B.boss && B.boss.state !== "leave" ? 98 : 74, 10, "#e4d0ff", "rgba(80,40,140,0.85)");
     const Wt = g.weather;   // clima: icono y nombre (al empezar, también qué cambia)
@@ -7800,7 +7853,7 @@ class UI {
     drawBuildHud(c, g);
     if (g.stat("eggArrow")) drawEggArrow(c, g);
 
-    this.drawRoarRing(c, W - 48, 46, g.roarCd, g.roarCdMax || g.mode.roarCooldown, "E", "RUGIDO");
+    this.drawRoarRing(c, W - 48, 46, g.roarCd, g.roarCdMax || g.mode.roarCooldown, g.touchMode ? "" : g.controls.label("roar"), "RUGIDO");
     if (g.netRace) {   // carrera online: posiciones, trampas y cuenta atrás
       g.net.drawHud(c, this);
       if (g.netWait > 0) {
@@ -7843,8 +7896,8 @@ class UI {
     c.font = '14px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.gold; c.fillText(String(g.runCoinsInt), 38, 76);
     c.font = '10px "Raptor Pixel Display", monospace'; c.fillStyle = UI_T.dim; c.fillText(`MULTIJUGADOR · ${g.mode.name.toUpperCase()}`, 96, 76);
     this.text(c, `NIVEL ${L.level} · ${L.biome.name.toUpperCase()}`, W / 2, 22, 16, L.biome.accent, "center");
-    this.drawRoarRing(c, W - 118, 46, g.player.roarCd, g.player.roarCdMax, "E", "J1 RUGIDO", UI_T.go);
-    this.drawRoarRing(c, W - 48, 46, g.p2.roarCd, g.p2.roarCdMax, "→", "J2 RUGIDO", UI_T.info);
+    this.drawRoarRing(c, W - 118, 46, g.player.roarCd, g.player.roarCdMax, g.controls.label("roar", "vs1"), "J1 RUGIDO", UI_T.go);
+    this.drawRoarRing(c, W - 48, 46, g.p2.roarCd, g.p2.roarCdMax, g.controls.label("roar", "vs2"), "J2 RUGIDO", UI_T.info);
   }
   drawRoarRing(c, cx, cy, cd, cdMax, key, label, labelCol) {
     const g = this.game, r = 26, ready = cd <= 0;
@@ -7854,8 +7907,9 @@ class UI {
     c.strokeStyle = ready ? (Math.floor(g.time * 4) % 2 ? UI_T.roar : "#ffc078") : UI_T.roar;
     c.beginPath(); c.arc(cx, cy, r - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cd / (cdMax || 1))); c.stroke();
     if (ready) { c.fillStyle = UI_T.roar; c.beginPath(); c.arc(cx, cy, r - 9, 0, Math.PI * 2); c.fill(); }
-    c.font = '20px "Raptor Pixel Display", monospace'; c.textAlign = "center"; c.textBaseline = "middle";
-    c.fillStyle = ready ? "#16111f" : UI_T.text; c.fillText(ready ? key : String(Math.ceil(cd)), cx, cy + 1);
+    const kt = ready ? key : String(Math.ceil(cd));   // teclas largas (Espacio, Intro…) en letra más pequeña
+    c.font = `${kt.length > 3 ? 9 : kt.length > 1 ? 13 : 20}px "Raptor Pixel Display", monospace`; c.textAlign = "center"; c.textBaseline = "middle";
+    c.fillStyle = ready ? "#16111f" : UI_T.text; c.fillText(kt.length > 5 ? kt.slice(0, 4) + "." : kt, cx, cy + 1);
     this.text(c, label, cx, cy + r + 16, 10, labelCol || (ready ? UI_T.roar : UI_T.dim), "center");
   }
   drawBanner(c) {
@@ -7909,7 +7963,7 @@ class Shop {
     for (const [slot] of HAT_SLOTS) for (const h of HATS.filter(x => x.slot === slot)) this.makeItem($("hatGrid-" + slot), "hats", h, { hat: { [slot]: h.id }, trailFx: null });
     for (const t of SHOP_TRAILS) this.makeItem($("trailGrid"), "trails", t, { hat: null, trailFx: t.id });
     for (const r of SHOP_ROARS) this.makeItem($("roarGrid"), "roars", r, { hat: null, trailFx: null, roar: r });
-    for (const p of PET_SPECIES) this.makeItem($("petGrid"), "pets", p, {});
+    for (const p of PET_SPECIES.slice().sort((a, b) => a.price - b.price)) this.makeItem($("petGrid"), "pets", p, {});
     this.petEditor = new PetEditor(game, this);
     this.eggs = new EggShop(game, this);
     this.designGrid = $("designGrid");
@@ -8016,7 +8070,9 @@ class Shop {
   }
   makeItem(parent, kind, it, st) {
     const card = document.createElement("div"); card.className = "skin item " + kind;
-    const extra = kind === "roars" ? `<div class="fx-label roar-label">🔊 ${{ fire: "Fuego", ice: "Hielo", bolt: "Rayos", shards: "Cristales", ghost: "Ecos", stars: "Estrellas", rainbow: "Arcoíris", sun: "Destello solar", prism: "Prisma" }[it.type] || ""}${it.wings ? " · alas" : ""}</div>` : `<div class="fx-label">${it.desc || ""}</div>`;
+    const ab = kind === "pets" && PET_ABILITIES[it.ab];
+    if (kind === "pets") card.style.setProperty("--rc", RARITY_COLORS[it.rarity] || "#d6d3cb");
+    const extra = kind === "pets" ? `<div class="skin-tags">${rarityTag(it.rarity)}</div><div class="fx-label">${it.desc}</div>${ab ? `<div class="fx-label pet-ab">${ab.icon} ${ab.desc(it.cd)}</div>` : ""}` : kind === "roars" ? `<div class="fx-label roar-label">🔊 ${{ fire: "Fuego", ice: "Hielo", bolt: "Rayos", shards: "Cristales", ghost: "Ecos", stars: "Estrellas", rainbow: "Arcoíris", sun: "Destello solar", prism: "Prisma" }[it.type] || ""}${it.wings ? " · alas" : ""}</div>` : `<div class="fx-label">${it.desc || ""}</div>`;
     card.innerHTML = `<canvas width="120" height="84"></canvas><div class="skin-name">${it.name}</div>${extra}
       <div class="skin-price"><span class="coin"></span> ${it.price}</div><button class="btn small"></button><div class="toast">¡Comprado!</div>`;
     const e = { kind, it, card, btn: card.querySelector("button"), ctx: card.querySelector("canvas").getContext("2d"), st: Object.assign({ tick: randInt(0, 7), speed: 2, trail: null, advance: true }, st) };
@@ -8328,7 +8384,16 @@ function drawPetPreview(c, pet, st, w, h, sc) {
   c.fillStyle = "#2f3658"; c.fillRect(0, 0, w, h); const gy = h - 10;
   c.fillStyle = "#4a5282"; c.fillRect(0, gy, w, 3);
   c.globalAlpha = 0.35; for (let i = 0; i < 5; i++) c.fillRect(mod(i * 31 - st.tick * 6, w + 10) - 10, gy + 5, 6, 2); c.globalAlpha = 1;
-  c.save(); c.translate(Math.round(w / 2 - 8 * sc), gy); drawPetSprite(c, pet, st.tick * CONFIG.SKIN_TICK, sc, 0); c.restore();
+  const t = st.tick * CONFIG.SKIN_TICK, cx = w / 2, cy = gy - 6 * sc - (sp.fly ? 26 : 0);
+  // Aura y efectos propios (fuego del fénix, brillos del cristal…)
+  const kinds = []; if (pet.aura && pet.aura !== "none") kinds.push(pet.aura); if (sp.flame) kinds.push("fuego"); if (sp.sparkle) kinds.push("chispas");
+  st.fx = st.fx || []; const dt = CONFIG.SKIN_TICK;
+  if (kinds.length) for (let i = 0; i < kinds.length * 2; i++) { const p = petAuraParticle(choice(kinds), cx, cy, pet.accent || sp.accent); p.x += (p.vx < -40 ? 10 : 0); st.fx.push(p); }
+  for (const p of st.fx) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; } st.fx = st.fx.filter(p => p.t < p.life).slice(-60);
+  const back = p => p.kind === "fuego" || p.kind === "arcoiris" || p.kind === "sombra";
+  for (const p of st.fx) if (back(p)) drawAuraParticle(c, p);
+  c.save(); c.translate(Math.round(w / 2 - 8 * sc), gy); drawPetSprite(c, pet, t, sc, 0); c.restore();
+  for (const p of st.fx) if (!back(p)) drawAuraParticle(c, p);
 }
 // =====================================================================
 //  PetEditor: personaliza la mascota elegida (nombre, color del cuerpo y color de detalle)
@@ -8356,7 +8421,13 @@ class PetEditor {
     const set = (k, v) => { p[k] = v; this.g.save.save(); this.refresh(); };
     this.swatches(document.getElementById("petBody"), p.body, v => set("body", v));
     this.swatches(document.getElementById("petAccent"), p.accent, v => set("accent", v));
-    document.getElementById("petSpecies").textContent = PET_BY_ID[p.id].name;
+    const sp = PET_BY_ID[p.id], ab = PET_ABILITIES[sp.ab];
+    document.getElementById("petSpecies").innerHTML = `${sp.name} ${rarityTag(sp.rarity)}${ab ? ` · ${ab.icon} ${ab.name}: ${ab.desc(sp.cd)}` : ""}`;
+    const chips = (id, list, cur, key) => { const el = document.getElementById(id); el.innerHTML = "";
+      for (const [v, name, icon] of list) { const b = document.createElement("button"); b.className = "chip" + (v === (cur || list[0][0]) ? " sel" : ""); b.textContent = (icon ? icon + " " : "") + name;
+        b.addEventListener("click", e => { e.currentTarget.blur(); this.g.sfx.click(); set(key, v); }); el.appendChild(b); } };
+    chips("petPattern", PET_PATTERNS, p.pattern, "pattern");
+    chips("petAura", PET_AURAS, p.aura, "aura");
   }
   update(dt) { const p = this.g.save.data.pet; if (!p) return; tickStates([this.st], dt); if (this.st.advance) { drawPetPreview(this.ctx, p, this.st, 240, 120, 6); this.st.advance = false; } }
 }
@@ -8922,15 +8993,15 @@ const MANUAL_SECTIONS = [
     </ul>` },
   { title: "Controles", html: () => `
     <table><tr><th>Tecla</th><th>Acción</th></tr>
-      <tr><td>${kbd("W")}</td><td>Saltar. Otra vez en el aire = doble salto.</td></tr>
-      <tr><td>${kbd("S")}</td><td>En el suelo: deslizarse (${secs(CONFIG.SLIDE_DURATION)}). En el aire: caída rápida.</td></tr>
-      <tr><td>${kbd("A")}</td><td>Ir al carril de arriba.</td></tr>
-      <tr><td>${kbd("D")}</td><td>Ir al carril de abajo.</td></tr>
-      <tr><td>${kbd("E")}</td><td>Rugido (recarga ${secs(CONFIG.ROAR_COOLDOWN)}, ${secs(CONFIG.EASY.ROAR_COOLDOWN)} en Fácil, ${secs(CONFIG.HARD.ROAR_COOLDOWN)} en Difícil). Con la <b>barra de furia</b> llena: <b>súper rugido</b>, que destruye todo lo que hay en pantalla.</td></tr>
-      <tr><td>${kbd("P")}</td><td>Pausa (también congela los combates).</td></tr>
+      <tr><td>${kbd(game.controls.labels("jump"))}</td><td>Saltar. Otra vez en el aire = doble salto.</td></tr>
+      <tr><td>${kbd(game.controls.labels("slide"))}</td><td>En el suelo: deslizarse (${secs(CONFIG.SLIDE_DURATION)}). En el aire: caída rápida.</td></tr>
+      <tr><td>${kbd(game.controls.labels("laneUp"))}</td><td>Ir al carril de arriba.</td></tr>
+      <tr><td>${kbd(game.controls.labels("laneDown"))}</td><td>Ir al carril de abajo.</td></tr>
+      <tr><td>${kbd(game.controls.labels("roar"))}</td><td>Rugido (recarga ${secs(CONFIG.ROAR_COOLDOWN)}, ${secs(CONFIG.EASY.ROAR_COOLDOWN)} en Fácil, ${secs(CONFIG.HARD.ROAR_COOLDOWN)} en Difícil). Con la <b>barra de furia</b> llena: <b>súper rugido</b>, que destruye todo lo que hay en pantalla.</td></tr>
+      <tr><td>${kbd(game.controls.labels("pause"))}</td><td>Pausa (también congela los combates).</td></tr>
       <tr><td>${kbd("M")}</td><td>Silenciar.</td></tr>
     </table>
-    <p>Las teclas funcionan en mayúsculas y minúsculas. En la elección de mejora: ${kbd("A")}/${kbd("D")} elegir carta, ${kbd("W")} cogerla, ${kbd("R")} barajar y ${kbd("Q")} saltar. Montado, cada montura cambia lo que hacen ${kbd("W")} y ${kbd("S")} (mira la sección Monturas).</p>
+    <p>Son las teclas que tienes ahora: cámbialas en <b>Opciones → 🎮 Controles</b> (WASD, flechas, las dos o las que quieras; también las del multijugador local). Esc siempre pausa. Las teclas funcionan en mayúsculas y minúsculas. En la elección de mejora: ${kbd("A")}/${kbd("D")} elegir carta, ${kbd("W")} cogerla, ${kbd("R")} barajar y ${kbd("Q")} saltar. Montado, cada montura cambia lo que hacen ${kbd("W")} y ${kbd("S")} (mira la sección Monturas).</p>
     <h4>Furia</h4>
     <p>La barra de furia (debajo del rugido) se llena esquivando por los pelos (+${FURY_CONFIG.NEAR_MISS}), recogiendo huevos (+${FURY_CONFIG.EGG}), destruyendo con el rugido (+${FURY_CONFIG.ROAR_KILL}) y dañando a los bosses (+${FURY_CONFIG.BOSS_HIT}). Si pasas ${FURY_CONFIG.DECAY_AFTER} s sin sumar, se va vaciando. Durante los combates contra jefes el súper rugido no se puede usar.</p>
     <h4>Móvil</h4>
@@ -9031,7 +9102,9 @@ const MANUAL_SECTIONS = [
     <h4>Editor de skins</h4><p>Cuesta ${CONFIG.EDITOR_PRICE} monedas una sola vez. Dibuja tu raptor <b>píxel a píxel</b> (lápiz, goma, rellenar, cuentagotas, voltear y borrar todo) con 13 colores de paleta que puedes cambiar cuando quieras, o empieza desde una plantilla. Elige fondo, suelo y efecto y guárdalo en una de sus ${CONFIG.EDITOR_SLOTS} ranuras. Las patas se animan solas y la pose agachada se genera a partir de tu dibujo. Las plantillas y efectos de skins Épicos o superiores solo están disponibles si tienes esos skins.</p>
     <h4>Accesorios</h4><p>En la pestaña <b>🎩 Accesorios</b>, con 3 huecos (uno de cada a la vez): ${HAT_SLOTS.map(([k, n]) => `<b>${n}</b>: ${HATS.filter(h => h.slot === k).map(h => `${h.name} (${h.price})`).join(", ")}`).join(". ")}. Se ponen encima de cualquier skin y te siguen al correr, saltar y agacharte.</p>
     <h4>Estelas y rugidos</h4><p>En <b>✨ Estelas y rugidos</b>. Estelas: ${SHOP_TRAILS.map(t => `${t.name} (${t.price})`).join(", ")}. Rugidos: ${SHOP_ROARS.map(r => `${r.name} (${r.price})`).join(", ")}. Valen para cualquier skin: la estela se suma a la del skin y el rugido sustituye al suyo (solo cambia el aspecto).</p>
-    <h4>Mascotas</h4><p>En <b>🐾 Mascotas</b>: ${PET_SPECIES.map(p => `${p.name} (${p.price})`).join(", ")}. Corren por el carril del medio, saltan cuando saltas y cada ${PET_CONFIG.CD} s te traen una moneda cercana. Elige su nombre, el color del cuerpo y el de los detalles.</p>`; } },
+    <h4>Mascotas</h4><p>En <b>🐾 Mascotas</b> hay ${PET_SPECIES.length} especies de cuatro rarezas. Corren por el carril del medio, saltan cuando saltas, parpadean y celebran lo que te traen. Todas te traen monedas; algunas además buscan huevos o lanzan fuego:</p>
+    <table><tr><th>Mascota</th><th>Rareza</th><th>Precio</th><th>Habilidad</th></tr>${PET_SPECIES.slice().sort((a, b) => a.price - b.price).map(p => `<tr><td>${p.name}</td><td>${p.rarity}</td><td>${p.price}</td><td>${PET_ABILITIES[p.ab].icon} ${PET_ABILITIES[p.ab].desc(p.cd)}</td></tr>`).join("")}</table>
+    <p>Personalízala gratis: nombre, color del cuerpo y de los detalles, <b>estampado</b> (${PET_PATTERNS.map(p => p[1].toLowerCase()).join(", ")}) y <b>aura</b> (${PET_AURAS.slice(1).map(a => a[1].toLowerCase()).join(", ")}). Las legendarias brillan con su propio halo.</p>`; } },
   { title: "Ruleta", html: () => { const O = CONFIG.ROULETTE_ODDS; return `
     <p>Apuesta monedas del juego (mín. ${CONFIG.ROULETTE_MIN_BET}, máx. ${CONFIG.ROULETTE_MAX_BET}). El resultado se decide con estas probabilidades y la rueda se para exactamente en esa casilla;
     el tamaño de cada casilla se parece a su probabilidad.</p>
@@ -9114,7 +9187,9 @@ const MANUAL_SECTIONS = [
     <ul><li>Cada jefe tiene más vida (+${Math.round(NET_CONFIG.BOSS_HP_PER_PLAYER * 100)} % por cada compañero), pero <b>el daño de todos se suma</b>: cuando un compañero golpea, verás su nombre y el daño sobre tu jefe.</li>
       <li>Si caes, no se acaba: <b>te levantas</b> en cuanto tu equipo derrota a un jefe o a los ${NET_CONFIG.REVIVE} s (si queda alguien en pie), con escudo y el camino despejado.</li>
       <li><kbd>Q</kbd> / 🎁 regala un <b>escudo</b> de ${NET_CONFIG.GIFT_TIME} s al compañero que va más atrasado.</li>
-      <li>La partida acaba cuando cae todo el equipo. El premio depende de la puntuación del equipo y de los jefes derrotados; el que más daño hizo es el <b>MVP</b> ⭐.</li></ul>
+      <li>La partida acaba cuando cae todo el equipo.</li></ul>
+    <p><b>👁 Modo espectador</b>: cuando caes (en los dos modos) la cámara sigue a un compañero que siga vivo y ves sus obstáculos y su jefe en directo. Cambia de jugador con ◀ ▶ (o tus teclas de carril) y mira la clasificación con 🏆 (o <kbd>T</kbd>). Si revives en el cooperativo, vuelves a tu partida.</p>
+    <ul><li>Resultados: El premio depende de la puntuación del equipo y de los jefes derrotados; el que más daño hizo es el <b>MVP</b> ⭐.</li></ul>
     <p>Después puedes pedir la revancha en la misma sala.</p>` },
   { title: "Clima", html: () => `
     <p>A mitad de nivel puede llegar el <b>clima</b> del bioma. Dura unos segundos, se anuncia en el marcador y cambia algo del juego mientras dura (no en multijugador ni durante los jefes):</p>
@@ -10091,19 +10166,19 @@ const TUTORIAL_CONFIG = {
 };
 // Cada paso espera a que se cumplan sus eventos (need) y a superar su obstáculo sin golpe
 const TUTORIAL_STEPS = [
-  { keys: ["W"], text: "Pulsa W para saltar el cactus", need: ["jump"], spawn: t => t.ground("small", 1) },
-  { keys: ["W", "W"], text: "En el aire, pulsa W otra vez: ¡doble salto! Lo necesitas para lo largo", need: ["doubleJump"], spawn: t => t.ground("big", 3) },
-  { keys: ["S"], text: "Pulsa S para deslizarte bajo el pájaro", need: ["slide"], spawn: t => t.flyer() },
-  { keys: ["W", "S"], text: "Salta el cactus y, ya en el aire, pulsa S: caída rápida", need: ["fastFall"], spawn: t => t.ground("small", 1) },
-  { keys: ["A", "D"], text: "Pulsa A (arriba) o D (abajo) para cambiar de carril y esquivar el muro", need: ["laneChange"], spawn: t => t.wall() },
-  { keys: ["E"], text: "Pulsa E: el rugido rompe la roca", need: ["roarKill"], spawn: t => t.rock(), kill: true },
+  { keys: ["jump"], text: "Pulsa {jump} para saltar el cactus", need: ["jump"], spawn: t => t.ground("small", 1) },
+  { keys: ["jump", "jump"], text: "En el aire, pulsa {jump} otra vez: ¡doble salto! Lo necesitas para lo largo", need: ["doubleJump"], spawn: t => t.ground("big", 3) },
+  { keys: ["slide"], text: "Pulsa {slide} para deslizarte bajo el pájaro", need: ["slide"], spawn: t => t.flyer() },
+  { keys: ["jump", "slide"], text: "Salta el cactus y, ya en el aire, pulsa {slide}: caída rápida", need: ["fastFall"], spawn: t => t.ground("small", 1) },
+  { keys: ["laneUp", "laneDown"], text: "Pulsa {laneUp} (arriba) o {laneDown} (abajo) para cambiar de carril y esquivar el muro", need: ["laneChange"], spawn: t => t.wall() },
+  { keys: ["roar"], text: "Pulsa {roar}: el rugido rompe la roca", need: ["roarKill"], spawn: t => t.rock(), kill: true },
   { keys: [], text: "Coge las monedas, el power-up y el huevo", need: ["coinCollected", "powerup", "eggCollected"], spawn: t => t.goodies(), free: true },
-  { keys: ["E"], text: "Rompe rocas con E para llenar la FURIA (arriba a la derecha). Llena: E = ¡SÚPER RUGIDO!", need: ["superRoar"], spawn: t => t.rock(), kill: true, fury: true },
+  { keys: ["roar"], text: "Rompe rocas con {roar} para llenar la FURIA (arriba a la derecha). Llena: {roar} = ¡SÚPER RUGIDO!", need: ["superRoar"], spawn: t => t.rock(), kill: true, fury: true },
 ];
 class Tutorial {
   constructor(game) { this.g = game; this.step = 0; this.t = 0; this.wait = 1.4; this.seen = new Set(); this.objs = []; this.done = false; this.msgT = 0; this.msg = ""; this.flash = 0; }
   get cur() { return TUTORIAL_STEPS[this.step]; }
-  onEvent(type) { if (!this.done) this.seen.add(type); if (type === "furyFull") this.say("¡FURIA LLENA! Pulsa E", "#ff9a3c"); }
+  onEvent(type) { if (!this.done) this.seen.add(type); if (type === "furyFull") this.say(`¡FURIA LLENA! Pulsa ${this.g.controls.label("roar")}`, "#ff9a3c"); }
   say(t, col = "#ffd23f") { this.msg = t; this.msgCol = col; this.msgT = 1.6; }
   // Golpe: solo hace retroceder (nunca se pierde)
   onHit() {
@@ -10165,12 +10240,12 @@ class Tutorial {
     ui.text(c, `TUTORIAL ${this.step + 1}/${TUTORIAL_STEPS.length}`, x + 12, y + 16, 10, UI_T.dim);
     let kx = x + 12;
     for (const k of S.keys) {   // tecla dibujada (parpadea)
-      const on = Math.floor(this.t * 3) % 2 === 0;
-      c.fillStyle = UI_T.line; c.fillRect(kx, y + 26, 28, 26); c.fillStyle = on ? UI_T.weak : "#3d3160"; c.fillRect(kx + 2, y + 28, 24, 20); c.fillStyle = "rgba(0,0,0,0.3)"; c.fillRect(kx + 2, y + 44, 24, 4);
-      ui.text(c, k, kx + 14, y + 38, 14, on ? "#16111f" : UI_T.text, "center"); kx += 34;
+      const on = Math.floor(this.t * 3) % 2 === 0, kl = g.controls.label(k), kw = Math.max(28, kl.length * 9 + 10);   // tecla elegida en Controles
+      c.fillStyle = UI_T.line; c.fillRect(kx, y + 26, kw, 26); c.fillStyle = on ? UI_T.weak : "#3d3160"; c.fillRect(kx + 2, y + 28, kw - 4, 20); c.fillStyle = "rgba(0,0,0,0.3)"; c.fillRect(kx + 2, y + 44, kw - 4, 4);
+      ui.text(c, kl, kx + kw / 2, y + 38, kl.length > 2 ? 10 : 14, on ? "#16111f" : UI_T.text, "center"); kx += kw + 6;
     }
     c.font = '10px "Raptor Pixel Display", monospace';   // texto en una o dos líneas
-    const words = S.text.toUpperCase().split(" "), lines = [""], maxW = x + w - kx - 16;
+    const words = S.text.replace(/\{(\w+)\}/g, (m, a) => g.controls.label(a)).toUpperCase().split(" "), lines = [""], maxW = x + w - kx - 16;
     for (const wd of words) { const t = lines[lines.length - 1] ? lines[lines.length - 1] + " " + wd : wd; if (c.measureText(t).width > maxW && lines[lines.length - 1]) lines.push(wd); else lines[lines.length - 1] = t; }
     lines.slice(0, 3).forEach((l, i, a) => ui.text(c, l, kx + 6, y + 40 + (i - (a.length - 1) / 2) * 14, 10, UI_T.text));
     if (S.free) {   // lista de lo que falta coger
@@ -10602,63 +10677,406 @@ const PET_SPECIES = [
       "................",
     ]] },
 ];
+// Especies nuevas: más variedad, rarezas y habilidades
+const NEW_PET_SPECIES = [
+  { id: "estegui", name: "Estegui", price: 1200, rarity: "Raro", desc: "Estegosaurio bebé con placas brillantes", body: "#4fa3a5", accent: "#ffb938", ab: "coin", cd: 2.6,
+    frames: [[
+      "................",
+      "................",
+      ".....oo.oo......",
+      "....oaooaoo.....",
+      "...oaaoaaoaoo...",
+      "..obbbbbbbbbboo.",
+      ".obbbbbbbbbbbepo",
+      "aobbbbbbbbbbbbbo",
+      "oaosbbbbbbbllboo",
+      ".o.ossssssllbo..",
+      "....obo..obo....",
+      "....oao..oao....",
+    ], [
+      "................",
+      "................",
+      ".....oo.oo......",
+      "....oaooaoo.....",
+      "...oaaoaaoaoo...",
+      "..obbbbbbbbbboo.",
+      ".obbbbbbbbbbbepo",
+      "aobbbbbbbbbbbbbo",
+      "oaosbbbbbbbllboo",
+      ".o.ossssssllbo..",
+      ".....obo..obo...",
+      ".....oao..oao...",
+    ]] },
+  { id: "gelatina", name: "Gelatina", price: 700, rarity: "Común", desc: "Un blandiblú de ámbar que bota sin parar", body: "#ffb938", accent: "#ff5c8a", ab: "coin", cd: 3, bouncy: true,
+    frames: [[
+      "................",
+      "................",
+      "................",
+      "......oooo......",
+      "....oobbbboo....",
+      "...obwwbbbbbo...",
+      "..obwbbbbbbbbo..",
+      "..obbbepbbepbo..",
+      "..obbbbbbbbbbo..",
+      "..obbbbbaabbbo..",
+      "..osbbbbbbbbso..",
+      "...oooooooooo...",
+    ], [
+      "................",
+      "................",
+      "................",
+      "................",
+      ".....oooooo.....",
+      "...oobwwbbbboo..",
+      "..obwbbbbbbbbbo.",
+      ".obbbepbbbepbbo.",
+      ".obbbbbbbbbbbbo.",
+      ".obbbbbbaabbbbo.",
+      ".osbbbbbbbbbbso.",
+      "..oooooooooooo..",
+    ]] },
+  { id: "mamut", name: "Mamutín", price: 1600, rarity: "Raro", desc: "Cría de mamut lanudo con colmillos", body: "#8a5a3a", accent: "#f3e2b8", ab: "egg", cd: 3,
+    frames: [[
+      "................",
+      "....ooooooo.....",
+      "...obbbbbbbo....",
+      "..obbbbbbbbboo..",
+      ".obbbbbbbbbbbbo.",
+      ".obsbbbbbbbbepbo",
+      ".obbbbbbbbbbbbbo",
+      ".osbbbbbbbbbaabo",
+      "..osbbbbbbbboabo",
+      "..osssssssbbo.bo",
+      "...obo..obo...oo",
+      "...oao..oao.....",
+    ], [
+      "................",
+      "....ooooooo.....",
+      "...obbbbbbbo....",
+      "..obbbbbbbbboo..",
+      ".obbbbbbbbbbbbo.",
+      ".obsbbbbbbbbepbo",
+      ".obbbbbbbbbbbbbo",
+      ".osbbbbbbbbbaabo",
+      "..osbbbbbbbboabo",
+      "..osssssssbbo.bo",
+      "....obo..obo..oo",
+      "....oao..oao....",
+    ]] },
+  { id: "fantasmin", name: "Fantasmín", price: 2200, rarity: "Épico", desc: "Un fantasmita que flota a tu lado", body: "#e8ecff", accent: "#ff7ab8", ab: "egg", cd: 3, fly: true, ghost: true,
+    frames: [[
+      "................",
+      ".....oooooo.....",
+      "....obbbbbbo....",
+      "...obllbbbbbo...",
+      "..obllbbbbbbbo..",
+      "..oblbbpbbpbbo..",
+      "..obbbbpbbpbbo..",
+      "..obbabbbbbabo..",
+      "..obbbbbaabbbo..",
+      "..obbbbbbbbbbo..",
+      "..obbobbbobbbo..",
+      "...oo.ooo.ooo...",
+    ], [
+      "................",
+      ".....oooooo.....",
+      "....obbbbbbo....",
+      "...obllbbbbbo...",
+      "..obllbbbbbbbo..",
+      "..oblbbpbbpbbo..",
+      "..obbbbpbbpbbo..",
+      "..obbabbbbbabo..",
+      "..obbbbbaabbbo..",
+      "..obbbbbbbbbbo..",
+      "..obbbobbbobbo..",
+      "..ooo.ooo.ooo...",
+    ]] },
+  { id: "robo", name: "Robo-rex", price: 2600, rarity: "Épico", desc: "Mini raptor robot con visor láser", body: "#9aa4b8", accent: "#3ddcff", ab: "fire", cd: 2.4, robot: true,
+    frames: [[
+      "..........a.....",
+      "..........o.....",
+      ".........ooooo..",
+      "........obbbbbo.",
+      "........obaaabo.",
+      "........obbbbbbo",
+      "..o....obkkkboo.",
+      ".obo..obbbbbo...",
+      "..obbbbbkbkbo...",
+      "...okbkbbbbo....",
+      "....oko.oko.....",
+      "....oao.oao.....",
+    ], [
+      "..........a.....",
+      "..........o.....",
+      ".........ooooo..",
+      "........obbbbbo.",
+      "........obaaabo.",
+      "........obbbbbbo",
+      "..o....obkkkboo.",
+      ".obo..obbbbbo...",
+      "..obbbbbkbkbo...",
+      "...okbkbbbbo....",
+      ".....okoko......",
+      ".....oaoao......",
+    ]] },
+  { id: "dragon", name: "Dragoncito", price: 3200, rarity: "Épico", desc: "Escupe fuego a las rocas y pájaros", body: "#5fd15a", accent: "#ff9a3c", ab: "fire", cd: 3, fly: true,
+    frames: [[
+      "....oo..........",
+      "...oaao...oo.o..",
+      "..oaaao..obbobo.",
+      "..oaaaoooobbbbbo",
+      "...oaaobbbbbepbo",
+      "....oabbbbbbbbbo",
+      ".o..obbbbbbblloo",
+      "oao.obbbbbbllo..",
+      ".oaobbbbbllloo..",
+      "..ooobsssslo....",
+      ".....oo.oo......",
+      "................",
+    ], [
+      "................",
+      "..........oo.o..",
+      ".........obbobo.",
+      ".....ooooobbbbbo",
+      "....obbbbbbbepbo",
+      "...oabbbbbbbbbbo",
+      ".o.oaaabbbbblloo",
+      "oaooaaaabbbllo..",
+      ".oaooaaaobllloo.",
+      "..o.ooaaosslo...",
+      "......ooooo.....",
+      "................",
+    ]] },
+  { id: "cristal", name: "Cristalito", price: 5500, rarity: "Legendario", desc: "Gólem de cristal: brilla y te trae huevos y monedas", body: "#9be7ff", accent: "#ff7ae0", ab: "egg", cd: 2, sparkle: true,
+    frames: [[
+      "................",
+      "......o..o......",
+      ".....oao.oao....",
+      "....oabbobbao...",
+      "...oabbbbbbbao..",
+      "...obllbbbbbbo..",
+      "...oblbepbepbo..",
+      "...obbbbbbbbbo..",
+      "....obbbaabbo...",
+      "....osbbbbbso...",
+      ".....oo..oo.....",
+      ".....ao..ao.....",
+    ], [
+      "................",
+      "................",
+      "......o..o......",
+      ".....oao.oao....",
+      "....oabbobbao...",
+      "...oabbbbbbbao..",
+      "...obllbbbbbbo..",
+      "...oblbepbepbo..",
+      "...obbbbbbbbbo..",
+      "....obbbaabbo...",
+      "....osbbbbbso...",
+      "....oao..oao....",
+    ]] },
+  { id: "fenix", name: "Fénix", price: 8000, rarity: "Legendario", desc: "Ave de fuego: quema obstáculos y deja una estela de llamas", body: "#ff5a2a", accent: "#ffd23f", ab: "fire", cd: 2, fly: true, flame: true,
+    frames: [[
+      "................",
+      "...........oo...",
+      "..........obbo..",
+      "...oo....obepoa.",
+      "..oaao..obbbboo.",
+      ".oaaaaoobbbbbo..",
+      "..oaaaabbbbbo...",
+      "aa.oaabbbbbo....",
+      ".aaaobbbllo.....",
+      "..aaaasbbo......",
+      "...aa.oo........",
+      "................",
+    ], [
+      "................",
+      "...........oo...",
+      "..........obbo..",
+      ".........obepoa.",
+      "........obbbboo.",
+      "..oooooobbbbbo..",
+      ".oaaaaaabbbbo...",
+      "aaoaaaabbbbo....",
+      ".aaaoaabbllo....",
+      "..aaaaooobbo....",
+      "...aa...oo......",
+      "................",
+    ]] },
+];
+// Especies nuevas (v26): rarezas, habilidades y efectos propios
+PET_SPECIES.push(...NEW_PET_SPECIES);
+// Rareza y habilidad de las especies originales
+{
+  const meta = { raptorin: ["Común", "coin", 3], trici: ["Común", "coin", 3], huevito: ["Común", "egg", 3.2], anky: ["Raro", "coin", 2.6], ptero: ["Raro", "coin", 2.6] };
+  for (const p of PET_SPECIES) if (meta[p.id]) { const [r, ab, cd] = meta[p.id]; p.rarity = p.rarity || r; p.ab = p.ab || ab; p.cd = p.cd || cd; }
+}
 const PET_BY_ID = Object.fromEntries(PET_SPECIES.map(p => [p.id, p]));
-const PET_COLORS = ["#6cc25a", "#3ddc84", "#2e6b2a", "#5fb4ff", "#1a4fb0", "#8a5cff", "#ff5cc8", "#ff3b3b", "#ff9a3c", "#ffd23f", "#f3e2b8", "#8a6a4a", "#3a2a1a", "#ffffff", "#8a93a6", "#1c1b19"];
+const PET_COLORS = ["#6cc25a", "#3ddc84", "#2e6b2a", "#4fa3a5", "#5fb4ff", "#1a4fb0", "#9be7ff", "#8a5cff", "#ff5cc8", "#ff7ab8", "#ff3b3b", "#ff5a2a", "#ff9a3c", "#ffd23f", "#f3e2b8", "#8a6a4a", "#3a2a1a", "#ffffff", "#9aa4b8", "#1c1b19"];
+// Habilidades: todas traen monedas; algunas además huevos o fuego contra obstáculos
+const PET_ABILITIES = {
+  coin: { icon: "🪙", name: "Recolectora", desc: cd => `Te trae una moneda cercana cada ${cd} s` },
+  egg:  { icon: "🥚", name: "Buscahuevos", desc: cd => `Monedas cada ${cd} s y te trae los huevos que se te escapan` },
+  fire: { icon: "🔥", name: "Lanzallamas", desc: cd => `Monedas cada ${cd} s y quema una roca o pájaro de tu carril cada ${PET_CONFIG.FIRE_CD} s` },
+};
+PET_CONFIG.FIRE_CD = 12; PET_CONFIG.FIRE_RANGE = 560; PET_CONFIG.EGG_CD = 6;
+// Estampados del cuerpo y auras (gratis para cualquier mascota)
+const PET_PATTERNS = [["liso", "Liso"], ["rayas", "Rayas"], ["manchas", "Manchas"], ["degradado", "Degradado"], ["estrellas", "Estrellas"], ["arcoiris", "Arcoíris"], ["galaxia", "Galaxia"]];
+const PET_AURAS = [["none", "Ninguna", ""], ["chispas", "Chispas", "✨"], ["corazones", "Corazones", "💖"], ["fuego", "Fuego", "🔥"], ["burbujas", "Burbujas", "🫧"], ["nieve", "Nieve", "❄️"], ["notas", "Música", "🎵"], ["arcoiris", "Arcoíris", "🌈"], ["sombra", "Sombra", "🌑"]];
+const PET_PATTERN_IDS = PET_PATTERNS.map(p => p[0]), PET_AURA_IDS = PET_AURAS.map(a => a[0]);
 const _petCache = new Map();
-// Lienzo de 16 × 12 con los colores elegidos (se cachea por especie, colores y fotograma)
-function petCanvas(id, body, accent, f) {
-  const k = id + body + accent + f; let cv = _petCache.get(k); if (cv) return cv;
+// Lienzo de 16 × 12 con los colores, el estampado y (si parpadea) los ojos cerrados. Se cachea.
+function petCanvas(id, body, accent, f, pattern = "liso", blink = false) {
+  const k = id + body + accent + f + pattern + (blink ? 1 : 0); let cv = _petCache.get(k); if (cv) return cv;
   const sp = PET_BY_ID[id]; if (!sp) return null;
   cv = document.createElement("canvas"); cv.width = 16; cv.height = 12; const c = cv.getContext("2d");
-  const pal = { o: "#1a1424", b: body, s: shadeHex(body, -0.3), l: shadeHex(body, 0.45), a: accent, e: "#ffffff", p: "#15161c" };
-  const n = sp.frames.length; sp.frames[(((f | 0) % n) + n) % n].forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") { c.fillStyle = pal[ch] || "#f0f"; c.fillRect(x, y, 1, 1); } }));
-  if (_petCache.size > 200) _petCache.clear();
+  const pal = { o: "#1a1424", b: body, s: shadeHex(body, -0.3), l: shadeHex(body, 0.45), a: accent, e: "#ffffff", p: "#15161c", w: "#ffffff", k: shadeHex(body, -0.55) };
+  const rainbow = ["#ff5c6c", "#ff9a3c", "#ffd23f", "#5fd15a", "#5fb4ff", "#8a5cff"];
+  const bodyCol = (x, y) => {   // estampado sobre los píxeles del cuerpo
+    switch (pattern) {
+      case "rayas": return x % 4 < 2 ? body : shadeHex(body, -0.22);
+      case "manchas": return (x * 7 + y * 5) % 11 < 2 ? accent : body;
+      case "degradado": return y < 5 ? shadeHex(body, 0.25) : y > 8 ? shadeHex(body, -0.2) : body;
+      case "estrellas": return (x * 11 + y * 7) % 17 === 0 ? "#ffffff" : (x * 3 + y * 5) % 13 === 0 ? accent : body;
+      case "arcoiris": return rainbow[Math.floor(x / 16 * 6) % 6];
+      case "galaxia": return (x * 13 + y * 7) % 19 === 0 ? "#ffffff" : (x * 5 + y * 11) % 23 === 0 ? accent : y % 3 === 0 ? "#2a1f5a" : "#1c1540";
+      default: return body;
+    }
+  };
+  const n = sp.frames.length;
+  sp.frames[(((f | 0) % n) + n) % n].forEach((r, y) => [...r].forEach((ch, x) => {
+    if (ch === ".") return;
+    if (blink && (ch === "e" || ch === "p")) ch = "s";
+    c.fillStyle = ch === "b" ? bodyCol(x, y) : pal[ch] || "#f0f"; c.fillRect(x, y, 1, 1);
+  }));
+  if (_petCache.size > 300) _petCache.clear();
   _petCache.set(k, cv); return cv;
 }
-// Dibuja una mascota con los pies en (0, 0) (coordenadas de carril)
-function drawPetSprite(c, pet, t, sc = PET_CONFIG.SCALE, y = 0) {
+// Dibuja una mascota con los pies en (0, 0). st = { land, blink } (aplastado al aterrizar, parpadeo)
+function drawPetSprite(c, pet, t, sc = PET_CONFIG.SCALE, y = 0, st = {}) {
   const sp = PET_BY_ID[pet.id]; if (!sp) return;
-  const f = Math.floor(t * (sp.fly ? 6 : 10)) % 2, cv = petCanvas(pet.id, pet.body || sp.body, pet.accent || sp.accent, f);
-  const fy = sp.fly ? 26 + Math.sin(t * 4) * 4 : 0;
-  c.imageSmoothingEnabled = false; c.drawImage(cv, 0, Math.round(-12 * sc - y - fy), 16 * sc, 12 * sc);
+  const f = Math.floor(t * (sp.fly ? 6 : sp.bouncy ? 4 : 10)) % 2, blink = !sp.robot && (t % 3.2) > 3.05;
+  const cv = petCanvas(pet.id, pet.body || sp.body, pet.accent || sp.accent, f, pet.pattern, blink);
+  const fy = sp.fly ? 26 + Math.sin(t * 4) * 4 : sp.bouncy ? Math.abs(Math.sin(t * 6)) * 10 : 0;
+  const sq = sp.bouncy ? 1 + (fy < 2 ? 0.12 : -0.04) : 1 + (st.land || 0) * 0.25;   // aplastado al tocar el suelo
+  const w = 16 * sc * sq, h = 12 * sc / sq, x0 = (16 * sc - w) / 2, top = Math.round(-h - y - fy);
+  c.save(); c.imageSmoothingEnabled = false;
+  if (sp.rarity === "Legendario") {   // halo de las legendarias
+    const g = c.createRadialGradient(8 * sc, top + h / 2, 2, 8 * sc, top + h / 2, 12 * sc);
+    g.addColorStop(0, hexA(pet.accent || sp.accent, 0.45)); g.addColorStop(1, hexA(pet.accent || sp.accent, 0));
+    c.fillStyle = g; c.fillRect(-6 * sc, top - 6 * sc, 28 * sc, h + 12 * sc);
+  }
+  if (sp.ghost) c.globalAlpha *= 0.72 + Math.sin(t * 3) * 0.12;
+  c.drawImage(cv, Math.round(x0), top, Math.round(w), Math.round(h));
+  if (sp.robot && Math.floor(t * 3) % 2) { c.fillStyle = "#ffffff"; c.fillRect(10 * sc, top, sc, sc); }   // luz de la antena
+  c.restore();
+}
+function hexA(hex, a) { const n = parseInt(String(hex).slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+// Partículas de aura (coordenadas de pantalla)
+function petAuraParticle(kind, x, y, accent) {
+  const p = { kind, x: x + rand(-14, 14), y: y + rand(-16, 10), vx: rand(-20, 20), vy: rand(-40, -15), t: 0, life: rand(0.6, 1.1), s: rand(2, 4), col: accent };
+  switch (kind) {
+    case "chispas": p.col = choice(["#ffffff", "#fff3b0", accent]); p.vy = rand(-20, 5); break;
+    case "corazones": p.col = choice(["#ff5c8a", "#ff8ab8", "#ff3b6b"]); p.vy = rand(-45, -25); break;
+    case "fuego": p.col = choice(["#ff5a2a", "#ff9a3c", "#ffd23f"]); p.vx = rand(-90, -50); p.vy = rand(-50, -20); p.life = rand(0.3, 0.6); p.s = rand(3, 6); break;
+    case "burbujas": p.col = "#bff8ff"; p.vy = rand(-35, -15); p.s = rand(3, 6); break;
+    case "nieve": p.col = "#ffffff"; p.vy = rand(10, 30); p.vx = rand(-40, -10); break;
+    case "notas": p.col = choice(["#ffd23f", "#5fb4ff", "#ff7ae0"]); p.vy = rand(-40, -20); p.vx = rand(-30, 10); break;
+    case "arcoiris": p.col = choice(["#ff5c6c", "#ff9a3c", "#ffd23f", "#5fd15a", "#5fb4ff", "#8a5cff"]); p.vx = rand(-120, -80); p.vy = rand(-5, 5); p.life = 0.45; p.s = 4; break;
+    case "sombra": p.col = choice(["#2a1f3d", "#3d2a5a", "#160f24"]); p.vx = rand(-60, -30); p.vy = rand(-25, -5); p.s = rand(4, 7); break;
+  }
+  return p;
+}
+function drawAuraParticle(c, p) {
+  const k = p.t / p.life, a = k < 0.2 ? k * 5 : 1 - (k - 0.2) / 0.8, x = Math.round(p.x), y = Math.round(p.y), s = Math.round(p.s);
+  c.globalAlpha = clamp(a, 0, 1); c.fillStyle = p.col;
+  switch (p.kind) {
+    case "chispas": c.fillRect(x - s, y, s * 2 + 1, 1); c.fillRect(x, y - s, 1, s * 2 + 1); break;   // destello en cruz
+    case "corazones": c.fillRect(x - 2, y - 2, 2, 2); c.fillRect(x + 1, y - 2, 2, 2); c.fillRect(x - 2, y, 5, 1); c.fillRect(x - 1, y + 1, 3, 1); c.fillRect(x, y + 2, 1, 1); break;
+    case "burbujas": c.strokeStyle = p.col; c.lineWidth = 1; c.beginPath(); c.arc(x, y, s, 0, Math.PI * 2); c.stroke(); c.fillStyle = "#ffffff"; c.fillRect(x - 1, y - s + 1, 1, 1); break;
+    case "notas": c.fillRect(x, y - 5, 1, 6); c.fillRect(x - 2, y, 3, 2); c.fillRect(x + 1, y - 5, 2, 1); break;
+    default: c.fillRect(x - s / 2, y - s / 2, s, s);
+  }
+  c.globalAlpha = 1;
 }
 class PetManager {
   constructor(game) { this.g = game; this.reset(); }
   get pet() { const p = this.g.save.data.pet; return p && PET_BY_ID[p.id] ? p : null; }
+  get sp() { const p = this.pet; return p && PET_BY_ID[p.id]; }
   get on() { return !!this.pet && !this.g.versus && !this.g.tutorial; }
-  reset() { this.y = 0; this.vy = 0; this.t = 0; this.cd = PET_CONFIG.CD; this.beams = []; this.wasJump = false; this.hopDelay = 0; this.tag = 3; }
+  reset() { this.y = 0; this.vy = 0; this.t = 0; this.cd = PET_CONFIG.CD; this.beams = []; this.wasJump = false; this.hopDelay = 0; this.tag = 3; this.fx = []; this.fxAcc = 0; this.land = 0; this.fireCd = PET_CONFIG.FIRE_CD / 2; this.eggCd = 2; this.shots = []; this.happy = 0; }
   get x() { return this.g.player.x - PET_CONFIG.BEHIND; }
-  // Animación (también en la portada) y, durante la partida, recoger monedas
+  // Animación (también en la portada) y, durante la partida, sus habilidades
   update(dt, playing) {
     if (!this.on || !(dt > 0)) return;
-    this.t += dt; this.tag = Math.max(0, this.tag - dt);
+    const sp = this.sp, pet = this.pet;
+    this.t += dt; this.tag = Math.max(0, this.tag - dt); this.land = Math.max(0, this.land - dt * 5); this.happy = Math.max(0, this.happy - dt);
     const pl = this.g.player, jumping = pl.y > 2 && pl.vy > 0;
     if (jumping && !this.wasJump) this.hopDelay = 0.12;   // salta un poco después que tú
     this.wasJump = jumping;
     if (this.hopDelay > 0 && (this.hopDelay -= dt) <= 0 && this.y <= 0) this.vy = 560;
-    if (this.y > 0 || this.vy > 0) { this.vy -= 2000 * dt; this.y = Math.max(0, this.y + this.vy * dt); if (this.y === 0) this.vy = 0; }
+    if (this.y > 0 || this.vy > 0) { this.vy -= 2000 * dt; this.y = Math.max(0, this.y + this.vy * dt); if (this.y === 0) { this.vy = 0; this.land = 1; } }
     for (const b of this.beams) b.t += dt; this.beams = this.beams.filter(b => b.t < 0.35);
-    if (!playing) return;
+    // Partículas: aura elegida y efectos propios de la especie
+    const kinds = [];
+    if (pet.aura && pet.aura !== "none") kinds.push(pet.aura);
+    if (sp.flame) kinds.push("fuego"); if (sp.sparkle) kinds.push("chispas");
+    if (kinds.length) {
+      this.fxAcc += dt * 14 * kinds.length; const at = this.anchor();
+      while (this.fxAcc >= 1) { this.fxAcc -= 1; this.fx.push(petAuraParticle(choice(kinds), at.x, at.y, pet.accent || sp.accent)); }
+    }
+    for (const p of this.fx) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+    this.fx = this.fx.filter(p => p.t < p.life); if (this.fx.length > 120) this.fx.splice(0, this.fx.length - 120);
+    for (const s of this.shots) s.t += dt;
+    if (!playing) { this.shots = []; return; }
+    const g = this.g;
+    // Bolas de fuego que ya han llegado
+    for (const s of this.shots) if (s.t >= s.dur && !s.hit) { s.hit = true; if (!s.o.dead && g.obstacles.includes(s.o)) { g.destroy(s.o, true); g.floatText(s.o.lane, s.o.x, 120, "¡FUEGO!", "#ff9a3c", 14); } }
+    this.shots = this.shots.filter(s => s.t < s.dur + 0.1);
+    if (sp.ab === "fire" && (this.fireCd -= dt) <= 0) {
+      let best = null;
+      for (const o of g.obstacles) if (!o.dead && o.destructible && o.lane === pl.logicalLane && o.x > pl.x + 60 && o.x < pl.x + PET_CONFIG.FIRE_RANGE && (!best || o.x < best.x)) best = o;
+      if (best) { this.fireCd = PET_CONFIG.FIRE_CD; const from = this.anchor(); this.shots.push({ o: best, from, t: 0, dur: 0.28 }); g.sfx.toss(); this.happy = 0.6; }
+      else this.fireCd = 0.25;
+    }
+    if (sp.ab === "egg" && (this.eggCd -= dt) <= 0) {
+      const e = g.eggs.find(e => !e.taken && e.x > this.x && e.x < this.x + PET_CONFIG.RANGE);
+      if (e) { this.eggCd = PET_CONFIG.EGG_CD; this.beams.push({ from: toScreen(e.lane, e.x, e.y), t: 0, egg: true }); g.takeEgg(e, e.lane); this.happy = 0.8; }
+      else this.eggCd = 0.3;
+    }
     if ((this.cd -= dt) > 0) return;
-    const g = this.g; let best = null;
+    let best = null;
     for (const c of g.coinsArr) if (!c.taken && c.x > this.x && c.x < this.x + PET_CONFIG.RANGE && (!best || c.x < best.x)) best = c;
     if (!best) { this.cd = 0.3; return; }
     best.taken = true; const v = g.coinValue; g.runCoins += v; g.sfx.coin();
     this.beams.push({ from: toScreen(best.laneT, best.x, best.y), t: 0 });
-    this.cd = PET_CONFIG.CD; g.ach.event("coinCollected");
+    this.cd = sp.cd || PET_CONFIG.CD; this.happy = 0.4; g.ach.event("coinCollected");
   }
+  // Centro de la mascota en pantalla
+  anchor() { const sp = this.sp, fy = sp && sp.fly ? 26 : 0; return toScreen(0.5, this.x + 24, 18 + this.y + fy); }
   // En el carril del medio (entre los dos), con su sombra
   draw(c) {
-    if (!this.on) return; const pet = this.pet, x = this.x;
+    if (!this.on || this.g.net.spec) return; const pet = this.pet, x = this.x;
+    for (const p of this.fx) if (p.kind === "fuego" || p.kind === "arcoiris" || p.kind === "sombra") drawAuraParticle(c, p);   // estelas por detrás
     c.save(); applyLane(c, 0.5); c.translate(x, 0);
     drawShadow(c, 24, 36 * (1 - Math.min(0.5, this.y / 120)), this.y);
-    drawPetSprite(c, pet, this.t, PET_CONFIG.SCALE, this.y);
+    drawPetSprite(c, pet, this.t, PET_CONFIG.SCALE, this.y + (this.happy > 0 ? Math.abs(Math.sin(this.happy * 12)) * 6 : 0), { land: this.land });
     c.restore();
+    for (const p of this.fx) if (!(p.kind === "fuego" || p.kind === "arcoiris" || p.kind === "sombra")) drawAuraParticle(c, p);
     const to = toScreen(0.5, x + 24, 20 + this.y);
-    for (const b of this.beams) {   // la moneda vuela hasta la mascota
+    for (const b of this.beams) {   // la moneda (o el huevo) vuela hasta la mascota
       const k = b.t / 0.35, px = b.from.x + (to.x - b.from.x) * k, py = b.from.y + (to.y - b.from.y) * k - Math.sin(k * Math.PI) * 30;
+      if (b.egg) { c.fillStyle = "#f3e2b8"; c.beginPath(); c.ellipse(px, py, 7, 9, 0, 0, Math.PI * 2); c.fill(); c.fillStyle = "#fffdf2"; c.fillRect(px - 3, py - 5, 2, 3); continue; }
       c.fillStyle = "#ffd23f"; c.beginPath(); c.arc(px, py, 6 * (1 - k * 0.4), 0, Math.PI * 2); c.fill();
       c.fillStyle = "#fff3b0"; c.fillRect(px - 2, py - 3, 2, 3);
+    }
+    for (const s of this.shots) {   // bola de fuego hacia el obstáculo
+      const k = Math.min(1, s.t / s.dur), o = s.o, tp = toScreen(o.lane, o.x + o.w / 2, (o.kind === "flyer" ? o.y : 0) + o.h / 2);
+      const px = s.from.x + (tp.x - s.from.x) * k, py = s.from.y + (tp.y - s.from.y) * k - Math.sin(k * Math.PI) * 24;
+      c.fillStyle = "#ff5a2a"; c.beginPath(); c.arc(px, py, 9, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#ffd23f"; c.beginPath(); c.arc(px, py, 5, 0, Math.PI * 2); c.fill();
+      for (let i = 1; i < 4; i++) { c.globalAlpha = 0.5 - i * 0.12; c.fillStyle = "#ff9a3c"; c.beginPath(); c.arc(px - (tp.x - s.from.x) * 0.06 * i, py - (tp.y - s.from.y) * 0.06 * i, 7 - i, 0, Math.PI * 2); c.fill(); }
+      c.globalAlpha = 1;
     }
     if (this.tag > 0 && pet.name) {   // su nombre al empezar
       c.globalAlpha = Math.min(1, this.tag); this.g.ui.pill(c, pet.name.toUpperCase(), to.x, to.y - 52, 9, "#fff3c4"); c.globalAlpha = 1;
@@ -10945,6 +11363,8 @@ class NetPlay {
     ch.on("b:gift", d => { if (d.to === this.uid && this.mode === "racing") this.g.receiveGift(d.type, d.n); });
     ch.on("b:bdmg", d => this.onTeamDamage(d));
     ch.on("b:bdef", d => this.onTeamBoss(d));
+    ch.on("b:spec", d => this.onSpec(d));      // modo espectador
+    ch.on("b:watch", d => this.onWatch(d));
     ch.on("close", () => this.onLost(ch));
     await Promise.race([stateIn, new Promise(r => setTimeout(r, NET_CONFIG.JOIN_WAIT))]);   // quién hay ya en la sala
     const others = Object.values(this.members).filter(m => m.u !== this.uid);
@@ -10960,7 +11380,7 @@ class NetPlay {
     if (this.mode === "racing") { this.g.floatText(this.g.player.laneT, this.g.player.x + 40, 170, "SIN CONEXIÓN CON LA SALA", "#ff8a8a", 16); for (const r of Object.values(this.remotes)) if (!r.dead) { r.dead = true; r.left = true; } this.checkEnd(); }
     else { this.mode = "idle"; this.say("Se ha perdido la conexión con la sala.", "err"); this.render(); }
   }
-  leaveAll() { this.leaveRoom(); this.stopQuick(); if (this.rt) { this.rt.close(); this.rt = null; } this.g.netRace = false; this.g.netCoop = false; this.g.netDraft = false; }
+  leaveAll() { this.stopSpectate(false); this.leaveRoom(); this.stopQuick(); if (this.rt) { this.rt.close(); this.rt = null; } this.g.netRace = false; this.g.netCoop = false; this.g.netDraft = false; }
   setReady(v) { this.ready = v; if (this.room) this.room.track(this.meta()); this.render(); this.maybeAutoStart(); }
   onPresence(p) {
     this.members = {}; for (const k in p) if (p[k] && p[k].u) this.members[k] = p[k];
@@ -10986,7 +11406,7 @@ class NetPlay {
     if (!d.players || !d.players.includes(this.uid) || this.mode === "racing") return;
     this.mode = "racing"; this.ready = false; this.result = null; this.traps = 1; this.trapT = 0; this.finishedSent = false; this.lost = false; this.expect = 0; clearTimeout(this.autoT);
     this.coop = d.mode === "coop"; this.roomMode = d.mode || "race";
-    this.remotes = {}; this.colors = {}; this.teamDmg = {}; this.applied = {}; this.dmgBy = {}; this.bossLv = new Set(); this.down = false; this.reviveT = 0; this.revives = 0;
+    this.remotes = {}; this.colors = {}; this.teamDmg = {}; this.applied = {}; this.dmgBy = {}; this.bossLv = new Set(); this.down = false; this.reviveT = 0; this.revives = 0; this.watchers = new Set(); this.spec = null;
     d.players.forEach((u, i) => { this.colors[u] = NET_CONFIG.COLORS[i % NET_CONFIG.COLORS.length]; this.dmgBy[u] = 0; });
     for (const u of d.players) if (u !== this.uid) { const m = this.members[u] || {}; this.remotes[u] = { u, n: m.n || "Rival", sk: m.sk, h: m.h || {}, d: 0, pd: 0, t: performance.now(), pt: performance.now(), l: 0, y: 0, sl: 0, s: 0, dead: false, st: { tick: 0, speed: 2, trail: null, trailFx: null } }; }
     this.g.closeScreens(); this.g.startNet(d.seed, this.coop);
@@ -11009,6 +11429,7 @@ class NetPlay {
       if (draft !== !!g.netDraft) { g.netDraft = draft; g.build.cache = {}; }
     }
     if (!this.room) return;
+    this.specSend(now);   // alguien me está mirando: le mando lo que tengo delante
     if (now - this.lastSend >= NET_CONFIG.SEND_MS && (!this.finishedSent || this.coop)) { this.sendState(); this.checkWin(); }
   }
   // Envía mi posición (al caer, una vez más con la puntuación)
@@ -11068,7 +11489,7 @@ class NetPlay {
   }
   revive() {
     if (!this.down || this.mode !== "racing") return;
-    this.down = false; this.revives++; this.finishedSent = false; this.g.netRevive(); this.sendState();
+    this.stopSpectate(); this.down = false; this.revives++; this.finishedSent = false; this.g.netRevive(); this.sendState();
   }
   onLocalDeath() {
     if (this.mode !== "racing") return;
@@ -11097,7 +11518,7 @@ class NetPlay {
   }
   finish() {
     if (this.mode !== "racing") return;
-    this.mode = "done"; clearTimeout(this.endConfirm); this.endConfirm = null;
+    this.stopSpectate(); this.mode = "done"; clearTimeout(this.endConfirm); this.endConfirm = null;
     const g = this.g, list = this.standings(), place = list.findIndex(x => x.me), n = list.length, lost = !!this.lost;
     g.bankRun();   // las monedas de la partida (en online se guardan al final)
     let coins = 0, xp = 0, team = 0;
@@ -11115,7 +11536,7 @@ class NetPlay {
   // ----- Pantallas -----
   say(t, k = "") { const m = document.getElementById("netMsg"); if (m) { m.textContent = t; m.className = "bk-msg " + k; } }
   render() { if (this.g.netScreen) this.g.netScreen.render(); }
-  renderWait() { if (this.g.state === "over" && this.g.overShown && this.mode === "racing") this.g.netScreen.showWaiting(); }
+  renderWait() { this.waitView(); }
   showResult() { this.g.netScreen.showResult(this.result); }
   // ----- Partida rápida (sala de espera común; siempre en modo Carrera) -----
   async quickMatch() {
@@ -11145,8 +11566,9 @@ class NetPlay {
   // ----- Dibujo de los rivales: semitransparentes, con el contorno de su color y su apodo -----
   drawGhosts(c) {
     if (this.mode !== "racing" && this.mode !== "done") return;
-    const g = this.g, myD = g.distance, S = CONFIG.RAPTOR_SCALE, pl = g.player;
-    Object.values(this.remotes).forEach((r, idx) => {
+    const g = this.g, S = CONFIG.RAPTOR_SCALE, sp = this.spec, tgt = sp && this.remotes[sp.u], myD = tgt ? this.remoteDist(tgt) : g.distance, pl = tgt ? { x: PLAYER_X, laneT: clamp(tgt.l, 0, 1) } : g.player;   // espectando: la cámara sigue al compañero
+    const order = Object.values(this.remotes).map((r, idx) => [r, idx]); if (tgt) order.sort((a, b) => (a[0] === tgt) - (b[0] === tgt));   // el que sigues, encima
+    order.forEach(([r, idx]) => {
       if (r.left) return;
       const x = pl.x + (this.remoteDist(r) - myD), lane = clamp(r.l, 0, 1), sk = SE.get(r.sk) ? r.sk : CONFIG.DEFAULT_SKIN, col = this.colors[r.u] || "#ffffff";
       if (x < -60 || x > W + 10) {   // fuera de la pantalla: flecha con la distancia
@@ -11155,16 +11577,16 @@ class NetPlay {
         g.ui.pill(c, `${right ? "" : "◀ "}${r.n} ${right ? "+" : "-"}${pts}${right ? " ▶" : ""}`, right ? W - 90 : 90, 230 + idx * 24, 9, "#16111f", col);
         return;
       }
-      const overlap = Math.abs(lane - pl.laneT) < 0.35 && Math.abs(x - pl.x) < 60;   // encima de ti: más transparente
+      const overlap = r !== tgt && Math.abs(lane - pl.laneT) < 0.35 && Math.abs(x - pl.x) < 60;   // encima de ti: más transparente
       r.st.tick = Math.floor(g.time / CONFIG.SKIN_TICK); r.st.duck = !!r.sl; r.st.hat = r.h || null;
       const jumpY = r.y / S, frame = r.dead ? "idle" : jumpY > 0 ? "jump" : r.sl ? (r.st.tick % 4 < 2 ? "duck1" : "duck2") : SE.runFrame(sk, r.st.tick).frame, oy = Math.round(-1 - SE.H + 1 - jumpY);
       c.save(); applyLane(c, lane); c.translate(x, 0);
-      const a = r.dead ? 0.2 : overlap ? 0.28 : 0.45;
+      const a = r.dead ? 0.2 : r === tgt ? 0.92 : overlap ? 0.28 : 0.45;
       for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) SE.drawSprite(c, sk, frame, dx * 0.7, oy + dy * 0.7, S, r.st.tick, { tint: col, alpha: a + 0.25 });   // contorno de su color
       c.globalAlpha = a; drawRaptor(c, sk, r.st, jumpY, r.dead, false);
       c.restore();
       const tp = toScreen(lane, x + 36, r.y + (r.sl ? 50 : 90) + idx * 20 + (overlap ? 26 : 0));   // etiquetas escalonadas; si va encima de ti, más arriba
-      g.ui.pill(c, r.n.toUpperCase() + (r.dead ? (this.coop ? " 💤" : " ✖") : ""), clamp(tp.x, 70, W - 70), tp.y, 9, "#16111f", r.dead ? "#8a8098" : col);
+      g.ui.pill(c, (r === tgt ? "👁 " : "") + r.n.toUpperCase() + (r.dead ? (this.coop ? " 💤" : " ✖") : ""), clamp(tp.x, 70, W - 70), tp.y, 9, "#16111f", r.dead ? "#8a8098" : col);
     });
   }
   // Marcador (a la derecha): posiciones en la carrera, estado del equipo en el cooperativo
@@ -11180,8 +11602,15 @@ class NetPlay {
       ui.text(c, fmtInt(p.s), x + 186, yy, 10, p.me ? UI_T.weak : col, "right");
     });
     if (this.coop) ui.text(c, `JEFES DERROTADOS: ${this.bossLv.size} · EQUIPO ${fmtInt(list.reduce((a, p) => a + p.s, 0))}`, x + 10, y + h - 12, 9, UI_T.weak);
-    const ty = y + h + 18, key = this.g.touchMode ? "" : " · Q";
+    const ty = y + h + 18, key = this.g.touchMode ? "" : " · " + this.g.controls.label("trap");
     ui.pill(c, this.coop ? `🎁 ESCUDOS ×${this.traps}${key}` : `🎯 TRAMPAS ×${this.traps}${key}`, x + 98, ty, 9, this.traps ? "#16111f" : UI_T.dim, this.traps ? (this.coop ? UI_T.go : UI_T.weak) : UI_T.pill);
+    const sb = this.spec && this.spec.boss;
+    if (sb) {   // espectando un combate: vida del jefe del compañero
+      const bw = 320, bx = Math.round(W / 2 - bw / 2), by = 40;
+      ui.text(c, "⚔ " + String(sb[0] || "JEFE").toUpperCase(), W / 2, 20, 14, "#ff8a9a", "center");
+      c.fillStyle = UI_T.line; c.fillRect(bx - 5, by - 5, bw + 10, 24); c.fillStyle = "#3a2f50"; c.fillRect(bx, by, bw, 14);
+      c.fillStyle = "#ff5c6c"; c.fillRect(bx, by, Math.round(bw * clamp(sb[1] / Math.max(1, sb[2]), 0, 1)), 14);
+    }
     if (g.netDraft && g.state === "playing") ui.pill(c, "💨 ¡REBUFO! +10 % VELOCIDAD", W / 2, H - 40, 10, "#16111f", UI_T.info);
   }
 }
@@ -11216,6 +11645,10 @@ class NetScreen {
     bind("netStart", () => { if (Object.keys(net.members).length < 2) throw new Error("Hacen falta al menos 2 jugadores."); net.startRace(); });
     bind("netLeave", () => { net.leaveRoom(); net.say(""); this.render(); });
     bind("nrAgain", () => { if (!net.room) { net.leaveAll(); this.g.showMenu(); return; } this.res.classList.add("hidden"); net.mode = "room"; net.ready = false; game.netRace = false; game.netCoop = false; game.netDraft = false; game.state = "net"; game.reset(); game.closeScreens(); this.el.classList.remove("hidden"); if (net.room) net.room.track(net.meta()); this.render(); });
+    bind("nrSpec", () => net.toggleBoard());
+    bind("specPrev", () => net.specCycle(-1));
+    bind("specNext", () => net.specCycle(1));
+    bind("specBoard", () => net.toggleBoard());
     bind("nrExit", () => { this.res.classList.add("hidden"); net.leaveAll(); game.showMenu(); });
     for (const id of ["netNick", "netCodeIn"]) $(id).addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") $(id === "netNick" ? "netNickOk" : "netJoin").click(); });
   }
@@ -11262,7 +11695,18 @@ class NetScreen {
       $("nrSub").textContent = anyAlive ? `Te levantas en ${Math.max(0, Math.ceil(net.reviveT))} s o en cuanto tu equipo derrote a un jefe` : "Todo el equipo ha caído…";
     } else { $("nrTitle").textContent = "¡ELIMINADO!"; $("nrSub").textContent = "Esperando a que terminen los demás…"; }
     $("nrList").innerHTML = net.standings().map((p, i) => `<div class="${p.me ? "me" : ""}" style="--pc:${net.colors[p.u] || "#fff"}"><b>${net.coop ? "●" : i + 1 + "º"}</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.dead ? (p.left ? "se fue" : net.coop ? "💤 caído" : "✖") : "🏃 corriendo"}</small></div>`).join("");
-    $("nrActions").classList.add("hidden"); this.res.classList.remove("hidden");
+    $("nrActions").classList.add("hidden"); $("nrSpec").classList.toggle("hidden", !net.spec); this.res.classList.remove("hidden");
+  }
+  // Barra del modo espectador (abajo, sobre el juego)
+  specBar(spec) {
+    const net = this.g.net, $ = id => document.getElementById(id), bar = $("specBar"), r = spec && net.remotes[spec.u];
+    bar.classList.toggle("hidden", !r || spec.board);
+    if (!r) return;
+    const alive = net.specAlive().length;
+    bar.style.setProperty("--pc", net.colors[r.u] || "#fff");
+    $("specName").textContent = r.n;
+    $("specInfo").textContent = `${fmtInt(r.s)} pts` + (net.coop && net.down ? ` · te levantas en ${Math.max(0, Math.ceil(net.reviveT))} s` : "");
+    $("specPrev").disabled = $("specNext").disabled = alive < 2;
   }
   showResult(r) {
     const $ = id => document.getElementById(id), n = r.list.length, net = this.g.net;
@@ -11277,9 +11721,224 @@ class NetScreen {
       $("nrSub").textContent = r.lost ? "Se cortó la conexión con la sala: la carrera no cuenta (las monedas recogidas sí)." : n < 2 ? "Te has quedado solo en la sala." : `+${r.coins} monedas · +${r.xp} XP del pase${r.ups.length ? " · ¡subes de nivel en el pase!" : ""}`;
       $("nrList").innerHTML = r.list.map((p, i) => `<div class="${p.me ? "me" : ""} p${i + 1}" style="--pc:${net.colors[p.u] || "#fff"}"><b>${["🥇", "🥈", "🥉", "4º"][i] || i + 1 + "º"}</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.left ? "se fue" : ""}</small></div>`).join("");
     }
-    $("nrAgain").classList.toggle("hidden", !net.room);   // sin conexión no hay revancha
+    $("nrSpec").classList.add("hidden"); $("nrAgain").classList.toggle("hidden", !net.room);   // sin conexión no hay revancha
     $("nrActions").classList.remove("hidden"); this.res.classList.remove("hidden");
     if (!r.lost && (r.coop || (r.place === 0 && n > 1))) this.g.sfx.jackpot();
+  }
+}
+
+// =====================================================================
+//  Modo espectador (online): al caer sigues a un compañero que sigue vivo (◀ ▶ para cambiar).
+//  Quien está siendo observado envía ~8 veces por segundo lo que tiene delante (obstáculos y jefe);
+//  el espectador lo reconstruye y lo mueve entre mensajes. Tu partida se guarda aparte y vuelve si revives.
+// =====================================================================
+const SPEC_CONFIG = { SEND_MS: 120, AHEAD: W + 160 };
+const SPEC_KIND = { ground: "g", rock: "r", flyer: "f", stalactite: "s" }, SPEC_KIND_R = { g: "ground", r: "rock", f: "flyer", s: "stalactite" };
+// Obstáculo → [id, tipo, carril, x, parámetros, estilo, velocidad extra]
+function specEncode(o) {
+  let p = "";
+  if (o.kind === "ground") p = (Object.keys(GROUND_SIZES).find(k => GROUND_SIZES[k].w === o.pw && GROUND_SIZES[k].h === o.h) || "small") + o.count;
+  else if (o.kind === "rock") p = o.size;
+  else if (o.kind === "flyer") p = o.diver ? "mid*" : Object.keys(FLYER_HEIGHTS).find(k => FLYER_HEIGHTS[k] === o.y) || "mid";
+  return [o.nid, SPEC_KIND[o.kind] || "s", o.lane, Math.round(o.x), p, o.style, Math.round(o.extra || 0)];
+}
+function specDecode(a) {
+  const [id, k, lane, x, p, style, extra] = a, kind = SPEC_KIND_R[k] || "stalactite", ps = String(p || "");
+  let opts = {};
+  if (kind === "ground") { const m = /^([a-z]+)(\d*)$/.exec(ps) || []; opts = { size: GROUND_SIZES[m[1]] ? m[1] : "small", count: clamp(+m[2] || 1, 1, 4) }; }
+  else if (kind === "rock") opts = { size: ROCK_SIZES[ps] ? ps : "small" };
+  else if (kind === "flyer") { const h = ps.replace("*", ""); opts = { h: FLYER_HEIGHTS[h] != null ? h : "mid", diver: ps.includes("*") }; }
+  const o = new Obstacle(kind, lane ? 1 : 0, +x || 0, opts, { obstacles: { ground: style, rock: style, flyer: style } });
+  o.nid = id; o.extra = +extra || 0; return o;
+}
+Object.assign(NetPlay.prototype, {
+  // ----- Quien es observado -----
+  onWatch(d) {
+    if (!this.watchers) this.watchers = new Set();
+    if (d.t === this.uid) this.watchers.add(d.u); else this.watchers.delete(d.u);
+  },
+  specSend(now) {
+    const g = this.g; if (!this.room || !this.watchers || !this.watchers.size || g.state !== "playing" || now - (this.lastSpec || 0) < SPEC_CONFIG.SEND_MS) return;
+    for (const u of this.watchers) if (!this.members[u] || !this.remotes[u] || this.remotes[u].left) this.watchers.delete(u);
+    if (!this.watchers.size) return;
+    this.lastSpec = now; this.nidSeq = this.nidSeq || 0;
+    const p = g.player, o = [];
+    for (const ob of g.obstacles) if (!ob.dead && ob.x < PLAYER_X + SPEC_CONFIG.AHEAD && ob.x + ob.w > -60) { if (!ob.nid) ob.nid = ++this.nidSeq; o.push(specEncode(ob)); }
+    const B = g.bosses.boss, b = B && B.state !== "leave" ? [B.name, B.hp, B.maxHp] : null;
+    this.lastSend = now;   // este mensaje también vale como estado
+    this.room.send("spec", { u: this.uid, d: Math.round(g.distance), l: Math.round(p.laneT * 100) / 100, y: Math.round(p.y), sl: p.sliding ? 1 : 0, s: g.score, dead: 0, lv: g.level.level, o, b });
+  },
+  // ----- Espectador -----
+  onSpec(d) {
+    this.onState(d);   // posición, carril y puntos (como un mensaje normal)
+    const S = this.spec, g = this.g; if (!S || d.u !== S.u || this.mode !== "racing") return;
+    const seen = new Set();
+    for (const a of d.o || []) {
+      let o = S.obs.get(a[0]);
+      if (!o) { o = specDecode(a); S.obs.set(a[0], o); g.obstacles.push(o); } else o.x = a[3];
+      seen.add(a[0]);
+    }
+    for (const [id, o] of S.obs) if (!seen.has(id)) { if (o.x > PLAYER_X - 20 && o.x < W) g.puff(o.x + o.w / 2, o.y || 0, o.lane, 8, "#ffffff"); S.obs.delete(id); }   // roto por su rugido
+    g.obstacles = g.obstacles.filter(o => S.obs.has(o.nid));
+    S.boss = d.b || null; S.lv = d.lv;
+    const bi = Math.max(0, (d.lv || 1) - 1) % BIOMES.length; if (g.level.cur !== bi) g.level.setBiome(bi);
+  },
+  specAlive() { return Object.values(this.remotes || {}).filter(r => !r.dead && !r.left); },
+  startSpectate(u) {
+    const g = this.g;
+    if (!this.spec) {   // guarda tu partida tal cual (vuelve si revives)
+      this.spec = { u: null, obs: new Map(), boss: null, board: false, stash: { obstacles: g.obstacles, coinsArr: g.coinsArr, powerups: g.powerups, eggs: g.eggs, hatches: g.hatches, biome: g.level.cur, portal: g.level.portal, boss: g.bosses.boss, scroll: g.scroll } };
+      g.coinsArr = []; g.powerups = []; g.eggs = []; g.hatches = []; g.level.portal = null; g.bosses.boss = null;
+    }
+    if (this.spec.u === u) return;
+    this.spec.u = u; this.spec.obs.clear(); this.spec.boss = null; g.obstacles = [];
+    if (this.room) this.room.send("watch", { u: this.uid, t: u });
+  },
+  stopSpectate(restore = true) {
+    const S = this.spec, g = this.g; if (!S) return;
+    this.spec = null; if (this.room) this.room.send("watch", { u: this.uid, t: null });
+    if (restore) { const st = S.stash; Object.assign(g, { obstacles: st.obstacles, coinsArr: st.coinsArr, powerups: st.powerups, eggs: st.eggs, hatches: st.hatches, scroll: st.scroll }); g.level.portal = st.portal; g.bosses.boss = st.boss; g.level.cur = g.level.prev = st.biome; g.level.fade = 1; }
+    g.netScreen.specBar(null);
+  },
+  specCycle(dir) {
+    const alive = this.specAlive(); if (!this.spec || alive.length < 1) return;
+    const i = alive.findIndex(r => r.u === this.spec.u), next = alive[(i + dir + alive.length) % alive.length];
+    this.spec.board = false; this.startSpectate(next.u); this.g.sfx.click(); this.waitView();
+  },
+  toggleBoard() { if (!this.spec) return; this.spec.board = !this.spec.board; this.g.sfx.click(); this.waitView(); },
+  // Qué se ve mientras estás fuera: el compañero que sigues (con una barra abajo) o la clasificación
+  waitView() {
+    const g = this.g; if (this.mode !== "racing" || g.state !== "over" || !g.overShown) return;
+    const alive = this.specAlive();
+    if (alive.length) { if (!this.spec || !alive.some(r => r.u === this.spec.u)) this.startSpectate(alive.sort((a, b) => this.remoteDist(b) - this.remoteDist(a))[0].u); }
+    else if (this.spec) this.stopSpectate();
+    if (!this.spec || this.spec.board) g.netScreen.showWaiting(); else g.netScreen.res.classList.add("hidden");
+    g.netScreen.specBar(this.spec);
+  },
+  updateSpectate(dt) {
+    const S = this.spec, g = this.g, r = S && this.remotes[S.u]; if (!S) return;
+    if (!r || r.dead || r.left) { this.waitView(); return; }
+    const v = r.t > r.pt ? clamp((r.d - r.pd) / (r.t - r.pt) * 1000, 0, 3000) : 0;
+    for (const o of g.obstacles) o.update(dt, v, g);
+    g.obstacles = g.obstacles.filter(o => o.x + o.w > DESPAWN_X || !S.obs.delete(o.nid));
+    g.scroll = this.remoteDist(r);
+  },
+});
+
+// =====================================================================
+//  Controles configurables (Opciones → Controles): cada acción admite dos teclas.
+//  Grupos: «1 jugador» (también online) y «Multijugador local» (J1 y J2 comparten teclado, sin repetir teclas).
+// =====================================================================
+const CONTROL_ACTIONS = {
+  solo: [["jump", "Saltar · doble salto · planear"], ["slide", "Deslizarse · caída rápida"], ["laneUp", "Carril de arriba"], ["laneDown", "Carril de abajo"], ["roar", "Rugido · súper rugido"], ["trap", "Trampa / escudo (online)"], ["pause", "Pausa"]],
+  vs1: [["jump", "Saltar"], ["slide", "Deslizarse"], ["roar", "Rugido"], ["trap", "Trampa"]],
+  vs2: [["jump", "Saltar"], ["slide", "Deslizarse"], ["roar", "Rugido"], ["trap", "Trampa"]],
+};
+const CONTROL_PRESETS = {
+  wasd:   { name: "WASD", desc: "W saltar · S deslizarse · A/D carril · E rugido",
+            solo: { jump: ["w", ""], slide: ["s", ""], laneUp: ["a", ""], laneDown: ["d", ""], roar: ["e", ""], trap: ["q", ""], pause: ["p", ""] } },
+  arrows: { name: "Flechas", desc: "↑ saltar · ↓ deslizarse · ←/→ carril · Espacio rugido",
+            solo: { jump: ["ArrowUp", ""], slide: ["ArrowDown", ""], laneUp: ["ArrowLeft", ""], laneDown: ["ArrowRight", ""], roar: ["Space", ""], trap: ["ShiftRight", ""], pause: ["p", ""] } },
+  both:   { name: "WASD + flechas", desc: "Las dos a la vez: juega como te resulte más cómodo",
+            solo: { jump: ["w", "ArrowUp"], slide: ["s", "ArrowDown"], laneUp: ["a", "ArrowLeft"], laneDown: ["d", "ArrowRight"], roar: ["e", "Space"], trap: ["q", "ShiftRight"], pause: ["p", ""] } },
+};
+const CONTROL_VS_DEFAULT = {
+  vs1: { jump: ["w", ""], slide: ["s", ""], roar: ["e", "d"], trap: ["a", ""] },
+  vs2: { jump: ["ArrowUp", ""], slide: ["ArrowDown", ""], roar: ["ArrowRight", "Enter"], trap: ["ArrowLeft", ""] },
+};
+const CONTROL_RESERVED = ["Escape", "m", "Tab"];   // Esc (pausa / volver), M (sonido) y Tab no se pueden asignar
+const KEY_NAMES = { ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→", Space: "Espacio", Enter: "Intro", Escape: "Esc", Backspace: "Retroceso",
+  ShiftLeft: "Mayús izq.", ShiftRight: "Mayús der.", ControlLeft: "Ctrl izq.", ControlRight: "Ctrl der.", AltLeft: "Alt", AltRight: "Alt Gr", CapsLock: "Bloq Mayús",
+  Insert: "Insert", Delete: "Supr", Home: "Inicio", End: "Fin", PageUp: "Re Pág", PageDown: "Av Pág" };
+const keyName = k => !k ? "—" : KEY_NAMES[k] || (k.length === 1 ? k.toUpperCase() : k.replace(/^Key|^Digit|^Numpad/, "").replace(/^(.)/, m => m.toUpperCase()));
+const clone = o => JSON.parse(JSON.stringify(o));
+
+class Controls {
+  constructor(game) {
+    this.g = game; this.tab = "solo"; this.wait = null; this.msg = "";
+    const $ = id => document.getElementById(id);
+    this.el = $("ctrlScr"); this.body = $("ctrlBody");
+    $("ctrlBack").addEventListener("click", e => { e.currentTarget.blur(); game.sfx.click(); this.close(); });
+    for (const b of document.querySelectorAll("#ctrlTabs .tab")) b.addEventListener("click", () => { game.sfx.click(); this.tab = b.dataset.t; this.wait = null; this.msg = ""; this.render(); });
+    // Esperando una tecla: se captura antes que el juego
+    addEventListener("keydown", e => {
+      if (!this.wait || !this.visible) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      const k = keyOf(e);
+      if (k === "Escape") { this.wait = null; this.msg = ""; this.render(); return; }
+      if (k === "Backspace" || k === "Delete") { this.set(this.wait.set, this.wait.act, this.wait.slot, ""); return; }
+      if (CONTROL_RESERVED.includes(k)) { this.msg = `${keyName(k)} está reservada (no se puede asignar).`; this.g.sfx.denied(); this.render(); return; }
+      this.set(this.wait.set, this.wait.act, this.wait.slot, k);
+    }, true);
+    this.rebuild(); this.applyLabels();
+  }
+  get visible() { return !this.el.classList.contains("hidden"); }
+  open(from) { this.returnTo = from; this.wait = null; this.msg = ""; this.render(); this.el.classList.remove("hidden"); }
+  close() { this.wait = null; this.el.classList.add("hidden"); if (this.returnTo === "pause") this.g.ui.showPause(); else this.g.showMenu(); }
+  // Configuración guardada (con valores por defecto y sin datos raros)
+  get cfg() {
+    const s = this.g.save.data;
+    if (!s.controls || typeof s.controls !== "object") s.controls = {};
+    const c = s.controls, ok = v => Array.isArray(v) && v.length === 2 && v.every(k => typeof k === "string" && k.length < 24);
+    if (!c.preset || !CONTROL_PRESETS[c.preset] && c.preset !== "custom") c.preset = "both";
+    for (const set of ["solo", "vs1", "vs2"]) {
+      const def = set === "solo" ? CONTROL_PRESETS.both.solo : CONTROL_VS_DEFAULT[set];
+      if (!c[set] || typeof c[set] !== "object") c[set] = clone(def);
+      for (const [a] of CONTROL_ACTIONS[set]) if (!ok(c[set][a])) c[set][a] = def[a].slice();
+    }
+    return c;
+  }
+  // Mapa tecla → acción de cada grupo (se recalcula al cambiar algo)
+  rebuild() {
+    const c = this.cfg; this.map = {};
+    for (const set of ["solo", "vs1", "vs2"]) { const m = this.map[set] = {}; for (const [a] of CONTROL_ACTIONS[set]) for (const k of c[set][a]) if (k) m[k] = a; }
+  }
+  action(k, set = "solo") { return this.map[set][k] || null; }
+  keys(act, set = "solo") { return this.cfg[set][act].filter(Boolean); }
+  label(act, set = "solo") { const k = this.keys(act, set); return k.length ? keyName(k[0]) : "—"; }
+  labels(act, set = "solo") { const k = this.keys(act, set); return k.length ? k.map(keyName).join(" / ") : "—"; }
+  // Asigna una tecla y la quita de cualquier otra acción del mismo grupo
+  set(set, act, slot, k) {
+    const c = this.cfg, group = set === "solo" ? ["solo"] : ["vs1", "vs2"];
+    if (k) for (const s of group) for (const [a] of CONTROL_ACTIONS[s]) c[s][a] = c[s][a].map((x, i) => (x === k && !(s === set && a === act && i === slot) ? "" : x));
+    c[set][act][slot] = k;
+    if (set === "solo") c.preset = "custom";
+    if (!c[set][act][0] && c[set][act][1]) c[set][act] = [c[set][act][1], ""];   // la principal nunca vacía si hay otra
+    this.wait = null; this.msg = k ? `${keyName(k)} → ${CONTROL_ACTIONS[set].find(x => x[0] === act)[1]}` : "Tecla quitada";
+    this.g.save.save(); this.rebuild(); this.applyLabels(); this.g.sfx.click(); this.render();
+  }
+  usePreset(id) {
+    const c = this.cfg; c.solo = clone(CONTROL_PRESETS[id].solo); c.preset = id;
+    this.msg = `Preajuste «${CONTROL_PRESETS[id].name}»`; this.g.save.save(); this.rebuild(); this.applyLabels(); this.g.sfx.click(); this.render();
+  }
+  resetVs(swap) {
+    const c = this.cfg;
+    if (swap) { const t = c.vs1; c.vs1 = c.vs2; c.vs2 = t; this.msg = "J1 y J2 intercambiados"; }
+    else { c.vs1 = clone(CONTROL_VS_DEFAULT.vs1); c.vs2 = clone(CONTROL_VS_DEFAULT.vs2); this.msg = "Controles por defecto"; }
+    this.g.save.save(); this.rebuild(); this.applyLabels(); this.g.sfx.click(); this.render();
+  }
+  // Textos de ayuda con las teclas elegidas (<kbd data-k="jump"> o data-k="vs2.roar")
+  applyLabels() {
+    for (const el of document.querySelectorAll("[data-k]")) { const [a, b] = el.dataset.k.split("."), set = b ? a : "solo", act = b || a; el.textContent = el.dataset.all ? this.labels(act, set) : this.label(act, set); }
+  }
+  render() {
+    const c = this.cfg, h = [];
+    for (const b of document.querySelectorAll("#ctrlTabs .tab")) b.classList.toggle("sel", b.dataset.t === this.tab);
+    const row = (set, act, name) => `<div class="ctrl-row"><span>${name}</span>${[0, 1].map(i => { const k = c[set][act][i], w = this.wait && this.wait.set === set && this.wait.act === act && this.wait.slot === i;
+      return `<button class="ctrl-key${w ? " wait" : ""}${k ? "" : " empty"}" data-set="${set}" data-act="${act}" data-slot="${i}">${w ? "Pulsa una tecla…" : k ? keyName(k) : i ? "+ otra" : "—"}</button>`; }).join("")}</div>`;
+    if (this.tab === "solo") {
+      h.push(`<div class="ctrl-presets">${Object.entries(CONTROL_PRESETS).map(([id, p]) => `<button class="btn${c.preset === id ? " sel" : ""}" data-preset="${id}"><b>${p.name}</b><small>${p.desc}</small></button>`).join("")}</div>`);
+      h.push(`<div class="ctrl-list">${CONTROL_ACTIONS.solo.map(([a, n]) => row("solo", a, n)).join("")}</div>`);
+      h.push(`<p class="touch-hint">${c.preset === "custom" ? "✏️ Personalizado · " : ""}Pulsa una casilla y luego la tecla que quieras. <kbd>Retroceso</kbd> la quita · <kbd>Esc</kbd> cancela. Esc siempre pausa y M silencia.</p>`);
+    } else {
+      h.push(`<div class="ctrl-vs">${["vs1", "vs2"].map((s, i) => `<div><h3>J${i + 1} · carril de ${i ? "abajo" : "arriba"}</h3><div class="ctrl-list">${CONTROL_ACTIONS[s].map(([a, n]) => row(s, a, n)).join("")}</div></div>`).join("")}</div>`);
+      h.push(`<div class="actions"><button class="btn" data-vs="swap">⇄ Intercambiar J1 y J2</button><button class="btn ghost" data-vs="reset">Restablecer</button></div>`);
+    }
+    if (this.msg) h.push(`<p class="bk-msg ok">${escapeHtml(this.msg)}</p>`);
+    this.body.innerHTML = h.join("");
+    for (const b of this.body.querySelectorAll(".ctrl-key")) b.addEventListener("click", e => { e.currentTarget.blur(); this.g.sfx.click(); this.wait = { set: b.dataset.set, act: b.dataset.act, slot: +b.dataset.slot }; this.msg = ""; this.render(); });
+    for (const b of this.body.querySelectorAll("[data-preset]")) b.addEventListener("click", e => { e.currentTarget.blur(); this.usePreset(b.dataset.preset); });
+    for (const b of this.body.querySelectorAll("[data-vs]")) b.addEventListener("click", e => { e.currentTarget.blur(); this.resetVs(b.dataset.vs === "swap"); });
   }
 }
 
@@ -11308,7 +11967,7 @@ Sfx.prototype.mountFx = function (id) {
 //  Estados: menu · play · playing · paused · over · shop · roulette · manual · achievements
 // =====================================================================
 // Estados con el fondo animado de la portada
-const MENU_STATES = ["menu", "play", "shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season", "ranking", "net"];
+const MENU_STATES = ["menu", "play", "shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season", "ranking", "net", "controls"];
 class Game {
   constructor(canvas) {
     this.canvas = canvas; this.ctx = canvas.getContext("2d");
@@ -11324,7 +11983,7 @@ class Game {
     this.ach = new AchievementManager(this);
     this.ui = new UI(this); this.shop = new Shop(this); this.roulette = new Roulette(this); this.manual = new Manual(this);
     this.rogue = new RogueManager(this); this.history = new BuildHistory(this); this.album = new UpgradeAlbum(this);
-    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this); this.tips = new TipManager(this); this.season = new SeasonPass(this);
+    this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.controls = new Controls(this); this.tree = new SkillTree(this); this.tips = new TipManager(this); this.season = new SeasonPass(this);
     this.dailyRace = new DailyRace(this); this.daily = false;   // carrera diaria
     this.weather = new WeatherManager(this); this.pets = new PetManager(this);   // clima y mascota
     this.online = new Online(this); this.ranking = new RankingScreen(this); this.backup.setupCloud();
@@ -11401,7 +12060,7 @@ class Game {
   // ----- Estados -----
   closeScreens() {
     this.ui.hideAll();
-    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el, this.season.el, this.ranking.el, this.netScreen.el, this.netScreen.res]) el.classList.add("hidden");
+    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el, this.season.el, this.ranking.el, this.netScreen.el, this.netScreen.res, this.controls.el]) el.classList.add("hidden");
   }
   showMenu() {
     if (["playing", "paused", "choice", "tip"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
@@ -11533,6 +12192,10 @@ class Game {
   openNet() { this.state = "net"; this.closeScreens(); this.netScreen.open(); }
   openRanking() { this.state = "ranking"; this.closeScreens(); this.ranking.open(); }
   openTree() { this.state = "tree"; this.closeScreens(); this.tree.open(); }
+  openControls(from) {   // desde la pausa no se abandona la partida
+    if (["choice", "tip"].includes(this.state)) return;
+    if (from !== "pause" && ["playing", "paused"].includes(this.state)) { if (this.state === "playing") this.setPaused(true); from = "pause"; }
+    if (from !== "pause") this.state = "controls"; this.closeScreens(); this.controls.open(from); }
   openStats() { this.state = "stats"; this.closeScreens(); this.statsMgr.open(); }
   openBackup() { this.state = "backup"; this.closeScreens(); this.backup.open(); }
   openAlbum() { this.state = "album"; this.closeScreens(); this.album.open(); }
@@ -11541,7 +12204,7 @@ class Game {
     if (on && this.state === "playing") {
       this.state = "paused"; this.ui.showPause();
     } else if (!on && this.state === "paused") {
-      this.state = "playing"; this.ui.hideAll(); this.manual.el.classList.add("hidden");
+      this.state = "playing"; this.ui.hideAll(); this.manual.el.classList.add("hidden"); this.controls.el.classList.add("hidden");
     }
   }
   togglePause() { this.setPaused(this.state === "playing"); }
@@ -11839,8 +12502,9 @@ class Game {
     }
     if (this.state === "over") {
       this.overTime += dt; this.updateParticles(dt);
-      if (!this.overShown && this.overTime > 0.7) { this.overShown = true; if (this.netRace) { if (this.net.mode === "done") this.net.showResult(); else this.netScreen.showWaiting(); } else this.ui.showOver(); }
-      if (this.netRace && this.overShown && this.net.mode === "racing" && (this.netRefresh = (this.netRefresh || 0) + dt) > 0.5) { this.netRefresh = 0; this.netScreen.showWaiting(); }
+      if (!this.overShown && this.overTime > 0.7) { this.overShown = true; if (this.netRace) { if (this.net.mode === "done") this.net.showResult(); else this.net.waitView(); } else this.ui.showOver(); }
+      if (this.netRace && this.overShown && this.net.mode === "racing" && (this.netRefresh = (this.netRefresh || 0) + dt) > 0.5) { this.netRefresh = 0; this.net.waitView(); }
+      if (this.netRace && this.net.spec) this.net.updateSpectate(dt);   // espectando a un compañero
       return;
     }
     if (this.state !== "playing") return;
@@ -12127,7 +12791,7 @@ class Game {
     if (!this.versus && lane === this.player.logicalLane && this.stat("ghostPack")) for (const gh of this.ghosts) {   // Manada fantasma
       const pl = this.player; SE.drawSprite(c, this.skinId, "run", Math.round((pl.x + gh.x) / 3), Math.round(-SE.H), 3, this.player.skinState.tick, { tint: "#7fd0ff", alpha: gh.cd > 0 ? 0.18 : 0.5 });
     }
-    for (const p of this.players) if ((p.laneT < 0.5 ? 0 : 1) === lane) this.drawEntity(c, p.laneT, p.x, () => p.draw(c));
+    if (!this.net.spec) for (const p of this.players) if ((p.laneT < 0.5 ? 0 : 1) === lane) this.drawEntity(c, p.laneT, p.x, () => p.draw(c));
     const pl = this.player;
     c.save(); applyLane(c, lane);
     for (const p of this.particles) if (p.lane === lane) p.draw(c);
@@ -12165,25 +12829,28 @@ game.showMenu();
 
 // Letra pulsada en minúscula (acepta mayúsculas, Bloq Mayús y Mayús)
 const KEY_CODES = { KeyW: "w", KeyA: "a", KeyS: "s", KeyD: "d", KeyE: "e", KeyP: "p", KeyM: "m", KeyT: "t", KeyB: "b" };
-const keyOf = e => (e.key && e.key.length === 1 ? e.key.toLowerCase() : KEY_CODES[e.code] || e.code);
+const keyOf = e => (e.code === "Space" ? "Space" : e.key && e.key.length === 1 && e.key !== " " ? e.key.toLowerCase() : KEY_CODES[e.code] || e.code);
+const C = game.controls;   // teclas configurables (Opciones → Controles)
 addEventListener("keydown", e => {
   const k = keyOf(e), st = game.state;
   if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;           // escribir el nombre de un diseño
   // Si el foco está en un botón, Espacio/Enter lo pulsan (comportamiento normal del navegador)
   if ((e.code === "Space" || e.code === "Enter") && e.target.closest && e.target.closest("button")) return;
-  // Controles: W saltar · S deslizarse/caída rápida · A carril de arriba · D carril de abajo · E rugido · P pausa
+  // Acción de la tecla según los controles elegidos (por defecto: W saltar · S deslizarse · A/D carril · E rugido · P pausa, y también las flechas)
+  const act = C.action(k), a1 = game.versus ? C.action(k, "vs1") : null, a2 = game.versus ? C.action(k, "vs2") : null;
   if ("wasde".includes(k) && k.length === 1) e.preventDefault();
-  if (k.startsWith("Arrow") && ["playing", "paused"].includes(st)) e.preventDefault();   // las flechas no mueven la página
-  if (k === "s") game.player.downHeld = true;
-  if (k === "w") game.player.upHeld = true;   // planeo y monturas (roca de lava, seta)
-  if (k === "ArrowDown") game.p2.downHeld = true;
+  if ((k.startsWith("Arrow") || act || a1 || a2) && ["playing", "paused", "over"].includes(st)) e.preventDefault();   // las flechas y el espacio no mueven la página
+  if (game.versus) {   // mantener pulsado: deslizarse / caída rápida y planear
+    if (a1 === "slide") game.player.downHeld = true; if (a1 === "jump") game.player.upHeld = true;
+    if (a2 === "slide") game.p2.downHeld = true; if (a2 === "jump") game.p2.upHeld = true;
+  } else { if (act === "slide") game.player.downHeld = true; if (act === "jump") game.player.upHeld = true; }   // planeo y monturas (roca de lava, seta)
   if (e.repeat) return;
   if (DEBUG && k === "m" && st === "playing" && !game.versus) { game.mounts.debugGive(e.shiftKey); return; }   // M: montura del bioma · Mayús+M: recorre las 10
   if (k === "m") { game.toggleMute(); return; }
   if (game.manual.visible) {
     if (k === "Escape") game.manual.close();
-    else if (k === "a") game.manual.show(game.manual.page - 1);
-    else if (k === "d") game.manual.show(game.manual.page + 1);
+    else if (k === "a" || act === "laneUp") game.manual.show(game.manual.page - 1);
+    else if (k === "d" || act === "laneDown") game.manual.show(game.manual.page + 1);
     return;
   }
   if (game.roulette.visible) { if (k === "Escape") game.roulette.close(); return; }
@@ -12194,12 +12861,13 @@ addEventListener("keydown", e => {
   if (game.netScreen.visible) { if (k === "Escape") game.netScreen.close(); return; }
   if (game.ranking.visible) { if (k === "Escape") game.ranking.close(); return; }
   if (game.backup.visible) { if (k === "Escape") game.backup.close(); return; }
-  if (game.tips.visible) { if (["w", "Enter", "Escape", "ArrowUp"].includes(k) || e.code === "Space") game.tips.close(); return; }
+  if (game.controls.visible) { if (k === "Escape") game.controls.close(); return; }
+  if (game.tips.visible) { if (["w", "Enter", "Escape", "ArrowUp"].includes(k) || e.code === "Space" || act === "jump") game.tips.close(); return; }
   if (st === "choice") {   // elección de mejora o pacto: A/D o flechas + W/Intro, R barajar, Q saltar, 1–4 directa
     const S = game.rogue.screen;
-    if (k === "a" || k === "ArrowLeft") S.move(-1);
-    else if (k === "d" || k === "ArrowRight") S.move(1);
-    else if (k === "w" || k === "ArrowUp" || k === "Enter" || e.code === "Space") S.confirm();
+    if (k === "a" || k === "ArrowLeft" || act === "laneUp") S.move(-1);
+    else if (k === "d" || k === "ArrowRight" || act === "laneDown") S.move(1);
+    else if (k === "w" || k === "ArrowUp" || k === "Enter" || e.code === "Space" || act === "jump") S.confirm();
     else if (k === "r") S.reroll();
     else if (k === "q") S.skip();
     else if (/^Digit[1-4]$/.test(e.code) && S.kind !== "pact") S.pick(+e.code[5] - 1);
@@ -12219,44 +12887,49 @@ addEventListener("keydown", e => {
     else if (k === "Escape") game.ui.menuBack();
     else if (k === "ArrowDown" || k === "ArrowUp" || k === "ArrowLeft" || k === "ArrowRight") { e.preventDefault(); game.ui.menuFocus(k === "ArrowDown" || k === "ArrowRight" ? 1 : -1); }
   } else if (st === "play") {
-    if (k === "w") { if (game.ui.versusSel) game.startVersus(game.ui.selMode); else game.start(game.ui.selMode, game.ui.selLevel); }
+    if (k === "w" || act === "jump") { if (game.ui.versusSel) game.startVersus(game.ui.selMode); else game.start(game.ui.selMode, game.ui.selLevel); }
     else if (k === "Escape") game.showMenu();
   } else if (st === "shop") {
     if (k === "Escape") game.shop.close();
   } else if (st === "over") {
     if (game.overTime < 0.7) return;
-    if (game.netRace) { if (k === "Escape" && game.net.mode !== "racing") { game.net.leaveAll(); game.showMenu(); } return; }   // online: se usan los botones del podio
-    if (k === "w") game.retry();
+    if (game.netRace) {   // online: se usan los botones del podio; caído, ◀ ▶ cambian a quién espectas y T muestra la clasificación
+      const N = game.net;
+      if (N.mode === "racing") { if (act === "laneUp" || k === "ArrowLeft") N.specCycle(-1); else if (act === "laneDown" || k === "ArrowRight") N.specCycle(1); else if (k === "t") N.toggleBoard(); }
+      if (k === "Escape" && N.mode !== "racing") { N.leaveAll(); game.showMenu(); }
+      return;
+    }
+    if (k === "w" || act === "jump") game.retry();
     else if (k === "t") game.openShop("over");
     else if (k === "Escape") game.showMenu();
   } else if (st === "paused") {
-    if (k === "p" || k === "Escape" || k === "w") game.setPaused(false);
+    if (k === "p" || k === "Escape" || k === "w" || act === "pause" || act === "jump") game.setPaused(false);
   } else if (st === "playing" && game.versus) {
-    // Multijugador — J1: W saltar · S deslizarse · E/D rugido   J2: ↑ saltar · ↓ deslizarse · →/Intro rugido
-    switch (k) {
-      case "w": game.player.jump(); break;
-      case "s": game.player.slide(); break;
-      case "e": case "d": game.roarP(game.player); break;
-      case "a": game.throwTrap(game.player); break;
-      case "ArrowLeft": game.throwTrap(game.p2); break;
-      case "ArrowUp": game.p2.jump(); break;
-      case "ArrowDown": game.p2.slide(); break;
-      case "ArrowRight": case "Enter": case "ShiftRight": game.roarP(game.p2); break;
-      case "p": case "Escape": game.setPaused(true); break;
+    // Multijugador local — por defecto J1: W saltar · S deslizarse · E/D rugido · A trampa   J2: ↑ · ↓ · →/Intro · ←
+    for (const [a, p] of [[a1, game.player], [a2, game.p2]]) switch (a) {
+      case "jump": p.jump(); break;
+      case "slide": p.slide(); break;
+      case "roar": game.roarP(p); break;
+      case "trap": game.throwTrap(p); break;
     }
+    if (k === "Escape" || (!a1 && !a2 && act === "pause")) game.setPaused(true);
   } else if (st === "playing") {
-    switch (k) {
-      case "w": game.jump(); break;
-      case "s": game.player.slide(); break;
-      case "a": game.player.changeLane(-1); break;   // carril de arriba
-      case "d": game.player.changeLane(1); break;    // carril de abajo
-      case "e": game.roar(); break;
-      case "q": if (game.netRace) game.net.throwTrap(); break;   // online: lanzar trampa al rival
-      case "p": case "Escape": game.setPaused(true); break;
+    switch (k === "Escape" ? "pause" : act) {
+      case "jump": game.jump(); break;
+      case "slide": game.player.slide(); break;
+      case "laneUp": game.player.changeLane(-1); break;     // carril de arriba
+      case "laneDown": game.player.changeLane(1); break;    // carril de abajo
+      case "roar": game.roar(); break;
+      case "trap": if (game.netRace) game.net.throwTrap(); break;   // online: trampa al rival / escudo al compañero
+      case "pause": game.setPaused(true); break;
     }
   }
 });
-addEventListener("keyup", e => { const k = keyOf(e); if (k === "s") game.player.downHeld = false; if (k === "w") game.player.upHeld = false; if (k === "ArrowDown") game.p2.downHeld = false; });
+addEventListener("keyup", e => {
+  const k = keyOf(e), pl = game.player, p2 = game.p2;
+  if (game.versus) { const a1 = C.action(k, "vs1"), a2 = C.action(k, "vs2"); if (a1 === "slide") pl.downHeld = false; if (a1 === "jump") pl.upHeld = false; if (a2 === "slide") p2.downHeld = false; if (a2 === "jump") p2.upHeld = false; }
+  else { const a = C.action(k); if (a === "slide") pl.downHeld = false; if (a === "jump") pl.upHeld = false; }
+});
 
 // Gestos: tocar = saltar, deslizar ↓ = deslizarse / caída rápida
 let touch = null;
