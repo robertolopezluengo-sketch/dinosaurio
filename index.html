@@ -733,6 +733,34 @@
   .os-rank { margin: 6px 0 0; font-size: 11px; color: var(--info); } .os-rank b { color: var(--weak); font-weight: 400; }
   .mm-world { background: linear-gradient(180deg, rgba(40,90,170,.95), rgba(35,27,56,.94)); }
   .rk-nick .btn { flex: 0 0 auto; width: auto; min-width: 0; }
+  /* Multijugador online */
+  #touch button.t-trap { display: none; background: linear-gradient(180deg, #7b5cff, #4a2fb0); }
+  body.net-race #touch button.t-trap { display: flex; }
+  .mm-online { background: linear-gradient(180deg, rgba(40,90,170,.95), rgba(35,27,56,.94)); }
+  .net-card { max-width: 860px; }
+  .net-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 12px 0; }
+  .net-join { cursor: default; }
+  .net-join input { font-family: var(--f-title); font-size: 18px; letter-spacing: 6px; text-align: center; text-transform: uppercase; width: 130px; background: #14101f; color: var(--weak); border: 2px solid var(--line); padding: 6px; }
+  .net-searching { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px; background: rgba(40,90,170,.35); border: 2px solid var(--info); margin-bottom: 10px; }
+  .net-searching b { font-family: var(--f-title); font-weight: 400; font-size: 12px; color: var(--info); }
+  .net-spin { width: 16px; height: 16px; border: 3px solid var(--info); border-top-color: transparent; border-radius: 50%; animation: netspin .8s linear infinite; }
+  @keyframes netspin { to { transform: rotate(360deg); } }
+  .net-code { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 10px 0 14px; font-family: var(--f-title); font-size: 10px; color: var(--text-dim); }
+  .net-code b { font-weight: 400; font-size: 48px; line-height: 52px; letter-spacing: 12px; color: var(--weak); text-shadow: 4px 4px 0 var(--line); }
+  .net-code small { font-family: var(--f-text); font-size: 11px; }
+  .net-players { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .net-p { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; min-height: 110px; justify-content: center; background: var(--surface-2); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel); }
+  .net-p canvas { width: 96px; height: 60px; image-rendering: pixelated; border: 2px solid var(--line); }
+  .net-p b { font-family: var(--f-title); font-weight: 400; font-size: 10px; } .net-p small { font-size: 11px; color: var(--text-dim); }
+  .net-p.ready { outline: 2px solid var(--go); } .net-p.ready small { color: var(--go); } .net-p.me b { color: var(--weak); }
+  .net-p.empty { opacity: .45; border-style: dashed; }
+  .net-podium { display: flex; flex-direction: column; gap: 8px; width: min(520px, 100%); margin: 12px auto 18px; }
+  .net-podium > div { display: grid; grid-template-columns: 48px 1fr auto 70px; gap: 10px; align-items: center; padding: 10px 14px; background: rgba(35,27,56,.92); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); animation: rise .35s ease-out both; text-align: left; }
+  .net-podium > div:nth-child(2) { animation-delay: .1s; } .net-podium > div:nth-child(3) { animation-delay: .2s; } .net-podium > div:nth-child(4) { animation-delay: .3s; }
+  .net-podium b { font-family: var(--f-title); font-weight: 400; font-size: 20px; } .net-podium span { font-family: var(--f-title); font-size: 12px; }
+  .net-podium em { font-style: normal; font-family: var(--f-title); font-size: 16px; color: var(--weak); } .net-podium small { font-size: 11px; color: var(--text-dim); text-align: right; }
+  .net-podium .me { outline: 2px solid var(--weak); } .net-podium .p1 { background: linear-gradient(90deg, rgba(255,210,63,.25), rgba(35,27,56,.92)); }
+  @media (max-width: 640px) { .net-players { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -743,6 +771,7 @@
   <button data-act="laneUp" class="t-lane"><b>▲</b><small>Carril</small></button>
   <button data-act="laneDown" class="t-lane"><b>▼</b><small>Carril</small></button>
   <button data-act="roar" class="roar"><b>📢</b><small>Rugido</small></button>
+  <button data-act="trap" class="t-trap"><b>🎯</b><small>Trampa</small></button>
   <button data-act="pause" class="t-pause"><b>❚❚</b></button>
 </div>
 <p class="help">
@@ -776,7 +805,7 @@
       <div class="mm-grid">
         <button class="mm-btn mm-sq" data-sub="mmShop"><i>🛒</i>Tienda<em class="mm-dot hidden" id="dotShop"></em></button>
         <button class="mm-btn mm-sq" data-sub="mmProg"><i>🏆</i>Progreso<em class="mm-dot hidden" id="dotProg"></em></button>
-        <button class="mm-btn mm-sq" id="btnVersus"><i>👥</i>2 jugadores</button>
+        <button class="mm-btn mm-sq mm-online" data-sub="mmMulti"><i>🌐</i>Multijugador</button>
         <button class="mm-btn mm-sq" data-sub="mmOpts"><i>⚙️</i>Opciones</button>
       </div>
       <p class="mm-hint">Pulsa <kbd>W</kbd> para jugar</p>
@@ -787,6 +816,14 @@
       <div id="dailyBox" class="dl-box"></div>
       <button class="mm-btn mm-play" id="btnDaily">► CORRER LA DIARIA<small>Intentos ilimitados · cuenta tu mejor marca</small></button>
       <button class="mm-btn" id="btnDailyRank"><i>🌍</i>Ranking mundial de hoy</button>
+    </section>
+
+    <section id="mmMulti" class="mm-panel mm-sub-panel hidden">
+      <button class="mm-back" data-back>← Multijugador</button>
+      <div class="mm-tiles">
+        <button class="mm-tile mm-world" id="btnOnline"><i>🌐</i><b>Online</b><small>Carrera contra 1–3 jugadores de cualquier sitio</small></button>
+        <button class="mm-tile" id="btnVersus"><i>👥</i><b>En este dispositivo</b><small>2 jugadores con el mismo teclado</small></button>
+      </div>
     </section>
 
     <section id="mmShop" class="mm-panel mm-sub-panel hidden">
@@ -836,7 +873,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 21 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 22 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -1008,6 +1045,38 @@
       <div class="actions"><input id="cloudIn" maxlength="14" placeholder="Código (p. ej. ABCD-EFGH-JK)" autocomplete="off" spellcheck="false"><button class="btn purple" id="cloudDown">Descargar de la nube</button></div>
       <p id="cloudMsg" class="bk-msg"></p>
     </div>
+  </div>
+</div>
+
+<!-- Multijugador online -->
+<div id="net" class="overlay scr hidden">
+  <div class="card achs net-card">
+    <div class="shop-head"><h2>🌐 Online</h2><button class="btn" id="netBack">← Volver</button></div>
+    <div id="netHome">
+      <div class="rk-nick"><span class="ed-lbl">Tu apodo</span><input id="netNick" maxlength="16" placeholder="Elige un apodo" autocomplete="off" spellcheck="false"><button class="btn primary small" id="netNickOk">Guardar</button></div>
+      <div class="net-tiles">
+        <button class="mm-tile" id="netQuick"><i>⚡</i><b>Partida rápida</b><small>Te empareja con quien esté buscando</small></button>
+        <button class="mm-tile" id="netCreate"><i>➕</i><b>Crear sala</b><small>Para jugar con tus amigos con un código</small></button>
+        <div class="mm-tile net-join"><i>🔑</i><b>Unirse a una sala</b><input id="netCodeIn" maxlength="4" placeholder="CÓDIGO" autocomplete="off" spellcheck="false"><button class="btn small purple" id="netJoin">Entrar</button></div>
+      </div>
+      <div id="netSearching" class="net-searching hidden"><span class="net-spin"></span><b id="netSearchTxt">Buscando rival…</b><button class="btn small" id="netCancel">Cancelar</button></div>
+      <p class="touch-hint">De 2 a 4 jugadores. Todos corréis el mismo recorrido a la vez, sin jefes ni mejoras; los rivales se ven como fantasmas. Cada 8 s ganas una <b>trampa</b> (tecla <kbd>Q</kbd> o botón 🎯) que aparece delante del rival que va justo por delante de ti. Gana quien llegue más lejos.</p>
+    </div>
+    <div id="netRoom" class="hidden">
+      <div class="net-code">SALA <b id="netCode">ABCD</b><small>Pasa este código a tus amigos para que entren</small></div>
+      <div id="netPlayers" class="net-players"></div>
+      <p class="touch-hint" id="netRoomHint"></p>
+      <div class="actions"><button class="btn primary" id="netReady">Estoy listo</button><button class="btn gold hidden" id="netStart">► Empezar</button><button class="btn" id="netLeave">Salir de la sala</button></div>
+    </div>
+    <p id="netMsg" class="bk-msg"></p>
+  </div>
+</div>
+<div id="netResult" class="overlay scr hidden">
+  <div class="card scr-card net-res">
+    <h2 class="scr-title" id="nrTitle">¡ELIMINADO!</h2>
+    <p class="scr-sub" id="nrSub"></p>
+    <div id="nrList" class="net-podium"></div>
+    <div class="actions" id="nrActions"><button class="btn primary" id="nrAgain">↻ Revancha (misma sala)</button><button class="btn" id="nrExit">Salir</button></div>
   </div>
 </div>
 
@@ -3139,7 +3208,7 @@ class RunBuild {
   }
   *sources() {
     const g = this.game, tree = g.save.data.tree || {};
-    if (!g.versus && !g.tutorial) for (const n of TREE_NODES) if (tree[n.id]) yield [n.mod, tree[n.id]];
+    if (!g.versus && !g.tutorial && !g.netRace) for (const n of TREE_NODES) if (tree[n.id]) yield [n.mod, tree[n.id]];
     for (const id in this.levels) yield [UPGRADE_BY_ID[id].mod, this.levels[id]];
     for (const id of this.synergies) yield [SYNERGIES.find(s => s.id === id).mod, 1];
     for (const id of this.pacts) yield [PACT_BY_ID[id].mod, 1];
@@ -7416,6 +7485,7 @@ class UI {
     bind("btnMute", () => game.toggleMute());
     bind("btnRetry", () => game.retry());
     bind("btnVersus", () => game.openPlay(true));
+    bind("btnOnline", () => game.openNet());
     bind("btnOverShop", () => game.openShop("over"));
     bind("btnMenu", () => game.showMenu());
     bind("btnGo", () => this.versusSel ? game.startVersus(this.selMode) : game.start(this.selMode, this.selLevel));
@@ -7670,7 +7740,7 @@ class UI {
       this.text(c, `NIVEL ${L.level} · ${L.biome.name.toUpperCase()}`, W / 2, 22, 16, L.biome.accent, "center");
       // Cuenta atrás hasta el boss del nivel
       const left = B.nextAt - g.distScore, lvl = Math.floor(B.nextAt / CONFIG.POINTS_PER_LEVEL) + 1;
-      if (!B.active && !g.tutorial && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
+      if (!B.active && !g.tutorial && !g.netRace && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
     }
     if (g.randomMod) this.pill(c, `${g.daily ? "📅 DIARIA · " + g.randomMod.icon : "🎲"} ${g.randomMod.name.toUpperCase()}`, W / 2, B.boss && B.boss.state !== "leave" ? 98 : 74, 10, "#e4d0ff", "rgba(80,40,140,0.85)");
     const Wt = g.weather;   // clima: icono y nombre (al empezar, también qué cambia)
@@ -7717,6 +7787,15 @@ class UI {
     if (g.stat("eggArrow")) drawEggArrow(c, g);
 
     this.drawRoarRing(c, W - 48, 46, g.roarCd, g.roarCdMax || g.mode.roarCooldown, "E", "RUGIDO");
+    if (g.netRace) {   // carrera online: posiciones, trampas y cuenta atrás
+      g.net.drawHud(c, this);
+      if (g.netWait > 0) {
+        c.fillStyle = "rgba(14,11,22,0.45)"; c.fillRect(0, 0, W, H);
+        const n = Math.ceil(g.netWait - 0.5), k = (g.netWait - 0.5) % 1;
+        this.text(c, n > 0 ? String(n) : "¡YA!", W / 2, H / 2 - 10, 72 + 30 * Math.max(0, k), n > 0 ? UI_T.weak : UI_T.go, "center");
+        this.text(c, "CARRERA ONLINE · GANA QUIEN LLEGUE MÁS LEJOS", W / 2, H / 2 + 50, 12, UI_T.text, "center");
+      }
+    }
   }
   // Barra de furia (debajo del rugido). Llena: E lanza el súper rugido
   drawFuryBar(c) {
@@ -9007,6 +9086,13 @@ const MANUAL_SECTIONS = [
     <p>Dificultad Normal, pero cada nivel trae una <b>regla sorpresa</b> que se anuncia al empezar el nivel (y se ve arriba en el marcador). Tiene su propio récord.</p>
     <table><tr><th>Regla</th><th>Qué hace</th></tr>${RANDOM_MODS.map(m => `<tr><td>${m.icon} ${m.name}</td><td>${m.desc}</td></tr>`).join("")}</table>
     <div class="tip">Dicen que quien recorre los 10 niveles de un tirón, sin caer ni una sola vez, encuentra un portal dorado…</div>` },
+  { title: "Multijugador online", html: () => `
+    <p>En <b>Multijugador → 🌐 Online</b> corres contra 1–3 personas a la vez, cada una en su móvil u ordenador (necesitas conexión y un apodo).</p>
+    <ul><li><b>Partida rápida</b>: te empareja con quien esté buscando partida (espera ${NET_CONFIG.QUICK_WAIT} s por si entra alguien más).</li>
+      <li><b>Crear sala</b>: te da un código de 4 letras para tus amigos; entran con <b>Unirse a una sala</b>. Cuando todos estáis listos, el anfitrión (👑) pulsa Empezar.</li>
+      <li>Todos corréis <b>el mismo recorrido</b> en Normal desde el nivel 1, sin jefes, sin mejoras roguelike y sin el árbol (igualdad para todos). Los rivales se ven como fantasmas con su apodo; si se alejan, una flecha indica la distancia.</li>
+      <li>Cada ${NET_CONFIG.TRAP_EVERY} s ganas una <b>trampa</b> (máximo ${NET_CONFIG.TRAP_MAX}): <kbd>Q</kbd> o el botón 🎯 la lanza al rival que va justo por delante de ti (o al primero si vas en cabeza).</li>
+      <li>Gana quien llegue más lejos. Premios: ${NET_CONFIG.PRIZE_COINS.map((c, i) => `${i + 1}º ${c} monedas`).join(", ")} y XP del pase. Después puedes pedir la revancha en la misma sala.</li></ul>` },
   { title: "Clima", html: () => `
     <p>A mitad de nivel puede llegar el <b>clima</b> del bioma. Dura unos segundos, se anuncia en el marcador y cambia algo del juego mientras dura (no en multijugador ni durante los jefes):</p>
     <table><tr><th>Bioma</th><th>Clima</th><th>Efecto</th></tr>${Object.entries(WEATHER).map(([b, w]) => `<tr><td>${(BIOMES.find(x => x.id === b) || {}).name || b}</td><td>${w.icon} ${w.name}</td><td>${w.desc}</td></tr>`).join("")}</table>` },
@@ -9268,7 +9354,7 @@ class AmberAltar {
 class RogueManager {
   constructor(game) { this.g = game; this.pool = new UpgradePool(game); this.screen = new UpgradeScreen(game, this); this.reset(); }
   reset() { this.pending = []; this.delay = 0; this.altar = null; this.altarPlan = {}; }
-  get enabled() { return !this.g.versus && !this.g.tutorial; }
+  get enabled() { return !this.g.versus && !this.g.tutorial && !this.g.netRace; }
   // Al empezar la partida (desde el nivel 1 o un checkpoint)
   startRun(startLevel) {
     if (!this.enabled) return;
@@ -10093,7 +10179,7 @@ class TipManager {
   get visible() { return !this.el.classList.contains("hidden"); }
   // key: identificador del consejo · data: datos extra (montura)
   show(key, data) {
-    const g = this.g; if (this.d.off || g.versus || g.tutorial) return;
+    const g = this.g; if (this.d.off || g.versus || g.tutorial || g.netRace) return;
     const id = key === "mount" ? "mount-" + data.id : key;
     if (this.d.seen[id] || this.visible) return;
     this.d.seen[id] = 1; g.save.save();
@@ -10339,10 +10425,10 @@ class DailyRace {
       <div class="dl-hist">${hist.map(h => `<div class="${h.today ? "today" : ""}"><i style="height:${Math.round(h.v / max * 100)}%"></i><small>${fmtDay(h.k).split(" ")[0].replace(",", "")}</small></div>`).join("")}</div>`;
   }
 }
-// Las partes del juego que deciden el recorrido usan el generador del día durante la carrera diaria
+// Las partes del juego que deciden el recorrido usan el generador del día (carrera diaria) o el de la sala (carrera online)
 for (const [proto, name, key] of [[Spawner.prototype, "update", "spawn"], [MountManager.prototype, "planLevel", "mount"], [RogueManager.prototype, "onLevelStart", "rogue"], [UpgradePool.prototype, "roll", "pool"], [WeatherManager.prototype, "planLevel", "weather"]]) {
   const f = proto[name];
-  proto[name] = function (...a) { const g = this.game || this.g, R = g && g.daily && g.dailyRace.rng; return R ? withRng(R[key], () => f.apply(this, a)) : f.apply(this, a); };
+  proto[name] = function (...a) { const g = this.game || this.g, R = g && (g.netRace ? g.netRng : g.daily && g.dailyRace.rng); return R ? withRng(R[key], () => f.apply(this, a)) : f.apply(this, a); };
 }
 
 // =====================================================================
@@ -10624,7 +10710,7 @@ class Online {
   // ----- Puntuaciones -----
   // Al acabar una partida (Game.bankRun). Solo si tienes apodo y no juegas con «todas las mejoras» del código
   submitRun(g) {
-    if (!this.nick || g.versus || g.tutorial || g.save.data.allUpgrades || g.score <= 0) return;
+    if (!this.nick || g.versus || g.tutorial || g.netRace || g.save.data.allUpgrades || g.score <= 0) return;
     const mode = g.daily ? "daily" : g.mode.id, day = g.daily ? g.dailyRace.today : dayKey();
     this.queue.push({ p_mode: mode, p_day: day, p_score: Math.floor(g.score), p_level: Math.min(99, g.level.level), p_seconds: Math.round(g.runTime * 10) / 10 });
     this.persist(); this.flush();
@@ -10724,6 +10810,293 @@ SaveBackup.prototype.setupCloud = function () {
   });
 };
 
+// =====================================================================
+//  Multijugador online (Supabase Realtime, sin servidor propio)
+//  Carrera en paralelo: todos corren el MISMO recorrido (semilla compartida) y cada móvil simula su partida.
+//  Por el canal de la sala viajan: quién está (presence), la salida, la posición de cada raptor (~8 veces por
+//  segundo) y las trampas. Los rivales se ven como fantasmas. Gana quien llegue más lejos.
+// =====================================================================
+const NET_CONFIG = { MAX: 4, SEND_MS: 125, COUNTDOWN: 3.5, TRAP_EVERY: 8, TRAP_MAX: 2, QUICK_WAIT: 4, HEARTBEAT: 25000,
+  PRIZE_COINS: [150, 80, 50, 30], PRIZE_XP: [80, 50, 30, 20] };
+// ---------- Cliente mínimo de Supabase Realtime (protocolo Phoenix, JSON vsn 1.0.0) ----------
+class RealtimeClient {
+  constructor(url) { this.url = url; this.ws = null; this.ref = 0; this.chans = new Map(); this.waits = new Map(); }
+  connect() {
+    if (this.ws && this.ws.readyState <= 1) return this.ready;
+    this.ready = new Promise((res, rej) => {
+      let ws; try { ws = new WebSocket(this.url); } catch (e) { rej(new Error("No se ha podido conectar.")); return; }
+      this.ws = ws; const to = setTimeout(() => { rej(new Error("Sin conexión con el servidor.")); try { ws.close(); } catch (e) {} }, 9000);
+      ws.onopen = () => { clearTimeout(to); res(); };
+      ws.onerror = () => { clearTimeout(to); rej(new Error("Sin conexión con el servidor.")); };
+      ws.onclose = () => { clearInterval(this.hb); for (const c of this.chans.values()) c.emit("close", {}); this.chans.clear(); };
+      ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (_) { return; }
+        if (m.event === "phx_reply" && this.waits.has(m.ref)) { this.waits.get(m.ref)(m.payload); this.waits.delete(m.ref); }
+        const c = this.chans.get(m.topic); if (c) c.handle(m); };
+      this.hb = setInterval(() => this.push("phoenix", "heartbeat", {}), NET_CONFIG.HEARTBEAT);
+    });
+    return this.ready;
+  }
+  push(topic, event, payload, wait) {
+    const ref = String(++this.ref);
+    if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify({ topic, event, payload, ref, join_ref: (this.chans.get(topic) || {}).joinRef || null }));
+    return wait ? new Promise(r => { this.waits.set(ref, r); setTimeout(() => { if (this.waits.has(ref)) { this.waits.delete(ref); r({ status: "timeout" }); } }, 8000); }) : null;
+  }
+  async channel(name, key) {
+    await this.connect();
+    const topic = "realtime:" + name, c = new RealtimeChannel(this, topic, key); this.chans.set(topic, c);
+    c.joinRef = String(this.ref + 1);
+    const r = await this.push(topic, "phx_join", { config: { broadcast: { ack: false, self: false }, presence: { key }, private: false } }, true);
+    if (!r || r.status !== "ok") { this.chans.delete(topic); throw new Error("No se ha podido entrar en la sala."); }
+    return c;
+  }
+  close() { try { if (this.ws) this.ws.close(); } catch (e) {} this.ws = null; }
+}
+class RealtimeChannel {
+  constructor(rt, topic, key) { this.rt = rt; this.topic = topic; this.key = key; this.subs = {}; this.presence = {}; }
+  on(ev, fn) { (this.subs[ev] = this.subs[ev] || []).push(fn); return this; }
+  emit(ev, p) { for (const f of this.subs[ev] || []) f(p); }
+  handle(m) {
+    if (m.event === "broadcast" && m.payload) this.emit("b:" + m.payload.event, m.payload.payload || {});
+    else if (m.event === "presence_state") { this.presence = {}; for (const k in m.payload) this.presence[k] = m.payload[k].metas.slice(-1)[0]; this.emit("presence", this.presence); }
+    else if (m.event === "presence_diff") {
+      for (const k in m.payload.leaves || {}) { const gone = m.payload.leaves[k].metas.map(x => x.phx_ref); if (this.presence[k] && gone.includes(this.presence[k].phx_ref)) delete this.presence[k]; }
+      for (const k in m.payload.joins || {}) this.presence[k] = m.payload.joins[k].metas.slice(-1)[0];
+      this.emit("presence", this.presence);
+    } else if (m.event === "phx_close" || m.event === "phx_error") this.emit("close", {});
+  }
+  send(event, payload) { this.rt.push(this.topic, "broadcast", { type: "broadcast", event, payload }); }
+  track(meta) { return this.rt.push(this.topic, "presence", { type: "presence", event: "track", payload: meta }, true); }
+  leave() { this.rt.push(this.topic, "phx_leave", {}); this.rt.chans.delete(this.topic); }
+}
+const roomCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
+// ---------- Lógica de la partida online ----------
+class NetPlay {
+  constructor(game) {
+    this.g = game; this.rt = null; this.room = null; this.lobby = null; this.code = ""; this.mode = "idle";   // idle | quick | room | racing | done
+    this.members = {}; this.remotes = {}; this.ready = false; this.traps = 0; this.trapT = 0; this.lastSend = 0;
+    this.uidLocal = "p-" + Math.random().toString(36).slice(2, 10);
+  }
+  get uid() { return this.g.online.uid || this.uidLocal; }
+  get nick() { return this.g.online.nick || "Raptor"; }
+  get url() { return window.__RT_URL || `${ONLINE_CONFIG.URL.replace(/^http/, "ws")}/realtime/v1/websocket?apikey=${ONLINE_CONFIG.KEY}&vsn=1.0.0`; }
+  get host() { const l = Object.values(this.members).sort((a, b) => a.j - b.j || (a.u < b.u ? -1 : 1)); return l[0] && l[0].u === this.uid; }
+  meta() { const s = this.g.save.data; return { u: this.uid, n: this.nick, sk: this.g.skinId, h: Object.assign({}, s.acc), ready: this.ready, j: this.joinedAt, racing: this.mode === "racing" }; }
+  async ensureRt() { if (!this.rt) this.rt = new RealtimeClient(this.url); await this.rt.connect(); }
+  // ----- Salas -----
+  async createRoom() { return this.joinRoom(roomCode(), true); }
+  async joinRoom(code, creating = false, auto = false) {
+    code = String(code || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4);
+    if (code.length !== 4) throw new Error("El código de sala tiene 4 letras.");
+    await this.ensureRt(); if (this.room) this.leaveRoom();
+    this.code = code; this.joinedAt = Date.now(); this.ready = auto; this.members = {}; this.remotes = {};
+    const ch = this.room = await this.rt.channel("dino-room-" + code, this.uid);
+    ch.on("presence", p => this.onPresence(p));
+    ch.on("b:start", d => this.onStart(d));
+    ch.on("b:st", d => this.onState(d));
+    ch.on("b:trap", d => { if (d.to === this.uid && this.mode === "racing") this.g.receiveNetTrap(d.type, d.n); });
+    ch.on("close", () => { if (this.room === ch) { this.room = null; this.say("Se ha perdido la conexión con la sala.", "err"); if (this.mode !== "racing") this.mode = "idle"; this.render(); } });
+    await new Promise(r => setTimeout(r, 250));   // llega el estado de la sala
+    const others = Object.values(this.members).filter(m => m.u !== this.uid);
+    if (others.some(m => m.racing)) { this.leaveRoom(); throw new Error("Esa sala ya está jugando una carrera. Espera a que acabe."); }
+    if (others.length >= NET_CONFIG.MAX) { this.leaveRoom(); throw new Error("La sala está llena (máximo 4)."); }
+    if (!creating && !auto && !others.length) this.say("Sala vacía: espera a que entren tus amigos con el mismo código.");
+    this.mode = "room"; await ch.track(this.meta()); this.render();
+  }
+  leaveRoom() { if (this.room) { try { this.room.leave(); } catch (e) {} } this.room = null; this.members = {}; this.mode = "idle"; this.code = ""; }
+  leaveAll() { this.leaveRoom(); this.stopQuick(); if (this.rt) { this.rt.close(); this.rt = null; } this.g.netRace = false; }
+  setReady(v) { this.ready = v; if (this.room) this.room.track(this.meta()); this.render(); this.maybeAutoStart(); }
+  onPresence(p) {
+    this.members = {}; for (const k in p) if (p[k] && p[k].u) this.members[k] = p[k];
+    if (this.mode === "racing") for (const id in this.remotes) if (!this.members[id] && !this.remotes[id].dead) { this.remotes[id].dead = true; this.remotes[id].left = true; this.checkEnd(); }
+    this.render(); this.maybeAutoStart();
+  }
+  // Partida rápida: el anfitrión arranca solo cuando todos los emparejados han entrado y están listos
+  maybeAutoStart() {
+    if (!this.host || this.mode !== "room") return;
+    const l = Object.values(this.members);
+    if (this.expect && l.length >= this.expect && l.every(m => m.ready)) { this.expect = 0; this.startRace(); }
+  }
+  startRace() {
+    const l = Object.values(this.members); if (!this.host || l.length < 2) return;
+    const d = { seed: (Math.random() * 2 ** 31) | 0, players: l.map(m => m.u) };
+    this.room.send("start", d); this.onStart(d);
+  }
+  onStart(d) {
+    if (!d.players || !d.players.includes(this.uid)) return;
+    this.mode = "racing"; this.ready = false; this.result = null; this.traps = 1; this.trapT = 0; this.finishedSent = false;
+    this.remotes = {};
+    for (const u of d.players) if (u !== this.uid) { const m = this.members[u] || {}; this.remotes[u] = { u, n: m.n || "Rival", sk: m.sk, h: m.h || {}, d: 0, pd: 0, t: performance.now(), pt: performance.now(), l: 0, y: 0, sl: 0, s: 0, dead: false, st: { tick: 0, speed: 2, trail: null, trailFx: null } }; }
+    this.g.closeScreens(); this.g.startNet(d.seed);
+    if (this.room) this.room.track(this.meta());
+  }
+  // ----- Durante la carrera -----
+  update(dt) {
+    if (this.mode !== "racing" || !this.room) return;
+    const g = this.g, now = performance.now(), dead = g.state === "over";
+    if (!dead && g.netWait <= 0 && this.traps < NET_CONFIG.TRAP_MAX && (this.trapT += dt) >= NET_CONFIG.TRAP_EVERY) { this.traps++; this.trapT = 0; g.sfx.tick(); }
+    if (now - this.lastSend >= NET_CONFIG.SEND_MS && !this.finishedSent) this.sendState();
+  }
+  // Envía mi posición (al morir, una última vez con la puntuación final)
+  sendState() {
+    const g = this.g, p = g.player, dead = g.state === "over"; if (!this.room) return;
+    this.lastSend = performance.now(); if (dead) this.finishedSent = true;
+    this.room.send("st", { u: this.uid, d: Math.round(g.distance), l: Math.round(p.laneT * 100) / 100, y: Math.round(p.y), sl: p.sliding ? 1 : 0, s: g.score, dead: dead ? 1 : 0, lv: g.level.level });
+  }
+  onState(d) {
+    const r = this.remotes[d.u]; if (!r || this.mode !== "racing") return;
+    const now = performance.now(); r.pd = r.d; r.pt = r.t; r.d = d.d; r.t = now; r.l = d.l; r.y = d.y; r.sl = d.sl; r.s = d.s; r.lv = d.lv;
+    if (d.dead && !r.dead) { r.dead = true; this.g.floatText(this.g.player.laneT, this.g.player.x + 40, 160, `¡${r.n.toUpperCase()} ELIMINADO!`, "#ff8a8a", 16); this.checkEnd(); }
+  }
+  // Distancia estimada de un rival ahora mismo (extrapola entre mensajes)
+  remoteDist(r) { if (r.dead) return r.d; const v = r.t > r.pt ? (r.d - r.pd) / (r.t - r.pt) : 0; return r.d + v * Math.min(300, performance.now() - r.t); }
+  throwTrap() {
+    const g = this.g; if (this.mode !== "racing" || g.state !== "playing" || g.netWait > 0) return;
+    const alive = Object.values(this.remotes).filter(r => !r.dead); if (!alive.length || this.traps <= 0) { g.sfx.denied(); return; }
+    const me = g.distance, ahead = alive.filter(r => this.remoteDist(r) >= me).sort((a, b) => this.remoteDist(a) - this.remoteDist(b));
+    const target = ahead[0] || alive.sort((a, b) => this.remoteDist(b) - this.remoteDist(a))[0];
+    const type = choice(TRAP_TYPES).id; this.traps--;
+    this.room.send("trap", { to: target.u, type, n: this.nick });
+    g.sfx.toss(); g.floatText(g.player.laneT, g.player.x + 40, g.player.y + 120, `TRAMPA PARA ${target.n.toUpperCase()}`, UI_T.weak, 16);
+  }
+  onLocalDeath() { if (this.mode === "racing") this.sendState(); this.checkEnd(); }
+  standings() {
+    const g = this.g, me = { u: this.uid, n: this.nick, s: g.score, dead: g.state === "over", me: true, d: g.distance };
+    return [me, ...Object.values(this.remotes).map(r => ({ u: r.u, n: r.n, s: r.s, dead: r.dead, left: r.left, d: this.remoteDist(r) }))].sort((a, b) => b.s - a.s);
+  }
+  checkEnd() {
+    if (this.mode !== "racing" || this.g.state !== "over" || Object.values(this.remotes).some(r => !r.dead)) { this.renderWait(); return; }
+    this.mode = "done"; const list = this.standings(), place = list.findIndex(x => x.me), n = list.length;
+    const coins = n > 1 ? NET_CONFIG.PRIZE_COINS[place] || 0 : 0, xp = n > 1 ? NET_CONFIG.PRIZE_XP[place] || 0 : 0;
+    const s = this.g.save; s.data.coins += coins; const ups = this.g.season.addXP(xp); s.save();
+    s.data.netWins = (s.data.netWins || 0) + (place === 0 && n > 1 ? 1 : 0); s.save();
+    this.result = { list, place, coins, xp, ups };
+    if (this.room) this.room.track(this.meta());
+    this.showResult();
+  }
+  // ----- Pantallas -----
+  say(t, k = "") { const m = document.getElementById("netMsg"); if (m) { m.textContent = t; m.className = "bk-msg " + k; } }
+  render() { if (this.g.netScreen) this.g.netScreen.render(); }
+  renderWait() { if (this.g.state === "over" && this.mode === "racing") this.g.netScreen.showWaiting(); }
+  showResult() { this.g.netScreen.showResult(this.result); }
+  // ----- Partida rápida (sala de espera común) -----
+  async quickMatch() {
+    await this.ensureRt(); this.stopQuick(); if (this.room) this.leaveRoom();
+    this.mode = "quick"; this.joinedAt = Date.now();
+    const lb = this.lobby = await this.rt.channel("dino-lobby", this.uid);
+    lb.on("presence", p => this.onLobby(p));
+    lb.on("b:match", d => { if (d.members.includes(this.uid) && this.mode === "quick") this.goMatch(d); });
+    await lb.track({ u: this.uid, n: this.nick, j: this.joinedAt });
+    this.render();
+  }
+  onLobby(p) {
+    const list = Object.values(p).filter(m => m && m.u).sort((a, b) => a.j - b.j || (a.u < b.u ? -1 : 1));
+    this.lobbyCount = list.length; this.render();
+    if (!list.length || list[0].u !== this.uid || list.length < 2) { clearTimeout(this.mmTimer); this.mmTimer = null; return; }
+    const go = () => { if (this.mode !== "quick" || !this.lobby) return; const cur = Object.values(this.lobby.presence).filter(m => m && m.u).sort((a, b) => a.j - b.j);
+      if (cur.length < 2) return; const d = { code: roomCode(), members: cur.slice(0, NET_CONFIG.MAX).map(m => m.u) }; this.lobby.send("match", d); this.goMatch(d); };
+    if (list.length >= NET_CONFIG.MAX) { clearTimeout(this.mmTimer); go(); }
+    else if (!this.mmTimer) this.mmTimer = setTimeout(go, NET_CONFIG.QUICK_WAIT * 1000);   // espera unos segundos por si entra alguien más
+  }
+  async goMatch(d) {
+    this.stopQuick(); this.expect = d.members.length;
+    try { await this.joinRoom(d.code, true, true); this.say("¡Rival encontrado! Empezando…", "ok"); }
+    catch (e) { this.say(e.message, "err"); }
+  }
+  stopQuick() { clearTimeout(this.mmTimer); this.mmTimer = null; if (this.lobby) { try { this.lobby.leave(); } catch (e) {} this.lobby = null; } if (this.mode === "quick") this.mode = "idle"; }
+  // ----- Dibujo de los rivales (fantasmas con su apodo) -----
+  drawGhosts(c) {
+    if (this.mode !== "racing" && this.mode !== "done") return;
+    const g = this.g, myD = g.distance, S = CONFIG.RAPTOR_SCALE;
+    Object.values(this.remotes).forEach((r, idx) => {
+      const x = g.player.x + (this.remoteDist(r) - myD) * (r.dead ? 1 : 1), lane = clamp(r.l, 0, 1), sk = SE.get(r.sk) ? r.sk : CONFIG.DEFAULT_SKIN;
+      if (x < -60 || x > W + 10) {   // fuera de la pantalla: flecha con la distancia
+        if (r.dead) return;
+        const right = x > W, pts = Math.round(Math.abs(this.remoteDist(r) - myD) / CONFIG.PX_PER_POINT), p = toScreen(lane, right ? W - 40 : 40, 60);
+        g.ui.pill(c, `${right ? "" : "◀ "}${r.n} ${right ? "+" : "-"}${pts}${right ? " ▶" : ""}`, right ? W - 80 : 80, p.y - idx * 22, 9, "#e8f4ff", "rgba(30,60,110,0.85)");
+        return;
+      }
+      r.st.tick = Math.floor(g.time / CONFIG.SKIN_TICK); r.st.duck = !!r.sl; r.st.hat = r.h || null;
+      c.save(); applyLane(c, lane); c.translate(x, 0); c.globalAlpha = r.dead ? 0.25 : 0.55;
+      drawRaptor(c, sk, r.st, r.y / S, r.dead, false); c.restore();
+      const tp = toScreen(lane, x + 36, r.y + (r.sl ? 50 : 90) + idx * 20);   // etiquetas escalonadas si van a la par
+      g.ui.pill(c, r.n.toUpperCase() + (r.dead ? " ✖" : ""), tp.x, tp.y, 9, r.dead ? "#ff8a8a" : "#e8f4ff", "rgba(30,60,110,0.8)");
+    });
+  }
+  // Marcador de la carrera (debajo del panel de puntos)
+  drawHud(c, ui) {
+    const g = this.g; if (this.mode !== "racing" && this.mode !== "done") return;
+    const list = this.standings(), x = 10, y = 96 + (g.mode.id === "easy" ? 30 : 0), h = 18 * list.length + 30;
+    ui.panel(c, x, y, 196, h);
+    ui.text(c, `🌐 CARRERA · SALA ${this.code}`, x + 10, y + 12, 9, UI_T.dim);
+    list.forEach((p, i) => {
+      const yy = y + 30 + i * 18, col = p.me ? UI_T.weak : p.dead ? "#8a8098" : UI_T.text;
+      ui.text(c, `${i + 1}º ${p.n.slice(0, 10)}${p.dead ? " ✖" : ""}`, x + 10, yy, 10, col);
+      ui.text(c, fmtInt(p.s), x + 186, yy, 10, col, "right");
+    });
+    const ty = y + h + 18;
+    ui.pill(c, `🎯 TRAMPAS ×${this.traps} · Q`, x + 80, ty, 9, this.traps ? "#16111f" : UI_T.dim, this.traps ? UI_T.weak : UI_T.pill);
+  }
+}
+// ---------- Pantalla Online (apodo, partida rápida, crear / unirse a sala, sala de espera) y resultados ----------
+class NetScreen {
+  constructor(game) {
+    this.g = game; const $ = id => document.getElementById(id), net = game.net;
+    this.el = $("net"); this.res = $("netResult");
+    const bind = (id, fn) => $(id).addEventListener("click", async e => { e.currentTarget.blur(); game.sfx.unlock(); game.sfx.click(); try { await fn(); } catch (err) { net.say(err.message, "err"); game.sfx.denied(); this.render(); } });
+    bind("netBack", () => this.close());
+    bind("netNickOk", async () => { const n = await game.online.setNick($("netNick").value); net.say(`¡Hola, ${n}!`, "ok"); this.render(); });
+    bind("netQuick", async () => { this.needNick(); net.say("Buscando rival…"); await net.quickMatch(); });
+    bind("netCreate", async () => { this.needNick(); await net.createRoom(); net.say("Sala creada. Pasa el código a tus amigos.", "ok"); });
+    bind("netJoin", async () => { this.needNick(); await net.joinRoom($("netCodeIn").value); net.say("¡Dentro! Pulsa «Estoy listo».", "ok"); });
+    bind("netCancel", () => { net.stopQuick(); net.say(""); this.render(); });
+    bind("netReady", () => net.setReady(!net.ready));
+    bind("netStart", () => { if (Object.keys(net.members).length < 2) throw new Error("Hacen falta al menos 2 jugadores."); net.startRace(); });
+    bind("netLeave", () => { net.leaveRoom(); net.say(""); this.render(); });
+    bind("nrAgain", () => { this.res.classList.add("hidden"); net.mode = "room"; net.ready = false; game.netRace = false; game.state = "net"; game.reset(); game.closeScreens(); this.el.classList.remove("hidden"); if (net.room) net.room.track(net.meta()); this.render(); });
+    bind("nrExit", () => { this.res.classList.add("hidden"); net.leaveAll(); game.showMenu(); });
+    for (const id of ["netNick", "netCodeIn"]) $(id).addEventListener("keydown", e => e.stopPropagation());
+  }
+  get visible() { return !this.el.classList.contains("hidden"); }
+  needNick() { if (!this.g.online.nick) throw new Error("Primero elige un apodo."); }
+  open() { document.getElementById("netNick").value = this.g.online.nick; this.el.classList.remove("hidden"); this.render(); }
+  close() { this.g.net.leaveAll(); this.el.classList.add("hidden"); this.g.showMenu(); }
+  render() {
+    const net = this.g.net, $ = id => document.getElementById(id), inRoom = net.mode === "room" && !!net.room;
+    $("netHome").classList.toggle("hidden", inRoom); $("netRoom").classList.toggle("hidden", !inRoom);
+    $("netSearching").classList.toggle("hidden", net.mode !== "quick");
+    if (net.mode === "quick") $("netSearchTxt").textContent = `Buscando rival… (${Math.max(0, (net.lobbyCount || 1) - 1)} esperando)`;
+    if (!inRoom) return;
+    $("netCode").textContent = net.code;
+    const list = Object.values(net.members).sort((a, b) => a.j - b.j), box = $("netPlayers"); box.innerHTML = "";
+    list.forEach((m, i) => {
+      const d = document.createElement("div"); d.className = "net-p" + (m.ready ? " ready" : "") + (m.u === net.uid ? " me" : "");
+      d.innerHTML = `<canvas width="96" height="60"></canvas><b>${escapeHtml(m.n)}${i === 0 ? " 👑" : ""}</b><small>${m.ready ? "✔ Listo" : "Esperando…"}</small>`;
+      const cv = d.querySelector("canvas"), x = cv.getContext("2d"); x.imageSmoothingEnabled = false;
+      drawSkinPreview(x, SE.get(m.sk) ? m.sk : CONFIG.DEFAULT_SKIN, { tick: 3, speed: 2, trail: null, hat: m.h || null, trailFx: null }, 96, 60, 2);
+      box.appendChild(d);
+    });
+    for (let i = list.length; i < NET_CONFIG.MAX; i++) { const d = document.createElement("div"); d.className = "net-p empty"; d.innerHTML = "<small>Hueco libre</small>"; box.appendChild(d); }
+    $("netReady").textContent = net.ready ? "✔ Listo (quitar)" : "Estoy listo";
+    $("netStart").classList.toggle("hidden", !net.host);
+    $("netStart").disabled = list.length < 2 || !list.every(m => m.ready);
+    $("netRoomHint").textContent = net.host ? (list.length < 2 ? "Esperando a que entre alguien con el código…" : list.every(m => m.ready) ? "¡Todos listos! Pulsa Empezar." : "Esperando a que todos estén listos…") : "El anfitrión (👑) empezará la carrera cuando todos estéis listos.";
+  }
+  showWaiting() {
+    const net = this.g.net, $ = id => document.getElementById(id);
+    $("nrTitle").textContent = "¡ELIMINADO!"; $("nrSub").textContent = "Esperando a que terminen los demás…";
+    $("nrList").innerHTML = net.standings().map((p, i) => `<div class="${p.me ? "me" : ""}"><b>${i + 1}º</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.dead ? (p.left ? "se fue" : "✖") : "🏃 corriendo"}</small></div>`).join("");
+    $("nrActions").classList.add("hidden"); this.res.classList.remove("hidden");
+  }
+  showResult(r) {
+    const $ = id => document.getElementById(id), n = r.list.length;
+    $("nrTitle").textContent = n < 2 ? "FIN DE LA CARRERA" : r.place === 0 ? "¡HAS GANADO!" : `${r.place + 1}º PUESTO`;
+    $("nrSub").textContent = n < 2 ? "Te has quedado solo en la sala." : `+${r.coins} monedas · +${r.xp} XP del pase${r.ups.length ? " · ¡subes de nivel en el pase!" : ""}`;
+    $("nrList").innerHTML = r.list.map((p, i) => `<div class="${p.me ? "me" : ""} p${i + 1}"><b>${["🥇", "🥈", "🥉", "4º"][i] || i + 1 + "º"}</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.left ? "se fue" : ""}</small></div>`).join("");
+    $("nrActions").classList.remove("hidden"); this.res.classList.remove("hidden");
+    if (r.place === 0 && n > 1) this.g.sfx.jackpot();
+  }
+}
+
 // Causa de un golpe (estadística «qué te mata más»)
 function obstacleCause(o) {
   if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
@@ -10749,7 +11122,7 @@ Sfx.prototype.mountFx = function (id) {
 //  Estados: menu · play · playing · paused · over · shop · roulette · manual · achievements
 // =====================================================================
 // Estados con el fondo animado de la portada
-const MENU_STATES = ["menu", "play", "shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season", "ranking"];
+const MENU_STATES = ["menu", "play", "shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season", "ranking", "net"];
 class Game {
   constructor(canvas) {
     this.canvas = canvas; this.ctx = canvas.getContext("2d");
@@ -10768,7 +11141,8 @@ class Game {
     this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this); this.tips = new TipManager(this); this.season = new SeasonPass(this);
     this.dailyRace = new DailyRace(this); this.daily = false;   // carrera diaria
     this.weather = new WeatherManager(this); this.pets = new PetManager(this);   // clima y mascota
-    this.online = new Online(this); this.ranking = new RankingScreen(this); this.backup.setupCloud();   // ranking mundial y nube (Supabase)
+    this.online = new Online(this); this.ranking = new RankingScreen(this); this.backup.setupCloud();
+    this.net = new NetPlay(this); this.netScreen = new NetScreen(this); this.netRace = false;   // multijugador online   // ranking mundial y nube (Supabase)
     this.tutSkip = document.getElementById("tutSkip");
     this.tutSkip.addEventListener("click", e => { e.currentTarget.blur(); this.sfx.click(); this.skipTutorial(); });
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
@@ -10803,7 +11177,7 @@ class Game {
     // Roguelike, furia y monturas
     this.build.reset(); this.fury.reset(this.versus ? 0 : this.stat("furyStart")); this.mounts.reset();
     this.bossHearts = 0; this.pendingHeart = 0; this.bonusScore = 0; this.timeCd = 0; this.echoT = 0; this.echoWave = null; this.superWave = null;
-    this.ghosts = [{ x: 120, cd: 0 }, { x: 200, cd: 0 }]; this.randomMod = null;
+    this.ghosts = [{ x: 120, cd: 0 }, { x: 200, cd: 0 }]; this.randomMod = null; this.netWait = 0;
     if (this.rogue) { this.rogue.reset(); this.rogue.screen.el.classList.add("hidden"); }
     if (this.weather) { this.weather.reset(); this.pets.reset(); }
   }
@@ -10841,21 +11215,22 @@ class Game {
   // ----- Estados -----
   closeScreens() {
     this.ui.hideAll();
-    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el, this.season.el, this.ranking.el]) el.classList.add("hidden");
+    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el, this.season.el, this.ranking.el, this.netScreen.el, this.netScreen.res]) el.classList.add("hidden");
   }
   showMenu() {
     if (["playing", "paused", "choice", "tip"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
     const fromSub = MENU_STATES.includes(this.state) && this.state !== "menu" && this.state !== "play" || this.history.visible;   // vuelve al submenú de donde vino
-    this.versus = false; this.daily = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
+    if (this.net && (this.netRace || this.net.mode !== "idle")) this.net.leaveAll();   // salir del online
+    this.versus = false; this.daily = false; this.netRace = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
   }
   // ----- Tutorial (nivel de práctica) -----
   // Nivel secreto: partida completa desde el nivel 1 sin morir (ni perder vidas ni revivir)
-  secretOk() { return !this.versus && !this.tutorial && (this.save.data.secretUnlocked || (this.startLevel === 1 && this.run.clean)); }
+  secretOk() { return !this.versus && !this.tutorial && !this.netRace && (this.save.data.secretUnlocked || (this.startLevel === 1 && this.run.clean)); }
   get firstTime() { const s = this.save.data; return !s.tutorialDone && !s.records.normal && !s.records.easy && !s.records.hard; }
   startTutorial() {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = false; this.daily = false; this.mode = MODES.normal; this.startLevel = 1;
+    this.versus = false; this.daily = false; this.netRace = false; this.mode = MODES.normal; this.startLevel = 1;
     this.tutorial = new Tutorial(this);
     this.reset(); this.fury.reset(0); this.state = "playing"; this.closeScreens();
     this.level.banner = 0; this.bosses.nextAt = 1e9; this.tutSkip.classList.remove("hidden");
@@ -10877,7 +11252,7 @@ class Game {
   start(modeId = this.mode.id, startLevel = this.startLevel, daily = false) {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = false; this.daily = daily; this.endTutorial();
+    this.versus = false; this.daily = daily; this.netRace = false; this.endTutorial();
     if (daily) { modeId = "normal"; startLevel = 1; }   // carrera diaria: Normal desde el nivel 1
     this.mode = MODES[modeId] || MODES.normal; if (!daily) { this.save.data.lastMode = this.mode.id; this.save.save(); }
     if (startLevel > 1 && !this.checkpoints.owned(startLevel)) startLevel = 1;
@@ -10899,13 +11274,40 @@ class Game {
   startVersus(modeId = this.versus ? this.mode.id : CONFIG.VERSUS_MODE) {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = true; this.daily = false; this.endTutorial(); this.mode = MODES[modeId] || MODES.normal; this.startLevel = 1;
+    this.versus = true; this.daily = false; this.netRace = false; this.endTutorial(); this.mode = MODES[modeId] || MODES.normal; this.startLevel = 1;
     this.p2SkinId = this.pickP2Skin();
     this.reset(); this.player.setLane(0); this.p2.setLane(1);
     for (const p of this.players) p.lives = this.mode.lives;   // Fácil: 3 vidas por raptor
     this.state = "playing"; this.closeScreens();
     this.level.banner = CONFIG.LEVEL_BANNER_TIME; this.level.bannerSub = "J1: W · S · E · A trampa      J2: ↑ · ↓ · → · ← trampa";
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+  // Carrera online: Normal desde el nivel 1, sin jefes ni mejoras, con el recorrido de la semilla de la sala
+  startNet(seed) {
+    this.sfx.unlock();
+    if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
+    this.versus = false; this.daily = false; this.netRace = true; this.endTutorial(); this.mode = MODES.normal; this.startLevel = 1;
+    this.reset(); this.netRace = true;
+    this.netRng = { spawn: mulberry32(seed), mount: mulberry32(seed ^ 0x51ed27), rogue: mulberry32(seed ^ 0xa5a5a5), pool: mulberry32(seed ^ 0x3c6ef3), weather: mulberry32(seed ^ 0x7f4a7c) };
+    this.state = "playing"; this.closeScreens(); this.netWait = NET_CONFIG.COUNTDOWN;
+    this.run.lastPowerup = this.run.lastRoar = this.run.lastLane = 0;
+    this.level.banner = 0; this.level.bannerSub = "";
+    this.ach.event("runStart"); this.onLevelStart(1);
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+  // Trampa que te lanza un rival online (aparece en tu carril, delante de ti)
+  receiveNetTrap(typeId, from) {
+    if (this.state !== "playing") return;
+    const p = this.player, lane = p.lane, biome = this.level.biome, type = TRAP_TYPES.find(t => t.id === typeId) || TRAP_TYPES[0];
+    if (type.id === "ink") p.ink = CONFIG.TRAP_INK_TIME;
+    else {
+      let x = CONFIG.TRAP_DISTANCE;
+      for (const o of this.obstacles) if (o.lane === lane && !o.dead && o.x < x + 200 && o.x + o.w > x - 200) x = Math.max(x, o.x + o.w + 200);
+      const o = type.id === "wall" ? new Obstacle("ground", lane, x, { size: "small", count: 2 }, biome) : type.id === "bird" ? new Obstacle("flyer", lane, x, { h: "mid" }, biome) : new Obstacle("rock", lane, x, { size: "tall" }, biome);
+      if (o.kind === "flyer") o.extra = this.level.flyerExtra(false);
+      o.trapBy = 2; o.trapName = String(from || "").slice(0, 3).toUpperCase(); this.obstacles.push(o);
+    }
+    this.sfx.trap(); this.floatText(p.laneT, p.x + 40, p.y + 110, `¡TRAMPA DE ${String(from || "RIVAL").toUpperCase()}! ${type.name.toUpperCase()}`, UI_T.info, 18);
   }
   retry() { if (this.versus) this.startVersus(); else if (this.tutorial) this.startTutorial(); else if (this.daily) this.startDaily(); else this.start(); }
   startDaily() { this.start("normal", 1, true); }
@@ -10920,6 +11322,7 @@ class Game {
   openManual(from) { if (from !== "pause") this.state = "manual"; this.closeScreens(); this.manual.open(from); }
   openHistory(from) { this.closeScreens(); this.history.open(from); }
   openSeason() { this.state = "season"; this.closeScreens(); this.season.open(); }
+  openNet() { this.state = "net"; this.closeScreens(); this.netScreen.open(); }
   openRanking() { this.state = "ranking"; this.closeScreens(); this.ranking.open(); }
   openTree() { this.state = "tree"; this.closeScreens(); this.tree.open(); }
   openStats() { this.state = "stats"; this.closeScreens(); this.statsMgr.open(); }
@@ -11179,7 +11582,7 @@ class Game {
     if (this.versus) { this.save.save(); return; }   // en multijugador no hay récords ni logros
     if (this.tutorial) { this.save.save(); return; }
     this.rogue.recordRun();
-    if (!this.daily && this.score > s.records[this.mode.id]) { s.records[this.mode.id] = this.score; this.newRecord = true; }   // la diaria tiene su propia marca
+    if (!this.daily && !this.netRace && this.score > s.records[this.mode.id]) { s.records[this.mode.id] = this.score; this.newRecord = true; }   // la diaria tiene su propia marca
     this.runFossils = fossilsForRun(this); s.fossils += this.runFossils.total;   // árbol de mejoras
     this.save.save();
     this.ach.event("score", { score: this.score });
@@ -11195,11 +11598,12 @@ class Game {
     for (let i = 0; i < 20; i++) this.particles.push(new Particle(this.player.logicalLane, c.x, c.y, rand(-250, 250), rand(100, 500), rand(0.5, 1), choice(cols), rand(3, 6)));
     if (navigator.vibrate) try { navigator.vibrate(150); } catch (e) {}
     this.bankRun();
+    if (this.netRace) this.net.onLocalDeath();
   }
 
   // ----- Actualización (dt en segundos) -----
   update(dt) {
-    this.time += dt;
+    this.time += dt; this.net.update(dt);
     updatePrismSkins(this.time); this.season.update(dt);
     this.level.tick(dt);
     this.ach.update(dt);
@@ -11226,10 +11630,16 @@ class Game {
     }
     if (this.state === "over") {
       this.overTime += dt; this.updateParticles(dt);
-      if (!this.overShown && this.overTime > 0.7) { this.overShown = true; this.ui.showOver(); }
+      if (!this.overShown && this.overTime > 0.7) { this.overShown = true; if (this.netRace) { if (this.net.mode === "done") this.net.showResult(); else this.netScreen.showWaiting(); } else this.ui.showOver(); }
+      if (this.netRace && this.overShown && this.net.mode === "racing" && (this.netRefresh = (this.netRefresh || 0) + dt) > 0.5) { this.netRefresh = 0; this.netScreen.showWaiting(); }
       return;
     }
     if (this.state !== "playing") return;
+    if (this.netWait > 0) {   // cuenta atrás de la carrera online
+      const before = Math.ceil(this.netWait); this.netWait -= dt; const now = Math.ceil(this.netWait);
+      if (now !== before) { if (now > 0) this.sfx.tick(); else this.sfx.powerup(); }
+      this.player.tickSkin(dt, 0); return;
+    }
 
     // Temporizadores en tiempo real (no les afecta la cámara lenta)
     for (const k of POWERUP_TYPES) {
@@ -11254,7 +11664,7 @@ class Game {
     }
     if (!this.versus) this.mounts.update(gdt, dt);
     if (this.tutorial) { this.tutorial.update(gdt, dt); }
-    else if (this.versus) { this.level.check(); this.spawner.update(); }   // multijugador: sin jefes
+    else if (this.versus || this.netRace) { this.level.check(); this.spawner.update(); }   // multijugador (local u online): sin jefes
     else if (!this.bosses.active) {
       this.level.check();                                    // durante un boss el cambio de nivel espera
       this.bosses.update(gdt, dt);                           // a mitad de nivel: "¡PELIGRO!" y llega el boss
@@ -11422,6 +11832,7 @@ class Game {
     else this.fastRuns = 0;
   }
   draw() {
+    if (this.netRace !== this.netCls) { this.netCls = this.netRace; document.body.classList.toggle("net-race", this.netRace); }   // botón táctil de trampa
     const bgOn = MENU_STATES.includes(this.state);   // portada y todas las pantallas del menú: fondo animado a pantalla completa
     if (bgOn !== this.menuBgOn) { this.menuBgOn = bgOn; this.ui.menuBg.classList.toggle("hidden", !bgOn); }
     if (bgOn) {   // el canvas del juego queda tapado: solo se dibujan el fondo y los canvas propios de cada pantalla
@@ -11443,6 +11854,7 @@ class Game {
     this.drawLane(c, 0);
     this.pets.draw(c);   // la mascota corre por el carril del medio
     this.drawLane(c, 1);
+    this.net.drawGhosts(c);   // rivales online
     if (this.versus) for (const p of this.players) if (p.ink > 0) {   // trampa de tinta: oscurece el carril de ese raptor por delante
       const a = Math.min(1, p.ink / 0.4) * 0.92, y0 = p.lane === 0 ? 150 : 246, y1 = p.lane === 0 ? 246 : 352;
       c.fillStyle = `rgba(10,6,24,${a})`; c.fillRect(300, y0, W - 300, y1 - y0);
@@ -11493,8 +11905,8 @@ class Game {
       o.draw(c);
       if (o.trapBy) {   // banderita de quién puso la trampa
         const top = -(o.kind === "flyer" ? o.y + o.h : o.h) - 22, cx = o.w / 2, col = o.trapBy === 1 ? UI_T.go : UI_T.info;
-        c.fillStyle = UI_T.line; c.fillRect(cx - 15, top - 9, 30, 18); c.fillStyle = col; c.fillRect(cx - 13, top - 7, 26, 14);
-        c.font = '10px "Raptor Pixel Display", monospace'; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#16111f"; c.fillText("J" + o.trapBy, cx, top + 1);
+        const tw = o.trapName ? 40 : 30; c.fillStyle = UI_T.line; c.fillRect(cx - tw / 2, top - 9, tw, 18); c.fillStyle = col; c.fillRect(cx - tw / 2 + 2, top - 7, tw - 4, 14);
+        c.font = '10px "Raptor Pixel Display", monospace'; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#16111f"; c.fillText(o.trapName || "J" + o.trapBy, cx, top + 1);
       }
     });
     for (const k of this.coinsArr) if ((k.laneT < 0.5 ? 0 : 1) === lane) this.drawEntity(c, k.laneT, k.x, () => k.draw(c));
@@ -11569,6 +11981,7 @@ addEventListener("keydown", e => {
   if (game.album.visible) { if (k === "Escape") game.album.close(); return; }
   if (game.tree.visible) { if (k === "Escape") game.tree.close(); return; }
   if (game.statsMgr.visible) { if (k === "Escape") game.statsMgr.close(); return; }
+  if (game.netScreen.visible) { if (k === "Escape") game.netScreen.close(); return; }
   if (game.ranking.visible) { if (k === "Escape") game.ranking.close(); return; }
   if (game.backup.visible) { if (k === "Escape") game.backup.close(); return; }
   if (game.tips.visible) { if (["w", "Enter", "Escape", "ArrowUp"].includes(k) || e.code === "Space") game.tips.close(); return; }
@@ -11627,6 +12040,7 @@ addEventListener("keydown", e => {
       case "a": game.player.changeLane(-1); break;   // carril de arriba
       case "d": game.player.changeLane(1); break;    // carril de abajo
       case "e": game.roar(); break;
+      case "q": if (game.netRace) game.net.throwTrap(); break;   // online: lanzar trampa al rival
       case "p": case "Escape": game.setPaused(true); break;
     }
   }
@@ -11667,6 +12081,7 @@ document.querySelectorAll("#touch button").forEach(b => b.addEventListener("poin
     case "laneUp": if (playing) game.player.changeLane(-1); break;
     case "laneDown": if (playing) game.player.changeLane(1); break;
     case "roar": if (game.versus) game.roarP(game.player); else game.roar(); break;
+    case "trap": if (playing && game.netRace) game.net.throwTrap(); break;
     case "pause": game.togglePause(); break;
   }
 }));
