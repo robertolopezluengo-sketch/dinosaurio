@@ -84,17 +84,42 @@ language sql stable security definer set search_path = public as $$
 $$;
 grant execute on function public.my_rank(text, date) to authenticated;
 
--- Guardado en la nube: una copia del progreso por jugador
-create table if not exists public.saves (
-  user_id uuid primary key references auth.users (id) on delete cascade,
+-- Guardado en la nube con código: cada jugador sube su progreso y recibe un código (p. ej. RXK7-2PQM-4D)
+-- con el que puede descargarlo en otro móvil u ordenador, sin crear cuenta con correo.
+drop table if exists public.saves;
+create table if not exists public.cloud_saves (
+  code text primary key,
+  user_id uuid unique not null references auth.users (id) on delete cascade,
   data jsonb not null,
   updated_at timestamptz not null default now(),
   check (pg_column_size(data) < 400000)
 );
-alter table public.saves enable row level security;
-drop policy if exists "leer mi guardado" on public.saves;
-create policy "leer mi guardado" on public.saves for select using (auth.uid() = user_id);
-drop policy if exists "crear mi guardado" on public.saves;
-create policy "crear mi guardado" on public.saves for insert with check (auth.uid() = user_id);
-drop policy if exists "cambiar mi guardado" on public.saves;
-create policy "cambiar mi guardado" on public.saves for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+alter table public.cloud_saves enable row level security;   -- sin políticas: solo se usa con las dos funciones de abajo
+
+create or replace function public.cloud_upload(p_data jsonb)
+returns text language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); c text; abc text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; i int;
+begin
+  if uid is null then raise exception 'sin sesión'; end if;
+  if pg_column_size(p_data) >= 400000 then raise exception 'guardado demasiado grande'; end if;
+  select code into c from cloud_saves where user_id = uid;
+  if c is null then
+    loop
+      c := ''; for i in 1..10 loop c := c || substr(abc, 1 + floor(random() * 32)::int, 1); end loop;
+      exit when not exists (select 1 from cloud_saves where code = c);
+    end loop;
+    insert into cloud_saves (code, user_id, data) values (c, uid, p_data);
+  else
+    update cloud_saves set data = p_data, updated_at = now() where user_id = uid;
+  end if;
+  return c;
+end $$;
+grant execute on function public.cloud_upload(jsonb) to authenticated;
+
+create or replace function public.cloud_download(p_code text)
+returns table (data jsonb, updated_at timestamptz) language plpgsql security definer set search_path = public as $$
+begin
+  perform pg_sleep(0.4);   -- frena a quien intente adivinar códigos
+  return query select s.data, s.updated_at from cloud_saves s where s.code = upper(regexp_replace(p_code, '[^A-Za-z0-9]', '', 'g'));
+end $$;
+grant execute on function public.cloud_download(text) to anon, authenticated;

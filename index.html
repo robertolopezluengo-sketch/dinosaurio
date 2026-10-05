@@ -718,6 +718,21 @@
   #petName { font-family: var(--f-text); font-size: 16px; background: #14101f; color: var(--text); border: 2px solid var(--line); padding: 6px 8px; }
   .pet-ctrl .btn { align-self: flex-start; }
   .skin.item canvas { image-rendering: pixelated; }
+  /* Ranking mundial y nube */
+  .rk-nick { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; margin: 8px 0; }
+  .rk-nick input, .cloud-box input { font-family: var(--f-text); font-size: 16px; background: #14101f; color: var(--text); border: 2px solid var(--line); padding: 8px 10px; min-width: 200px; }
+  .rk-me { font-family: var(--f-title); font-size: 10px; color: var(--weak); min-height: 1em; }
+  .rk-table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; }
+  .rk-table th, .rk-table td { border: 2px solid var(--line); padding: 6px 8px; background: var(--surface-2); text-align: left; font-size: 13px; }
+  .rk-table th { background: var(--surface-3); font-family: var(--f-title); font-weight: 400; font-size: 10px; color: var(--text-dim); }
+  .rk-table td:first-child, .rk-table td:nth-child(3), .rk-table td:nth-child(4) { font-family: var(--f-title); text-align: center; }
+  .rk-table tr.me td { background: #3a2f60; color: var(--weak); outline: 2px solid var(--weak); }
+  .rk-table tr.top1 td:nth-child(3) { color: #ffd23f; } .rk-table tr.top2 td:nth-child(3) { color: #d8e0ec; } .rk-table tr.top3 td:nth-child(3) { color: #e0a060; }
+  .cloud-box { margin-top: 18px; padding-top: 10px; border-top: 2px dashed var(--bevel); }
+  .cloud-code { font-size: 13px; } .cloud-code b { font-family: var(--f-title); font-weight: 400; font-size: 18px; color: var(--weak); letter-spacing: 2px; }
+  .os-rank { margin: 6px 0 0; font-size: 11px; color: var(--info); } .os-rank b { color: var(--weak); font-weight: 400; }
+  .mm-world { background: linear-gradient(180deg, rgba(40,90,170,.95), rgba(35,27,56,.94)); }
+  .rk-nick .btn { flex: 0 0 auto; width: auto; min-width: 0; }
 </style>
 </head>
 <body>
@@ -771,6 +786,7 @@
       <button class="mm-back" data-back>← Carrera diaria</button>
       <div id="dailyBox" class="dl-box"></div>
       <button class="mm-btn mm-play" id="btnDaily">► CORRER LA DIARIA<small>Intentos ilimitados · cuenta tu mejor marca</small></button>
+      <button class="mm-btn" id="btnDailyRank"><i>🌍</i>Ranking mundial de hoy</button>
     </section>
 
     <section id="mmShop" class="mm-panel mm-sub-panel hidden">
@@ -791,6 +807,7 @@
         <button class="mm-tile" id="btnTree"><i>🌳</i><b>Árbol</b><small id="menuTree">Mejoras permanentes</small><em class="mm-dot hidden" id="dotTree"></em></button>
         <button class="mm-tile" id="btnStats"><i>📊</i><b>Estadísticas</b><small>Tus números</small></button>
         <button class="mm-tile" id="btnAlbum"><i>📖</i><b>Álbum</b><small id="menuAlbum">Mejoras descubiertas</small></button>
+        <button class="mm-tile mm-world" id="btnRanking"><i>🌍</i><b>Ranking mundial</b><small id="menuRank">Compite con todos</small></button>
         <button class="mm-tile" id="btnMenuHistory"><i>📜</i><b>Historial</b><small>Tus últimas builds</small></button>
       </div>
     </section>
@@ -819,7 +836,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 20 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 21 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -949,6 +966,7 @@
       <button class="btn gold" id="btnOverShop">Tienda</button>
       <button class="btn" id="btnMenu">Menú</button>
       <button class="btn ghost" id="btnHistory">Historial de builds</button>
+      <button class="btn ghost" id="btnOverRank">🌍 Ranking</button>
     </div>
   </div>
 </div>
@@ -983,6 +1001,26 @@
       <div class="actions"><button class="btn primary" id="bkConfirm">Sí, cargar este progreso</button><button class="btn" id="bkCancel">Cancelar</button></div></div>
     <p id="bkMsg" class="bk-msg"></p>
     <div class="actions"><button class="btn ghost hidden" id="bkUndo">↶ Restaurar el guardado anterior</button></div>
+    <div class="cloud-box">
+      <h3>☁️ Guardado en la nube</h3>
+      <p class="touch-hint">Sube tu progreso a la nube y recibe un <b>código</b>. En otro móvil u ordenador, escribe ese código para descargarlo. Si vuelves a subir, se actualiza con el mismo código. ¡No lo compartas!</p>
+      <div class="actions"><button class="btn primary" id="cloudUp">Subir a la nube</button><span class="cloud-code" id="cloudCode"></span></div>
+      <div class="actions"><input id="cloudIn" maxlength="14" placeholder="Código (p. ej. ABCD-EFGH-JK)" autocomplete="off" spellcheck="false"><button class="btn purple" id="cloudDown">Descargar de la nube</button></div>
+      <p id="cloudMsg" class="bk-msg"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Ranking mundial -->
+<div id="ranking" class="overlay scr hidden">
+  <div class="card achs">
+    <div class="shop-head"><h2>🌍 Ranking mundial</h2><button class="btn" id="rkBack">← Volver</button></div>
+    <div class="rk-nick"><span class="ed-lbl">Tu apodo</span><input id="rkNick" maxlength="16" placeholder="Elige un apodo" autocomplete="off" spellcheck="false"><button class="btn primary small" id="rkNickOk">Guardar</button></div>
+    <p id="rkMsg" class="bk-msg"></p>
+    <div class="tabs" id="rkTabs"></div>
+    <p id="rkMe" class="rk-me"></p>
+    <div id="rkList"></div>
+    <p class="touch-hint">La carrera diaria tiene ranking de hoy; el resto de modos, el mejor de siempre. Las partidas con «Todas las mejoras» del código secreto no cuentan.</p>
   </div>
 </div>
 
@@ -2734,6 +2772,7 @@ class SaveManager {
         if (Array.isArray(d.pets)) this.data.pets = d.pets.filter(t => PET_BY_ID[t]);
         if (obj(d.pet) && this.data.pets.includes(d.pet.id)) { const hx = v => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
           this.data.pet = { id: d.pet.id, body: hx(d.pet.body) ? d.pet.body : PET_BY_ID[d.pet.id].body, accent: hx(d.pet.accent) ? d.pet.accent : PET_BY_ID[d.pet.id].accent, name: String(d.pet.name || PET_BY_ID[d.pet.id].name).slice(0, 14) }; }
+        for (const k of ["nick", "cloudCode", "cloudAt"]) if (typeof d[k] === "string") this.data[k] = d[k].slice(0, 40);
         this.data.secretUnlocked = !!d.secretUnlocked;
         this.data.codeUsed = !!d.codeUsed; this.data.allUpgrades = !!d.allUpgrades;
         this.data.tutorialDone = !!d.tutorialDone; this.data.tutorialRewarded = !!d.tutorialRewarded;
@@ -7357,6 +7396,9 @@ class UI {
     bind("btnTree", () => game.openTree());
     bind("btnSeason", () => game.openSeason());
     bind("btnDaily", () => game.startDaily());
+    bind("btnDailyRank", () => { game.ranking.mode = "daily"; game.openRanking(); });
+    bind("btnRanking", () => game.openRanking());
+    bind("btnOverRank", () => { game.ranking.mode = g_rankMode(game); game.openRanking(); });
     bind("btnCode", () => { const b = $("codeBox"); b.classList.toggle("hidden"); $("codeMsg").textContent = ""; if (!b.classList.contains("hidden")) $("codeInput").focus(); });
     bind("codeOk", () => this.redeem());
     $("codeInput").addEventListener("keydown", e => { if (e.key === "Enter") this.redeem(); });
@@ -7502,7 +7544,8 @@ class UI {
     // Pase de temporada: la barra se llena desde donde estaba antes de la partida
     const sp = this.$("overSeason"), sd = g.season.d, max = sd.tier >= SEASON_CONFIG.TIERS, ups = (g.runSeason || []).length;
     const to = max ? 100 : Math.round(sd.xp / g.season.need() * 100), from = ups || !g.seasonBefore ? 0 : Math.round(g.seasonBefore.frac * 100);
-    sp.innerHTML = `<div class="os-head"><span>🎟️ Pase · nivel <b>${sd.tier}</b>/${SEASON_CONFIG.TIERS}</span><span class="os-xp">+${g.runXP || 0} XP</span></div><div class="bar ss-bar"><i style="width:${from}%"></i></div>${ups ? `<p class="os-up">¡SUBES DE NIVEL! ${g.runSeason.map(x => x.txt).join(" · ")}</p>` : ""}`;
+    const O = g.online, rk = O.nick ? (g.save.data.allUpgrades ? "🌍 Con «Todas las mejoras» no cuenta para el ranking" : `🌍 Enviado al ranking mundial como <b>${escapeHtml(O.nick)}</b>`) : "🌍 Elige un apodo en el ranking para competir con todo el mundo";
+    sp.innerHTML = `<div class="os-head"><span>🎟️ Pase · nivel <b>${sd.tier}</b>/${SEASON_CONFIG.TIERS}</span><span class="os-xp">+${g.runXP || 0} XP</span></div><div class="bar ss-bar"><i style="width:${from}%"></i></div>${ups ? `<p class="os-up">¡SUBES DE NIVEL! ${g.runSeason.map(x => x.txt).join(" · ")}</p>` : ""}<p class="os-rank">${rk}</p>`;
     const bar = sp.querySelector("i"); requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = to + "%"; }));
     // Carrera diaria
     const od = this.$("overDaily"); od.classList.toggle("hidden", !D);
@@ -10514,6 +10557,173 @@ class PetManager {
   }
 }
 
+// =====================================================================
+//  Online (Supabase): apodo, ranking mundial y guardado en la nube con código.
+//  Sin dependencias: habla con la API REST de Supabase con fetch. Inicio de sesión anónimo (sin correo).
+//  Si no hay conexión el juego sigue igual: las puntuaciones esperan en una cola y se envían más tarde.
+// =====================================================================
+const ONLINE_CONFIG = {
+  URL: "https://jlvlupdvfyrrofydrocz.supabase.co",
+  KEY: "sb_publishable_XN4kZ5WfWx1YHYR8DF-i5w_Tq5lQqL_",   // clave pública (la seguridad la ponen las reglas de la base de datos)
+  SESSION_KEY: "dinoRunner.online", QUEUE_KEY: "dinoRunner.scoreQueue", TIMEOUT: 9000, TOP: 50,
+};
+const RANK_MODES = [["daily", "📅 Diaria de hoy"], ["normal", "Normal"], ["hard", "Difícil"], ["easy", "Fácil"], ["random", "🎲 Aleatorio"]];
+class Online {
+  constructor(game) {
+    this.g = game; this.sess = null; this.queue = [];
+    try { this.sess = JSON.parse(localStorage.getItem(ONLINE_CONFIG.SESSION_KEY) || "null"); } catch (e) {}
+    try { this.queue = JSON.parse(localStorage.getItem(ONLINE_CONFIG.QUEUE_KEY) || "[]"); } catch (e) {}
+    if (!Array.isArray(this.queue)) this.queue = [];
+    addEventListener("online", () => this.flush());
+    setTimeout(() => this.flush(), 3000);
+  }
+  get nick() { return this.g.save.data.nick || ""; }
+  get uid() { return this.sess && this.sess.user && this.sess.user.id; }
+  persist() { try { localStorage.setItem(ONLINE_CONFIG.SESSION_KEY, JSON.stringify(this.sess)); localStorage.setItem(ONLINE_CONFIG.QUEUE_KEY, JSON.stringify(this.queue.slice(-30))); } catch (e) {} }
+  // Petición a Supabase (con tiempo límite). auth = enviar la sesión del jugador
+  async req(path, { method = "GET", body, auth = true, prefer } = {}, retry = true) {
+    if (auth) await this.ensureSession();
+    const headers = { apikey: ONLINE_CONFIG.KEY, "Content-Type": "application/json" };
+    if (auth && this.sess) headers.Authorization = "Bearer " + this.sess.access_token;
+    if (prefer) headers.Prefer = prefer;
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), ONLINE_CONFIG.TIMEOUT);
+    let r;
+    try { r = await fetch(ONLINE_CONFIG.URL + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: ctl.signal }); }
+    catch (e) { throw new Error("Sin conexión con el servidor."); }
+    finally { clearTimeout(to); }
+    if (r.status === 401 && auth && retry) { this.sess = null; this.persist(); return this.req(path, { method, body, auth, prefer }, false); }
+    const txt = await r.text(); let js = null; try { js = txt ? JSON.parse(txt) : null; } catch (e) {}
+    if (!r.ok) throw new Error((js && (js.message || js.msg || js.error_description || js.error)) || `Error ${r.status}`);
+    return js;
+  }
+  // Sesión anónima: se crea la primera vez y se renueva sola
+  async ensureSession() {
+    const now = Date.now() / 1000;
+    if (this.sess && this.sess.access_token && (this.sess.expires_at || 0) - 60 > now) return;
+    const auth = async (path, body) => {
+      const s = await this.req(path, { method: "POST", body, auth: false });
+      if (!s || !s.access_token) throw new Error("No se ha podido iniciar sesión.");
+      this.sess = { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: s.expires_at || now + (s.expires_in || 3600), user: { id: s.user && s.user.id } };
+      this.persist();
+    };
+    if (this.sess && this.sess.refresh_token) { try { return await auth("/auth/v1/token?grant_type=refresh_token", { refresh_token: this.sess.refresh_token }); } catch (e) { if (/conexión/.test(e.message)) throw e; } }
+    try { await auth("/auth/v1/signup", { data: {} }); }
+    catch (e) { throw new Error(/anonymous|disabled/i.test(e.message) ? "El inicio de sesión anónimo está desactivado en el servidor." : e.message); }
+  }
+  // ----- Apodo -----
+  static cleanNick(n) { return String(n || "").trim().replace(/\s+/g, " ").slice(0, 16); }
+  async setNick(n) {
+    n = Online.cleanNick(n);
+    if (n.length < 3) throw new Error("El apodo necesita al menos 3 caracteres.");
+    if (!/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ _.-]+$/.test(n)) throw new Error("Usa solo letras, números, espacios, puntos, guiones o guion bajo.");
+    await this.ensureSession();
+    await this.req("/rest/v1/profiles", { method: "POST", body: { id: this.uid, nickname: n }, prefer: "resolution=merge-duplicates,return=minimal" });
+    this.g.save.data.nick = n; this.g.save.save(); this.flush();
+    return n;
+  }
+  // ----- Puntuaciones -----
+  // Al acabar una partida (Game.bankRun). Solo si tienes apodo y no juegas con «todas las mejoras» del código
+  submitRun(g) {
+    if (!this.nick || g.versus || g.tutorial || g.save.data.allUpgrades || g.score <= 0) return;
+    const mode = g.daily ? "daily" : g.mode.id, day = g.daily ? g.dailyRace.today : dayKey();
+    this.queue.push({ p_mode: mode, p_day: day, p_score: Math.floor(g.score), p_level: Math.min(99, g.level.level), p_seconds: Math.round(g.runTime * 10) / 10 });
+    this.persist(); this.flush();
+  }
+  async flush() {
+    if (this.flushing || !this.queue.length || !this.nick) return;
+    this.flushing = true;
+    try {
+      while (this.queue.length) {
+        try { await this.req("/rest/v1/rpc/submit_score", { method: "POST", body: this.queue[0] }); this.queue.shift(); this.persist(); }
+        catch (e) {
+          if (/rápido/.test(e.message)) { setTimeout(() => this.flush(), 16000); break; }   // límite de frecuencia: se reintenta
+          if (/conexión|sesión|Error 5/.test(e.message)) break;                            // sin red: se queda en la cola
+          this.queue.shift(); this.persist();                                              // rechazada (imposible o día pasado)
+        }
+      }
+    } finally { this.flushing = false; }
+  }
+  leaderboard(mode) { return this.req("/rest/v1/rpc/leaderboard", { method: "POST", body: { p_mode: mode, p_day: mode === "daily" ? this.g.dailyRace.today : null, p_limit: ONLINE_CONFIG.TOP }, auth: !!this.sess }); }
+  async myRank(mode) { if (!this.sess) return null; const r = await this.req("/rest/v1/rpc/my_rank", { method: "POST", body: { p_mode: mode, p_day: mode === "daily" ? this.g.dailyRace.today : null } }); return r && r[0]; }
+  // ----- Nube -----
+  async upload() {
+    this.g.save.save();
+    const code = await this.req("/rest/v1/rpc/cloud_upload", { method: "POST", body: { p_data: this.g.save.data } });
+    this.g.save.data.cloudCode = code; this.g.save.data.cloudAt = new Date().toISOString(); this.g.save.save();
+    return code;
+  }
+  async download(code) {
+    const r = await this.req("/rest/v1/rpc/cloud_download", { method: "POST", body: { p_code: code }, auth: false });
+    if (!r || !r[0]) throw new Error("No hay ningún guardado con ese código. Revisa que esté bien escrito.");
+    return { version: BACKUP_CONFIG.VERSION, date: r[0].updated_at, data: r[0].data };
+  }
+}
+const fmtCloudCode = c => String(c || "").replace(/(.{4})(.{4})(.*)/, "$1-$2-$3");
+// =====================================================================
+//  Pantalla de ranking mundial: pestañas por modo, top 50, tu puesto y tu apodo
+// =====================================================================
+class RankingScreen {
+  constructor(game) {
+    this.g = game; const $ = id => document.getElementById(id);
+    this.el = $("ranking"); this.list = $("rkList"); this.msg = $("rkMsg"); this.me = $("rkMe"); this.nick = $("rkNick"); this.mode = "daily";
+    $("rkBack").addEventListener("click", e => { e.currentTarget.blur(); game.sfx.click(); this.close(); });
+    $("rkNickOk").addEventListener("click", e => { e.currentTarget.blur(); this.saveNick(); });
+    this.nick.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") this.saveNick(); });
+    const tabs = $("rkTabs");
+    for (const [id, name] of RANK_MODES) { const b = document.createElement("button"); b.className = "tab"; b.dataset.mode = id; b.textContent = name;
+      b.addEventListener("click", () => { game.sfx.click(); this.load(id); }); tabs.appendChild(b); }
+  }
+  get visible() { return !this.el.classList.contains("hidden"); }
+  open() { this.nick.value = this.g.online.nick; this.el.classList.remove("hidden"); this.load(this.mode); }
+  close() { this.el.classList.add("hidden"); this.g.showMenu(); }
+  say(t, k = "") { this.msg.textContent = t; this.msg.className = "bk-msg " + k; }
+  async saveNick() {
+    this.say("Guardando…");
+    try { const n = await this.g.online.setNick(this.nick.value); this.nick.value = n; this.say(`¡Listo, ${n}! Tus partidas ya cuentan para el ranking.`, "ok"); this.g.sfx.buy(); this.load(this.mode); }
+    catch (e) { this.say(e.message, "err"); this.g.sfx.denied(); }
+  }
+  async load(mode) {
+    this.mode = mode; const O = this.g.online;
+    this.el.querySelectorAll("#rkTabs .tab").forEach(t => t.classList.toggle("active", t.dataset.mode === mode));
+    this.list.innerHTML = `<p class="touch-hint">Cargando…</p>`; this.me.textContent = "";
+    if (!O.nick) this.say("Elige un apodo para aparecer en el ranking (tus partidas se envían al acabar).");
+    try {
+      const rows = await O.leaderboard(mode); if (this.mode !== mode) return;
+      this.list.innerHTML = rows && rows.length ? `<table class="rk-table"><tr><th>#</th><th>Jugador</th><th>Puntos</th><th>Nivel</th></tr>${rows.map(r =>
+        `<tr class="${r.is_me ? "me" : ""}${r.rank <= 3 ? " top" + r.rank : ""}"><td>${r.rank <= 3 ? ["🥇", "🥈", "🥉"][r.rank - 1] : r.rank}</td><td>${escapeHtml(r.nickname)}</td><td>${fmtInt(r.score)}</td><td>${r.level}</td></tr>`).join("")}</table>`
+        : `<p class="touch-hint">Todavía no hay puntuaciones${mode === "daily" ? " hoy" : ""}. ¡Sé el primero!</p>`;
+      const me = await O.myRank(mode).catch(() => null);
+      if (this.mode === mode) this.me.textContent = me && me.score != null ? `Tu puesto: ${me.rank} de ${me.total} · tu mejor marca: ${fmtInt(me.score)}` : O.nick ? "Aún no tienes puntuación aquí." : "";
+      if (O.nick && O.queue.length) this.say(`${O.queue.length} partida(s) esperando para enviarse.`);
+    } catch (e) { if (this.mode === mode) { this.list.innerHTML = ""; this.say(`No se ha podido cargar el ranking: ${e.message}`, "err"); } }
+  }
+}
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const g_rankMode = g => g.daily ? "daily" : RANK_MODES.some(([m]) => m === g.mode.id) ? g.mode.id : "normal";
+// Guardado en la nube dentro de la pantalla Guardar / Cargar (reutiliza el resumen y la confirmación de la copia de seguridad)
+SaveBackup.prototype.setupCloud = function () {
+  const g = this.g, $ = id => document.getElementById(id), msg = $("cloudMsg"), say = (t, k = "") => { msg.textContent = t; msg.className = "bk-msg " + k; };
+  const show = () => { const c = g.save.data.cloudCode; $("cloudCode").innerHTML = c ? `Tu código: <b>${fmtCloudCode(c)}</b>${g.save.data.cloudAt ? ` <small>(subido el ${new Date(g.save.data.cloudAt).toLocaleString("es-ES")})</small>` : ""}` : ""; };
+  const oldOpen = this.open.bind(this); this.open = () => { oldOpen(); show(); say(""); };
+  $("cloudIn").addEventListener("keydown", e => e.stopPropagation());
+  $("cloudUp").addEventListener("click", async e => {
+    e.currentTarget.blur(); g.sfx.click(); say("Subiendo…");
+    try { const c = await g.online.upload(); show(); say(`¡Subido! Apunta tu código: ${fmtCloudCode(c)}`, "ok"); g.sfx.buy(); this.markExported && this.markExported(); }
+    catch (err) { say(`No se ha podido subir: ${err.message}`, "err"); g.sfx.denied(); }
+  });
+  $("cloudDown").addEventListener("click", async e => {
+    e.currentTarget.blur(); g.sfx.click(); const code = $("cloudIn").value.trim();
+    if (code.replace(/[^A-Za-z0-9]/g, "").length < 10) { say("Escribe el código completo (10 letras y números).", "err"); return; }
+    say("Buscando…");
+    try {
+      const obj = await g.online.download(code); this.pending = obj;
+      $("bkSumText").textContent = `Guardado en la nube del ${new Date(obj.date).toLocaleString("es-ES")}: ${SaveBackup.summary(obj.data)}.`;
+      this.sum.classList.remove("hidden"); say("Encontrado. Revisa el resumen de arriba y confirma para cargarlo.", "ok");
+      this.sum.scrollIntoView({ block: "center", behavior: "smooth" });
+    } catch (err) { say(err.message, "err"); g.sfx.denied(); }
+  });
+};
+
 // Causa de un golpe (estadística «qué te mata más»)
 function obstacleCause(o) {
   if (o.kind === "flyer") return FLYER_NAMES[o.style] || "Pájaro";
@@ -10539,7 +10749,7 @@ Sfx.prototype.mountFx = function (id) {
 //  Estados: menu · play · playing · paused · over · shop · roulette · manual · achievements
 // =====================================================================
 // Estados con el fondo animado de la portada
-const MENU_STATES = ["menu", "play", "shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season"];
+const MENU_STATES = ["menu", "play", "shop", "roulette", "manual", "achievements", "album", "backup", "stats", "tree", "season", "ranking"];
 class Game {
   constructor(canvas) {
     this.canvas = canvas; this.ctx = canvas.getContext("2d");
@@ -10558,6 +10768,7 @@ class Game {
     this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this); this.tips = new TipManager(this); this.season = new SeasonPass(this);
     this.dailyRace = new DailyRace(this); this.daily = false;   // carrera diaria
     this.weather = new WeatherManager(this); this.pets = new PetManager(this);   // clima y mascota
+    this.online = new Online(this); this.ranking = new RankingScreen(this); this.backup.setupCloud();   // ranking mundial y nube (Supabase)
     this.tutSkip = document.getElementById("tutSkip");
     this.tutSkip.addEventListener("click", e => { e.currentTarget.blur(); this.sfx.click(); this.skipTutorial(); });
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
@@ -10630,7 +10841,7 @@ class Game {
   // ----- Estados -----
   closeScreens() {
     this.ui.hideAll();
-    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el, this.season.el]) el.classList.add("hidden");
+    for (const el of [this.shop.el, this.roulette.el, this.manual.el, this.ach.el, this.history.el, this.album.el, this.rogue.screen.el, this.backup.el, this.statsMgr.el, this.tree.el, this.season.el, this.ranking.el]) el.classList.add("hidden");
   }
   showMenu() {
     if (["playing", "paused", "choice", "tip"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
@@ -10709,6 +10920,7 @@ class Game {
   openManual(from) { if (from !== "pause") this.state = "manual"; this.closeScreens(); this.manual.open(from); }
   openHistory(from) { this.closeScreens(); this.history.open(from); }
   openSeason() { this.state = "season"; this.closeScreens(); this.season.open(); }
+  openRanking() { this.state = "ranking"; this.closeScreens(); this.ranking.open(); }
   openTree() { this.state = "tree"; this.closeScreens(); this.tree.open(); }
   openStats() { this.state = "stats"; this.closeScreens(); this.statsMgr.open(); }
   openBackup() { this.state = "backup"; this.closeScreens(); this.backup.open(); }
@@ -10974,6 +11186,7 @@ class Game {
     this.ach.event("runEnd", { score: this.score });
     this.ach.event("coinsEarned", { n: earned });
     this.save.save();
+    this.online.submitRun(this);   // ranking mundial (si tienes apodo)
   }
   gameOver() {
     this.state = "over"; this.overTime = 0; this.overShown = false; this.sfx.hit(); this.sfx.defeat(); this.addShake(0.4, 8);
@@ -11356,6 +11569,7 @@ addEventListener("keydown", e => {
   if (game.album.visible) { if (k === "Escape") game.album.close(); return; }
   if (game.tree.visible) { if (k === "Escape") game.tree.close(); return; }
   if (game.statsMgr.visible) { if (k === "Escape") game.statsMgr.close(); return; }
+  if (game.ranking.visible) { if (k === "Escape") game.ranking.close(); return; }
   if (game.backup.visible) { if (k === "Escape") game.backup.close(); return; }
   if (game.tips.visible) { if (["w", "Enter", "Escape", "ArrowUp"].includes(k) || e.code === "Space") game.tips.close(); return; }
   if (st === "choice") {   // elección de mejora o pacto: A/D o flechas + W/Intro, R barajar, Q saltar, 1–4 directa

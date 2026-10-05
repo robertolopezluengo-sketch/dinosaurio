@@ -54,8 +54,11 @@ Un recorrido nuevo cada día, el mismo para todos. Mantén la racha para ganar m
 🛒 Y MUCHO MÁS
 Decenas de skins, editor de raptores, huevos sorpresa, ruleta, logros, árbol de mejoras permanentes, estadísticas, modos Fácil, Difícil y Aleatorio, y multijugador local en el mismo dispositivo.
 
-✅ Sin anuncios. Sin compras. Sin conexión.
-Todo se consigue jugando y tu progreso se guarda en tu dispositivo.
+🌍 RANKING MUNDIAL
+Compite en la carrera diaria y en cada modo con jugadores de todo el mundo, y pasa tu progreso a otro móvil con la nube.
+
+✅ Sin anuncios. Sin compras. Funciona sin conexión.
+Todo se consigue jugando.
 ```
 
 **Categoría:** Juegos → Arcade · **Etiquetas:** correr, pixel art, dinosaurios, sin conexión
@@ -64,7 +67,10 @@ Todo se consigue jugando y tu progreso se guarda en tu dispositivo.
 
 - **Anuncios:** No contiene anuncios.
 - **Compras en la aplicación:** No.
-- **Seguridad de los datos:** marca que la app **no recoge ni comparte** datos de usuario.
+- **Seguridad de los datos** (desde la v21, por el ranking y la nube, que son opcionales):
+  - Se recogen: **Identificadores de dispositivo u otros** (identificador anónimo de Supabase), **Actividad en la app → Otro contenido generado por el usuario** (apodo) y **Actividad en la app → Otras acciones** (puntuaciones y copia del progreso).
+  - Finalidad: **Funcionalidad de la app**. No se comparten con terceros, no se usan para publicidad, se cifran en tránsito (HTTPS) y la recogida es **opcional**.
+  - Se puede pedir el borrado (ver la política de privacidad).
 - **Clasificación de contenido (cuestionario IARC):** violencia de dibujos animados leve (el raptor ruge a obstáculos y jefes fantásticos; no hay sangre). Debería salir PEGI 3 / Para todos.
 - **Público objetivo:** 13 años o más (evita las normas extra de la política de Familias). Marca que la app *no* está dirigida a niños, aunque es apta para todos.
 - **Acceso a la app:** Todas las funciones están disponibles sin restricciones (no hay inicio de sesión).
