@@ -659,6 +659,58 @@
   .dl-hist i { display: block; width: 70%; min-height: 3px; background: var(--info); border: 2px solid var(--line); box-sizing: border-box; }
   .dl-hist .today i { background: var(--weak); } .dl-hist small { font-size: 10px; color: var(--text-dim); text-transform: capitalize; }
   @media (max-width: 640px) { .dl-stats { grid-template-columns: 1fr 1fr; } .scr-card { padding: 12px 8px; } }
+  /* Editor píxel a píxel */
+  .px-box { display: flex; flex-direction: column; gap: 8px; }
+  .px-box canvas { width: 100%; max-width: 432px; aspect-ratio: 24 / 20; height: auto; image-rendering: pixelated; border: 2px solid var(--line); box-shadow: 4px 4px 0 var(--line); cursor: crosshair; touch-action: none; }
+  .px-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+  .px-brushes { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+  .px-brush { display: flex; align-items: center; gap: 6px; padding: 4px 6px; background: var(--surface-2); border: 2px solid var(--line); color: var(--text); font-family: var(--f-text); font-size: 11px; cursor: pointer; text-align: left; }
+  .px-brush i { flex: none; width: 16px; height: 16px; background: var(--c); border: 2px solid var(--line); box-shadow: inset -2px -2px 0 rgba(0,0,0,.25); }
+  .px-brush.sel { outline: 2px solid var(--weak); outline-offset: 1px; background: var(--surface-3); }
+  .skin.hat canvas { image-rendering: pixelated; }
+  /* ===== Interfaz v19: más pulida ===== */
+  html, body { background: radial-gradient(ellipse 120% 90% at 50% 0%, #2a1f48 0%, #171225 55%, #0e0b16 100%) fixed; }
+  canvas#game { border: 2px solid var(--line); box-shadow: 0 0 0 2px #2f2549, 6px 6px 0 2px var(--line), 0 18px 60px rgba(0,0,0,.6), 0 0 80px rgba(123,92,255,.12); }
+  /* Botones con brillo que cruza al pasar por encima */
+  .btn { overflow: hidden; }
+  .btn::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.28), transparent); transform: skewX(-18deg); transition: left .35s ease-out; pointer-events: none; }
+  .btn:hover::after { left: 120%; }
+  .btn:disabled::after { display: none; }
+  /* Portada: botones secundarios en cuadrícula 2 × 2 */
+  .mm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mm-sq { flex-direction: column; justify-content: center; align-items: center; gap: 4px; text-align: center; padding: 10px 8px; font-size: 13px; line-height: 16px; }
+  .mm-sq i { font-size: 22px; line-height: 26px; width: auto; filter: drop-shadow(2px 2px 0 var(--line)); }
+  .mm-btn { background: linear-gradient(180deg, rgba(61,49,96,.94), rgba(35,27,56,.94)); }
+  .mm-btn:hover, .mm-btn:focus-visible { background: linear-gradient(180deg, rgba(87,74,130,.96), rgba(47,37,73,.96)); }
+  .mm-btn i { filter: drop-shadow(2px 2px 0 var(--line)); }
+  .mm-play { background: linear-gradient(180deg, #7ee878, #4cbf47); }
+  .mm-play:hover, .mm-play:focus-visible { background: linear-gradient(180deg, #96f290, #5fd15a); }
+  .mm-season { background: linear-gradient(90deg, rgba(123,92,255,.95), rgba(255,92,225,.92)); }
+  .mm-daily { background: linear-gradient(90deg, rgba(40,90,170,.95), rgba(70,170,200,.92)); }
+  .mm-chip { background: linear-gradient(180deg, rgba(61,49,96,.92), rgba(35,27,56,.92)); }
+  .mm-tile { background: linear-gradient(180deg, rgba(61,49,96,.94), rgba(35,27,56,.94)); }
+  .mm-tile i { filter: drop-shadow(2px 2px 0 var(--line)); transition: transform .15s; }
+  .mm-tile:hover i { transform: scale(1.15) rotate(-6deg); }
+  @media (max-height: 760px) { .mm-title { font-size: clamp(34px, 7vh, 64px); } .mm-sub { margin-bottom: 8px; } .mm-panel { gap: 7px; } .mm-btn { padding: 9px 16px; } .mm-play { padding: 10px 16px 8px; font-size: 22px; } .mm-sq { padding: 7px 8px; } }
+  @media (max-height: 560px) { .mm-sq i { display: none; } .mm-sq { font-size: 11px; } }
+  /* Tienda: el color de la rareza en el borde y brillo al pasar */
+  .skin { position: relative; background: linear-gradient(180deg, var(--surface-2), #261d3e); border-top: 3px solid var(--rc, var(--line)); transition: transform .12s, box-shadow .12s; }
+  .skin:hover { transform: translateY(-3px); box-shadow: inset 0 2px 0 var(--bevel), 0 0 0 2px var(--line), 0 8px 18px rgba(0,0,0,.35), 0 0 16px color-mix(in srgb, var(--rc, #fff) 35%, transparent); }
+  .skin canvas { box-shadow: 0 2px 0 rgba(0,0,0,.3); }
+  .tab { transition: background .1s, transform .1s; } .tab:hover { transform: translateY(-2px); }
+  .tab.active { background: linear-gradient(180deg, #ffd27a, var(--gold)); }
+  /* Botones táctiles: iconos grandes, colores y respuesta al pulsar */
+  #touch { gap: 10px; }
+  #touch button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 58px; background: linear-gradient(180deg, #3d3160, #231b38); box-shadow: inset 0 2px 0 var(--bevel), 0 4px 0 var(--line); }
+  #touch button b { font-family: var(--f-title); font-weight: 400; font-size: 18px; line-height: 20px; }
+  #touch button small { font-family: var(--f-title); font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+  #touch button:active { transform: translateY(3px); box-shadow: inset 0 2px 0 var(--bevel), 0 1px 0 var(--line); }
+  #touch button.t-lane b { color: var(--info); font-family: system-ui, sans-serif; font-size: 22px; }
+  #touch button.roar { background: linear-gradient(180deg, #ffb565, #ff8a1e); box-shadow: inset 0 2px 0 rgba(255,255,255,.5), 0 4px 0 var(--line), 0 0 18px rgba(255,154,60,.35); }
+  #touch button.roar small { color: #3a1a00; }
+  #touch button.t-pause { flex: 0 0 64px; }
+  /* Avisos y logros */
+  .ach-toast { background: linear-gradient(180deg, #3d3160, #231b38); box-shadow: 4px 4px 0 var(--line), 0 0 24px rgba(255,210,63,.25); animation: slidein .3s cubic-bezier(.2,1.4,.4,1); }
 </style>
 </head>
 <body>
@@ -666,10 +718,10 @@
   <div id="tip" class="tip-box hidden"><canvas id="tipCanvas" width="160" height="90"></canvas><div><small>CONSEJO</small><p id="tipText"></p><button class="btn primary" id="tipOk">Entendido <kbd>W</kbd></button></div></div>
 </div>
 <div id="touch">
-  <button data-act="laneUp">▲ Carril</button>
-  <button data-act="laneDown">▼ Carril</button>
-  <button data-act="roar" class="roar">Rugido</button>
-  <button data-act="pause">❚❚</button>
+  <button data-act="laneUp" class="t-lane"><b>▲</b><small>Carril</small></button>
+  <button data-act="laneDown" class="t-lane"><b>▼</b><small>Carril</small></button>
+  <button data-act="roar" class="roar"><b>📢</b><small>Rugido</small></button>
+  <button data-act="pause" class="t-pause"><b>❚❚</b></button>
 </div>
 <p class="help">
   <kbd>W</kbd> saltar (doble salto en el aire) · <kbd>S</kbd> deslizarse / caída rápida ·
@@ -698,11 +750,13 @@
     <nav id="mmMain" class="mm-panel">
       <button class="mm-btn mm-play" id="btnPlay">► JUGAR<small>Récord <b id="menuBest">0</b></small></button>
       <button class="mm-btn mm-daily" data-sub="mmDaily"><i>📅</i>Carrera diaria<small id="menuDaily">Mejor hoy 0</small><em class="mm-dot hidden" id="dotDaily"></em></button>
-      <button class="mm-btn" id="btnVersus"><i>👥</i>Multijugador</button>
       <button class="mm-btn mm-season" id="btnSeason"><i>🎟️</i>Pase de temporada<small id="menuSeason">Nivel 0/30</small><em class="mm-dot hidden" id="dotSeason"></em></button>
-      <button class="mm-btn" data-sub="mmShop"><i>🛒</i>Tienda y ruleta<em class="mm-dot hidden" id="dotShop"></em></button>
-      <button class="mm-btn" data-sub="mmProg"><i>🏆</i>Progreso<em class="mm-dot hidden" id="dotProg"></em></button>
-      <button class="mm-btn" data-sub="mmOpts"><i>⚙️</i>Opciones</button>
+      <div class="mm-grid">
+        <button class="mm-btn mm-sq" data-sub="mmShop"><i>🛒</i>Tienda<em class="mm-dot hidden" id="dotShop"></em></button>
+        <button class="mm-btn mm-sq" data-sub="mmProg"><i>🏆</i>Progreso<em class="mm-dot hidden" id="dotProg"></em></button>
+        <button class="mm-btn mm-sq" id="btnVersus"><i>👥</i>2 jugadores</button>
+        <button class="mm-btn mm-sq" data-sub="mmOpts"><i>⚙️</i>Opciones</button>
+      </div>
       <p class="mm-hint">Pulsa <kbd>W</kbd> para jugar</p>
     </nav>
 
@@ -758,7 +812,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 18 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 19 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -989,7 +1043,7 @@
       <button class="btn purple ghost" id="shopRoulette">Ruleta</button>
       <button class="btn" id="shopBack">← Volver</button>
     </div>
-    <div class="tabs"><button class="tab active" data-tab="skins">Skins</button><button class="tab" data-tab="checkpoints">Checkpoints</button><button class="tab" data-tab="editor">Editor</button><button class="tab" data-tab="eggs">🥚 Huevos</button></div>
+    <div class="tabs"><button class="tab active" data-tab="skins">Skins</button><button class="tab" data-tab="hats">🎩 Accesorios</button><button class="tab" data-tab="checkpoints">Checkpoints</button><button class="tab" data-tab="editor">Editor</button><button class="tab" data-tab="eggs">🥚 Huevos</button></div>
     <div id="skinsPane">
       <div id="skinGrid" class="grid"></div>
       <h3 class="shop-sec">🔒 Exclusivas de logros</h3>
@@ -998,6 +1052,10 @@
       <div id="seasonGrid" class="grid"></div>
       <h3 class="shop-sec">🎨 Mis diseños</h3>
       <div id="designGrid" class="grid"></div>
+    </div>
+    <div id="hatPane" class="hidden">
+      <p class="touch-hint">Los accesorios se ponen encima de cualquier skin (también de tus diseños) y te siguen al correr, saltar y agacharte. Puedes llevar uno a la vez.</p>
+      <div id="hatGrid" class="grid"></div>
     </div>
     <div id="cpPane" class="hidden">
       <div id="cpGrid" class="grid"></div>
@@ -1036,7 +1094,13 @@
         <div class="ed-ctrl">
           <div class="tabs" id="edSlots" style="margin:0"></div>
           <div class="ed-row"><span class="ed-lbl">Nombre</span><input id="edName" maxlength="18"></div>
-          <div><span class="ed-lbl">Patrón</span><div class="chips" id="edPatterns"></div></div>
+          <div class="px-box"><span class="ed-lbl">Dibujo píxel a píxel</span>
+            <div class="px-tools" id="edTools"></div>
+            <canvas id="edPixels" width="384" height="320"></canvas>
+            <div class="px-brushes" id="edBrushes"></div>
+            <small class="touch-hint">Pinta cada píxel con un color de la paleta. Las patas (abajo, en gris) se animan solas al correr y agacharte.</small>
+          </div>
+          <div><span class="ed-lbl">Empezar desde una plantilla</span><div class="chips" id="edPatterns"></div></div>
           <div id="edColors" class="ed-ctrl" style="gap:6px"></div>
           <div><span class="ed-lbl">Efecto</span><div class="chips" id="edFx"></div></div>
         </div>
@@ -1050,7 +1114,7 @@
 /* DinoSkinsEngine — motor de skins de velociraptor en pixel art (canvas 2D, sin dependencias).
    Uso: DinoSkinsEngine.init(datosJSON); luego drawDino(...) en cada frame del juego. */
 (function (root) {
-  var W = 24, H = 20;
+  var W = 24, H = 20, WD = 32;
   var RB = ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"];
   var DATA = null, byId = {};
 
@@ -1060,6 +1124,7 @@
   // Devuelve una matriz 20×24 de letras de paleta ('.' = transparente).
   function compose(spriteId, frame) {
     var spr = DATA.sprites[spriteId], fr = spr.frames[frame] || spr.frames.idle;
+    if (fr.full) return fr.full.map(function (r) { return (r + "................................").slice(0, WD).split(""); });
     var rows = spr.body.concat(fr.legs).map(function (r) { return (r + "........................").slice(0, W).split(""); });
     if (fr.top) {
       var off = fr.top[0];
@@ -1090,12 +1155,12 @@
     var cv = SPR_CACHE.get(key);
     if (!cv) {
       if (SPR_CACHE.size > 3000) SPR_CACHE.clear();
-      cv = document.createElement("canvas"); cv.width = W; cv.height = H + 8;
+      cv = document.createElement("canvas"); cv.width = WD; cv.height = H + 8;
       drawSpriteRaw(cv.getContext("2d"), skinId, frame, 0, 4, 1, t, { tint: opts.tint });
       SPR_CACHE.set(key, cv);
     }
     ctx.save(); if (opts.alpha != null) ctx.globalAlpha = opts.alpha; ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(cv, ox * sc, (oy - 4) * sc, W * sc, (H + 8) * sc);
+    ctx.drawImage(cv, ox * sc, (oy - 4) * sc, WD * sc, (H + 8) * sc);
     ctx.restore();
   }
   function drawSpriteRaw(ctx, skinId, frame, ox, oy, sc, t, opts) {
@@ -1187,7 +1252,7 @@
   // Llamar una vez por tick de animación (80–110 ms), no por requestAnimationFrame.
   function drawDino(ctx, skinId, ox, groundY, sc, state, jumpY, dead) {
     var tick = state.tick, frame, dy = 0;
-    if (dead) frame = "idle"; else if (jumpY > 0) frame = "jump"; else { var rf = runFrame(skinId, tick); frame = rf.frame; }
+    if (dead) frame = "idle"; else if (jumpY > 0) frame = "jump"; else if (state.duck) frame = tick % 4 < 2 ? "duck1" : "duck2"; else { var rf = runFrame(skinId, tick); frame = rf.frame; }
     var oy = Math.round(groundY - H + 1 - (jumpY || 0));
     var tr = state.trail || (state.trail = new Trail(skinId));
     if (!dead) { tr.step(state.speed || 2); tr.emit(ox, oy, tick, state.speed || 2, frame); }
@@ -1791,6 +1856,7 @@ const SECRET_CODE = "P1kach0$6767";
 function unlockAllUpgrades(g) {
   const s = g.save.data;
   for (const n of TREE_NODES) s.tree[n.id] = n.max;                                  // árbol de mejoras completo
+  for (const h of HATS) if (!s.hats.includes(h.id)) s.hats.push(h.id);                // todos los accesorios
   for (const u of UPGRADES) s.album.ups[u.id] = 1;                                    // álbum completo
   for (const x of SYNERGIES) s.album.syn[x.id] = 1;
   for (const p of PACTS) s.album.pacts[p.id] = 1;
@@ -2005,6 +2071,40 @@ const rgbaHex = (hex, a) => { const [r, g, b] = hexRgb(hex); return `rgba(${r},$
 //  SkinCatalog: skins del kit + exclusivos de logros + diseños propios, todo en el motor DinoSkinsEngine
 // =====================================================================
 const SE = window.DinoSkinsEngine;
+// ---------------------------------------------------------------------
+//  Pose agachada: se genera a partir del dibujo de cada sprite (cabeza adelantada y baja, cuerpo tumbado,
+//  patas flexionadas que alternan como al correr), así cada skin conserva sus manchas, crestas y cristales.
+// ---------------------------------------------------------------------
+const DUCK_W = 32;
+function spriteGrid(spr, frame) {
+  const fr = spr.frames[frame] || spr.frames.idle;
+  if (fr.full) return fr.full.map(r => (r + ".".repeat(DUCK_W)).slice(0, DUCK_W).split(""));
+  const rows = spr.body.concat(fr.legs).map(r => (r + ".".repeat(24)).slice(0, 24).split(""));
+  if (fr.top) fr.top[1].forEach((r, i) => { for (let j = 0; j < Math.min(r.length, 24); j++) if (r[j] !== ".") rows[fr.top[0] + i][j] = r[j]; });
+  return rows;
+}
+function duckGrid(spr, legsFrame) {
+  const G = spriteGrid(spr, "idle"), L = spriteGrid(spr, legsFrame), out = Array.from({ length: 20 }, () => Array(DUCK_W).fill("."));
+  const put = (y, x, c, force) => { if (c !== "." && y >= 0 && y < 20 && x >= 0 && x < DUCK_W && (force || out[y][x] === "." || out[y][x] === "o")) out[y][x] = c; };
+  const solid = c => c !== "." && c !== "o";
+  for (let y = 1; y <= 6; y++) for (let x = 11; x < 24; x++) put(y + 9, x + 8, G[y][x], true);            // cabeza
+  for (let y = 9; y <= 15; y++) for (let x = 0; x < 20; x++) {                                               // cuerpo y cola
+    let c = G[y][x]; if (y <= 10 && x >= 8 && x <= 16 && c === "a") c = "b";
+    if (y === 9 && x >= 3 && "oba.".includes(c)) continue; put(y + 2, x, c);
+  }
+  for (let y = 6; y <= 8; y++) for (let x = 0; x < 10; x++) if (!"ob.".includes(G[y][x])) put(y + 3, x, G[y][x]);   // crestas de la espalda
+  for (let y = 12; y <= 14; y++) for (let x = 14; x <= 20; x++) if (!solid(out[y][x])) out[y][x] = "b";               // cuello
+  put(15, 19, "o", true); put(15, 20, "a", true); put(15, 21, "a", true); put(16, 21, "o", true); put(16, 22, "a", true);   // bracito
+  [L[16], L[18]].forEach((row, i) => row.forEach((c, x) => put(18 + i, x + 1, c)));                         // patas flexionadas
+  const o2 = out.map(r => r.slice());
+  for (let y = 0; y < 20; y++) for (let x = 0; x < DUCK_W; x++) if (out[y][x] === ".")
+    for (const [a, b] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { const c = (out[y + a] || [])[x + b]; if (c && solid(c) && !"xy".includes(c)) { o2[y][x] = "o"; break; } }
+  return o2.map(r => r.join(""));
+}
+function addDuckFrames(spr) { spr.frames.duck1 = { full: duckGrid(spr, "run1") }; spr.frames.duck2 = { full: duckGrid(spr, "run2") }; }
+for (const k in SKINS_DATA.sprites) addDuckFrames(SKINS_DATA.sprites[k]);
+// Desplazamiento de los accesorios cuando el raptor va agachado (en píxeles del sprite)
+const DUCK_HEAD = { x: 8, y: 9 }, DUCK_BACK = { x: 1, y: 3 };
 const SkinCatalog = {
   base: SKINS_DATA.skins.map(s => s.id === CONFIG.DEFAULT_SKIN ? Object.assign({}, s, { price: 0 }) : s),
   designs: [],
@@ -2028,8 +2128,12 @@ const levelDef = l => CONFIG.LEVELS[(l - 1) % CONFIG.LEVELS.length];
 function drawRaptor(ctx, id, st, jumpY, dead, advance, sc = CONFIG.RAPTOR_SCALE, ox = 0, groundY = -1) {
   if (!SE.get(id)) return;
   const acc = SKIN_ACCESSORIES[id], oy = Math.round(groundY - SE.H + 1 - jumpY);
-  const frame = dead ? "idle" : jumpY > 0 ? "jump" : SE.runFrame(id, st.tick).frame;
-  if (acc && acc.back) acc.back(ctx, ox, oy, sc, st.tick, frame);
+  st.duck = !!st.duck && !dead && !(jumpY > 0);
+  const frame = dead ? "idle" : jumpY > 0 ? "jump" : st.duck ? (st.tick % 4 < 2 ? "duck1" : "duck2") : SE.runFrame(id, st.tick).frame;
+  const shifted = (fn, d) => { if (!st.duck) return fn(); ctx.save(); ctx.translate(d.x * sc, d.y * sc); fn(); ctx.restore(); };
+  const hat = st.hat === null ? null : HAT_BY_ID[st.hat || HAT_EQUIPPED];
+  if (hat && hat.slot === "back") drawHat(ctx, hat.id, id, ox, oy, sc, st.tick, frame, st.duck);   // accesorio equipado (espalda: detrás)
+  if (acc && acc.back) shifted(() => acc.back(ctx, ox, oy, sc, st.tick, frame), DUCK_BACK);
   if (advance) {
     SE.drawDino(ctx, id, ox, groundY, sc, st, jumpY, dead);
     if (st.trail && st.trail.p.length > CONFIG.TRAIL_MAX) st.trail.p.splice(0, st.trail.p.length - CONFIG.TRAIL_MAX);
@@ -2038,7 +2142,8 @@ function drawRaptor(ctx, id, st, jumpY, dead, advance, sc = CONFIG.RAPTOR_SCALE,
     tr.drawEchoes(ctx, ox, sc, st.tick); tr.draw(ctx, sc, st.tick);
     SE.drawSprite(ctx, id, frame, ox, oy, sc, st.tick);
   }
-  if (acc && acc.front) acc.front(ctx, ox, oy, sc, st.tick, frame);
+  if (acc && acc.front) shifted(() => acc.front(ctx, ox, oy, sc, st.tick, frame), DUCK_HEAD);
+  if (hat && hat.slot !== "back") drawHat(ctx, hat.id, id, ox, oy, sc, st.tick, frame, st.duck);    // accesorio equipado (cabeza o cuello)
 }
 // =====================================================================
 //  Skins del pase de temporada: color que cambia (Prisma Celestial) y accesorios animados
@@ -2248,6 +2353,49 @@ function tickStates(states, dt, speed = 2) {
     if (st.acc >= CONFIG.SKIN_TICK) { st.acc -= CONFIG.SKIN_TICK; st.tick++; st.speed = speed; st.advance = true; }
   }
 }
+// =====================================================================
+//  Accesorios equipables: se ponen encima de cualquier skin (cabeza, cuello o espalda) y siguen al raptor
+//  al correr, saltar y agacharse. Coordenadas en píxeles del sprite (24 × 20); se compran en la tienda.
+// =====================================================================
+let HAT_EQUIPPED = null;
+const HAT_LINE = "#1a1424";
+const HATS = [
+  { id: "gorra", name: "Gorra roja", price: 300, slot: "head", desc: "Visera hacia delante, estilo corredor",
+    parts: () => [["#d63a3a", 14, -1, 6, 2], ["#a52630", 19, 0, 5, 1], ["#ff7a7a", 15, -1, 2, 1], ["#ffffff", 16, -2, 2, 1]] },
+  { id: "pajarita", name: "Pajarita", price: 350, slot: "neck", desc: "Elegancia hasta en la carrera",
+    parts: t => [["#d63a3a", 12, 8, 2, 3], ["#d63a3a", 16, 8, 2, 3], ["#ff7a7a", 14, 9, 2, 1], ["#ff9a9a", 12, 8, 1, 1]] },
+  { id: "gafas", name: "Gafas de sol", price: 450, slot: "head", desc: "Demasiado guay para mirar atrás",
+    parts: t => [["#16111f", 15, 3, 4, 2], ["#16111f", 19, 3, 3, 2], ["#16111f", 13, 3, 2, 1], [t % 12 < 2 ? "#ffffff" : "#7fd0ff", 16, 3, 1, 1], [t % 12 < 2 ? "#ffffff" : "#7fd0ff", 20, 3, 1, 1]] },
+  { id: "fiesta", name: "Gorro de fiesta", price: 600, slot: "head", desc: "Cada partida es una celebración",
+    parts: t => [["#ff5ce1", 14, -1, 6, 2], ["#ffd23f", 15, -3, 4, 2], ["#5fb4ff", 16, -5, 2, 2], ["#ffffff", 16 + (t % 8 < 4 ? 0 : 1), -6, 1, 1], ["#ffffff", 15, -1, 1, 1], ["#ffffff", 18, -1, 1, 1], ["#ffffff", 17, -3, 1, 1]] },
+  { id: "bufanda", name: "Bufanda al viento", price: 750, slot: "neck", desc: "Ondea detrás de ti al correr",
+    parts: t => { const w = Math.round(Math.sin(t * 0.8)), w2 = Math.round(Math.sin(t * 0.8 + 1.5));
+      return [["#ff9a3c", 11, 7, 7, 2], ["#ffffff", 13, 7, 1, 2], ["#ffffff", 16, 7, 1, 2], ["#ff9a3c", 8, 8 + w, 3, 2], ["#ffffff", 9, 8 + w, 1, 2], ["#ff9a3c", 5, 9 + w2, 3, 2], ["#ffd23f", 4, 10 + w2, 1, 1]]; } },
+  { id: "chistera", name: "Sombrero de copa", price: 900, slot: "head", desc: "Un raptor con clase",
+    parts: () => [["#16111f", 13, 0, 9, 1], ["#2a2140", 15, -5, 5, 5], ["#d63a3a", 15, -1, 5, 1], ["#574a82", 16, -4, 1, 3]] },
+  { id: "auriculares", name: "Auriculares", price: 1100, slot: "head", desc: "Con notas que salen al ritmo",
+    parts: t => { const n = t % 16, ny = -2 - Math.floor((t % 8) / 2);
+      return [["#2a2140", 14, -1, 6, 1], ["#2a2140", 13, 0, 1, 1], ["#2a2140", 20, 0, 1, 1], ["#5fd15a", 12, 1, 2, 3], ["#9bf08f", 12, 1, 1, 1],
+        ...(n < 8 ? [["#ffd23f", 22, ny, 1, 2], ["#ffd23f", 23, ny, 1, 1]] : [["#5fb4ff", 9, ny + 1, 1, 2], ["#5fb4ff", 10, ny + 1, 1, 1]])]; } },
+  { id: "corona", name: "Corona real", price: 1500, slot: "head", desc: "Para el rey de la carrera, con brillo",
+    parts: t => { const sh = t % 20; return [["#ffb938", 14, -1, 6, 2], ["#ffb938", 14, -3, 1, 2], ["#ffb938", 16, -2, 2, 1], ["#ffb938", 19, -3, 1, 2], ["#ff3b5c", 16, -1, 1, 1], ["#41b8ff", 18, -1, 1, 1],
+      ...(sh < 6 ? [["#ffffff", 14 + sh, -1, 1, 1]] : [])]; } },
+  { id: "jetpack", name: "Mochila cohete", price: 2500, slot: "back", desc: "Llamas animadas en la espalda",
+    parts: t => [["#8a93a8", 4, 6, 4, 5], ["#d63a3a", 4, 6, 4, 1], ["#c7cedb", 5, 7, 1, 3], ["#5a6278", 4, 11, 4, 1],
+      ["#ffd23f", 4, 12, 4, 1 + (t % 2)], ["#ff6a00", 5, 13 + (t % 2), 2, 1 + ((t >> 1) % 2)]] },
+];
+const HAT_BY_ID = Object.fromEntries(HATS.map(h => [h.id, h]));
+const HAT_DUCK = { head: DUCK_HEAD, neck: { x: 5, y: 5 }, back: { x: 0, y: 3 } };
+const equippedHat = () => HAT_EQUIPPED;
+// Dibuja el accesorio: primero el contorno oscuro de todas las piezas y después los colores (se lee bien sobre cualquier skin)
+function drawHat(c, id, skinId, ox, oy, sc, t, frame, duck) {
+  const h = HAT_BY_ID[id]; if (!h) return;
+  const sk = SE.get(skinId), spr = sk && SKINS_DATA.sprites[sk.sprite], dy = (spr && spr.frames[frame] && spr.frames[frame].dy) || 0, d = duck ? HAT_DUCK[h.slot] : { x: 0, y: 0 };
+  const parts = h.parts(t || 0), X = ox + d.x, Y = oy + dy + d.y;
+  c.fillStyle = HAT_LINE;
+  for (const [, x, y, w, hh] of parts) c.fillRect((X + x - 1) * sc, (Y + y - 1) * sc, (w + 2) * sc, (hh + 2) * sc);
+  for (const [col, x, y, w, hh] of parts) { c.fillStyle = col; c.fillRect((X + x) * sc, (Y + y) * sc, w * sc, hh * sc); }
+}
 
 function drawShadow(ctx, cx, w, heightAbove) {
   const k = clamp(1 - heightAbove / 220, 0.35, 1);
@@ -2425,6 +2573,7 @@ class SaveManager {
       stats: {}, tree: {}, fossils: 0, treeResets: 0, lastWeeklySpin: "",
       tips: { seen: {}, off: false }, tutorialDone: false, tutorialRewarded: false,
       season: { id: 1, xp: 0, tier: 0, seen: 0 }, codeUsed: false, allUpgrades: false,
+      hats: [], hat: null,   // accesorios comprados y equipado
     };
     this.load();
     if (DEBUG) {
@@ -2450,7 +2599,7 @@ class SaveManager {
         this.data.editor = !!d.editor;
         if (Array.isArray(d.designs)) for (let i = 0; i < CONFIG.EDITOR_SLOTS; i++) {
           const x = d.designs[i];
-          if (x && x.sprite && SKINS_DATA.sprites[x.sprite] && x.pal) this.data.designs[i] = x;
+          if (x && x.sprite && SKINS_DATA.sprites[x.sprite] && x.pal) { if (!validPixels(x.pixels)) delete x.pixels; this.data.designs[i] = x; }
         }
         if (d.ach && typeof d.ach === "object") this.data.ach = { unlocked: d.ach.unlocked || {}, stats: d.ach.stats || {} };
         const obj = v => v && typeof v === "object" && !Array.isArray(v);
@@ -2464,6 +2613,8 @@ class SaveManager {
         if (obj(d.season)) this.data.season = { id: num(d.season.id) || 1, xp: num(d.season.xp), tier: Math.min(num(d.season.tier), 30), seen: num(d.season.seen) };
         if (obj(d.daily)) { const y = d.daily; this.data.daily = { date: typeof y.date === "string" ? y.date : "", best: num(y.best), attempts: num(y.attempts), streak: num(y.streak), lastDay: typeof y.lastDay === "string" ? y.lastDay : "", bestEver: num(y.bestEver), days: num(y.days),
           history: Array.isArray(y.history) ? y.history.filter(h => h && typeof h.date === "string").map(h => ({ date: h.date, best: num(h.best) })).slice(0, 14) : [] }; }
+        if (Array.isArray(d.hats)) this.data.hats = [...new Set(d.hats.filter(h => HAT_BY_ID[h]))];
+        if (typeof d.hat === "string" && this.data.hats.includes(d.hat)) this.data.hat = d.hat;
         this.data.secretUnlocked = !!d.secretUnlocked;
         this.data.codeUsed = !!d.codeUsed; this.data.allUpgrades = !!d.allUpgrades;
         this.data.tutorialDone = !!d.tutorialDone; this.data.tutorialRewarded = !!d.tutorialRewarded;
@@ -2480,7 +2631,7 @@ class SaveManager {
       }
     } catch (e) { /* datos corruptos o almacenamiento bloqueado: se usan los valores por defecto */ }
     SkinCatalog.designs = this.data.designs.map((x, i) => x && designSkin(x, i));
-    SkinCatalog.rebuild();
+    SkinCatalog.rebuild(); HAT_EQUIPPED = this.data.hat;
   }
   save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch (e) {} }
   record(modeId) { return this.data.records[modeId] || 0; }
@@ -2495,16 +2646,29 @@ class SaveManager {
     this.data.coins -= skin.price; this.data.owned.push(skin.id); this.save(); return true;
   }
   equip(id) { if (this.owns(id) && SkinCatalog.exists(id)) { this.data.equipped = id; this.save(); } }
+  // Accesorios
+  ownsHat(id) { return this.data.hats.includes(id); }
+  buyHat(h) { if (this.ownsHat(h.id) || this.data.coins < h.price) return false; this.data.coins -= h.price; this.data.hats.push(h.id); this.equipHat(h.id); return true; }
+  equipHat(id) { this.data.hat = id && this.ownsHat(id) ? id : null; HAT_EQUIPPED = this.data.hat; this.save(); }
   addCoins(n) { this.data.coins += n; this.save(); }
 }
 // Un diseño del editor convertido al formato de SKINS_DATA
 function designSkin(d, slot) {
   const s = { id: "design-" + slot, name: d.name || `Diseño ${slot + 1}`, rarity: "Diseño", price: 0, sprite: d.sprite,
     pal: Object.assign({}, d.pal), bg: d.bg, ground: d.ground, fx: d.fx ? JSON.parse(JSON.stringify(d.fx)) : undefined, fxFrom: d.fxFrom || "", custom: true };
+  if (validPixels(d.pixels)) {   // dibujo píxel a píxel: sprite propio con las patas animadas de la plantilla
+    const B = SKINS_DATA.sprites[d.sprite] || SKINS_DATA.sprites.raptor, sid = "dz-" + slot, spr = { body: d.pixels.slice(), frames: {} };
+    for (const f of ["run1", "run2", "idle", "jump"]) spr.frames[f] = { legs: B.frames[f].legs.slice() };
+    addDuckFrames(spr); SKINS_DATA.sprites[sid] = spr; s.sprite = sid; s.base = d.sprite;
+    return s;
+  }
   const src = SKINS_DATA.skins.find(k => k.sprite === d.sprite && k.run);   // el sprite Supremo tiene un ciclo de carrera propio
   if (src) s.run = src.run.slice();
   return s;
 }
+// Dibujo del editor: 16 filas de 24 letras de paleta ("." = transparente)
+const PIXEL_LETTERS = "obslaxyepcdfg";
+function validPixels(px) { return Array.isArray(px) && px.length === 16 && px.every(r => typeof r === "string" && r.length === 24 && /^[.obslaxyepcdfg]+$/.test(r)); }
 
 
 // =====================================================================
@@ -2549,7 +2713,7 @@ class Particle {
 //  Hitbox: columnas 8–16 y filas 2–19 del sprite (cuerpo); al deslizarse, una caja baja.
 // =====================================================================
 class Player {
-  constructor(game, num = 1) { this.game = game; this.num = num; this.skinState = { tick: 0, speed: 2, trail: null }; this.reset(); }
+  constructor(game, num = 1) { this.game = game; this.num = num; this.skinState = { tick: 0, speed: 2, trail: null, hat: num === 1 ? undefined : null }; this.reset(); }   // el J2 va sin accesorio
   reset() {
     this.x = PLAYER_X; this.y = 0; this.vy = 0; this.prevY = 0;
     this.onGround = true; this.jumps = 0; this.fastFall = false; this.slideTime = 0; this.downHeld = false;
@@ -2666,13 +2830,13 @@ class Player {
     ctx.save();
     if (blinking) ctx.globalAlpha = 0.3;
     if (g.effects.turbo > 0) {   // estela de velocidad del turbo (decorativa)
-      const frame = jumpY > 0 ? "jump" : SE.runFrame(id, this.skinState.tick).frame, oy = Math.round(-SE.H - jumpY);
+      const frame = jumpY > 0 ? "jump" : this.sliding ? "duck1" : SE.runFrame(id, this.skinState.tick).frame, oy = Math.round(-SE.H - jumpY);
       SE.drawSprite(ctx, id, frame, -5, oy, S, this.skinState.tick, { alpha: 0.25 });
       SE.drawSprite(ctx, id, frame, -10, oy, S, this.skinState.tick, { alpha: 0.12 });
     }
     if (lk > 0 && !dead) { ctx.translate(36, -hop); ctx.rotate(ldir * 0.1 * lk); ctx.scale(1 - 0.06 * lk, 1 + 0.1 * lk); ctx.translate(-36, 0); }
-    if (this.sliding && !dead) { ctx.translate(-6, 0); ctx.scale(1.25, 0.5); }   // agachado: el raptor se aplasta
-    else if (roarAnim > 0 && !dead) {   // pose de rugido (con aura en los skins de rugido especial)
+    this.skinState.duck = this.sliding && !dead;   // agachado: pose propia de cada skin (fotogramas duck1/duck2)
+    if (roarAnim > 0 && !dead && !this.sliding) {   // pose de rugido (con aura en los skins de rugido especial)
       const k = roarPose(ctx, roarWave && roarWave.style, 1 - roarAnim / 0.6, 40, -(this.y + 34), 1);
       const tilt = roarWave && roarWave.style ? 0.2 : 0.08;
       ctx.translate(30, -this.y); ctx.rotate(-tilt * k); ctx.scale(1 + 0.08 * k, 1 + 0.08 * k); ctx.translate(-30, this.y);
@@ -6300,6 +6464,114 @@ Obstacle.prototype.drawDrone = function (ctx) {
   ctx.globalAlpha = 0.25 + 0.15 * Math.sin(this.t * 6); R("#5ae0ff", 20, 30, 26, 6); ctx.globalAlpha = 1;
 };
 
+// =====================================================================
+//  Voladores nuevos (v19): un pájaro distinto por bioma, en pixel art de 22 × 12 (×3) y aleteo de 4 fotogramas.
+//  Cuerpo común + alas + detalles propios (cresta, cola larga, brillo…). Miran a la izquierda, hacia el raptor.
+// =====================================================================
+const BIRD_BODY = [
+  "......................",
+  "......................",
+  "......................",
+  "..kkkk................",
+  ".khhhhk...............",
+  "khwehhhkkkkkkkkk......",
+  "yyhhhhaaaaaaaaaakkkk..",
+  ".ykhhaaaaaaaaaaaatttkk",
+  "..kkccccccccaaaattttk.",
+  "....kkcccccccaakkkkk..",
+  "......kkkkkkkk........",
+  "......................",
+];
+const BIRD_WINGS = {
+  up: [
+    "...........kkkk.......",
+    "..........kfffgk......",
+    ".........kffgggk......",
+    "........kffgggk.......",
+    ".......kfffggk........",
+    ".......kffffk.........",
+    "........kkkk..........",
+  ],
+  mid: [
+    "......................", "......................", "......................", "......................",
+    "......kkkkkkkkkkkkkk..",
+    ".....kffffffffggggggk.",
+    "......kkkkkkkkkkkkkk..",
+  ],
+  down: [
+    "......................", "......................", "......................", "......................", "......................",
+    "......................", "......................", "......................",
+    ".......kffffk.........",
+    ".......kfffggk........",
+    "........kffgggk.......",
+    ".........kkkkk........",
+  ],
+};
+const BIRD_CYCLE = ["up", "mid", "down", "mid"];
+// Tipos: paleta + detalles (filas que se superponen; "." no pinta)
+const BIRD_TYPES = {
+  vulture: { name: "Buitre", pal: { k: "#2a1a10", h: "#f0a0a0", w: "#ffffff", e: "#15161c", y: "#e8c040", a: "#6a4428", c: "#f3e8d0", t: "#4a2e18", f: "#5a3a22", g: "#c08a52" },
+    extra: ["......................", "......................", "......................", "......................", "......................", ".......cc.............", "......cc..............", ".......c..............", "......................"] },
+  parrot: { name: "Guacamayo", pal: { k: "#1a0e12", h: "#e8342e", w: "#ffffff", e: "#15161c", y: "#f3e8d0", a: "#e8342e", c: "#ffd23f", t: "#2f7ad8", f: "#2f7ad8", g: "#3ddc84" },
+    extra: ["......................", "......................", "......................", "......................", "......................", "......................", "......................", "..................kttk", "..................tttk", "...................ttk", "....................kk", "......................"] },
+  phoenix: { name: "Pájaro de fuego", pal: { k: "#2a0606", h: "#ff9a1e", w: "#ffffff", e: "#15161c", y: "#ffd23f", a: "#ff5a1e", c: "#ffd23f", t: "#ff3b1e", f: "#ff3b1e", g: "#ffd23f" }, glow: "#ff9a3c",
+    extra: ["......................", "..y...................", ".yhy..................", "..h..................."] },
+  owl: { name: "Búho nival", pal: { k: "#2a3a52", h: "#ffffff", w: "#ffd23f", e: "#15161c", y: "#3a3a3a", a: "#f4f8ff", c: "#ffffff", t: "#c8d8ea", f: "#e8f0fa", g: "#9ab4d0" },
+    extra: ["......................", "......................", ".k..k.................", ".kk.kk................", "......................", "......................", "......................", "......................", "......t.t.t..........."] },
+  crow: { name: "Cuervo", pal: { k: "#06040c", h: "#1e1a2e", w: "#ff3b5c", e: "#ff3b5c", y: "#3a3448", a: "#1e1a2e", c: "#2e2844", t: "#1e1a2e", f: "#16121f", g: "#3e3866" }, glow: "#ff3b5c" },
+  gull: { name: "Gaviota", pal: { k: "#1e2230", h: "#ffffff", w: "#ffffff", e: "#15161c", y: "#ff9a2e", a: "#ffffff", c: "#e2e8f0", t: "#1e2230", f: "#9aa4b4", g: "#3a4052" } },
+  moth: { name: "Polilla luminosa", pal: { k: "#1a0a26", h: "#ffb3f0", w: "#7df9ff", e: "#15161c", y: "#ffb3f0", a: "#c86ad8", c: "#ffe1fb", t: "#c86ad8", f: "#7df9ff", g: "#ff7ad0" }, glow: "#7df9ff",
+    extra: ["......................", "......................", "......................", "...k..................", "..k...................", "......................"] },
+  bat: { name: "Murciélago", pal: { k: "#0e0814", h: "#3a2450", w: "#ff3b5c", e: "#ff3b5c", y: "#e8e0f0", a: "#2a1a3a", c: "#4a3060", t: "#2a1a3a", f: "#3a2450", g: "#5a3a78" },
+    extra: ["......................", "......................", "......................", "......................", "..k..k................", "......................", "..y...................", "......................"] },
+  crystal: { name: "Ave de cristal", pal: { k: "#2a1450", h: "#c8fcff", w: "#ffffff", e: "#ff5ce1", y: "#ffd23f", a: "#7df9ff", c: "#ffffff", t: "#ff5ce1", f: "#c9a6ff", g: "#ffffff" }, glow: "#ff5ce1", prism: true },
+};
+const WINGSPAN = {
+  up: ["......................", ".kk................kk.", ".kfk..............kfk.", ".kffk....k..k....kffk.", "..kffkk..kkkk..kkffk..", "..kfffgkkhhhhkkgfffk..",
+       "...kffgkhwhhwhkgffk...", "...kfgk.khhhhk.kgfk...", "....kk...kyyk...kk....", "..........kk..........", "......................", "......................"],
+  mid: ["......................", "......................", "......................", "......................", ".........k..k.........", ".........kkkk.........",
+        "kkkkkkkkkhhhhkkkkkkkkk", "kfffffggkwhhwkggfffffk", ".kfkfkfkkhhhhkkfkfkfk.", ".........kyyk.........", "..........kk..........", "......................"],
+  down: ["......................", "......................", "......................", "......................", ".........k..k.........", ".........kkkk.........",
+         "...kkkk.khhhhk.kkkk...", "..kfffgkkwhhwkkgfffk..", ".kffgggkhhhhhhkgggffk.", ".kfk.kfk.kyyk.kfk.kfk.", ".kk...kk..kk..kk...kk.", "......................"],
+};
+Object.assign(BIRD_TYPES, {
+  bat: { name: "Murciélago", span: true, pal: { k: "#0e0814", h: "#2a1a3a", w: "#ff3b5c", e: "#ff3b5c", y: "#e8e0f0", f: "#3a2450", g: "#5a3a78" } },
+  moth: { name: "Polilla luminosa", span: true, glow: "#7df9ff", pal: { k: "#1a0a26", h: "#ffb3f0", w: "#15161c", e: "#15161c", y: "#ffe1fb", f: "#c86ad8", g: "#7df9ff" },
+    extra: ["......................", "......................", "........k....k........", ".........k..k........."] },
+});
+function birdFrames(type) {
+  const T = BIRD_TYPES[type];
+  if (T.span) return BIRD_CYCLE.map(pose => { const g = WINGSPAN[pose].map(r => r.split("")); (T.extra || []).forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") g[y][x] = ch; })); return g.map(r => r.join("")); });
+  return BIRD_CYCLE.map(pose => {
+    const g = BIRD_BODY.map(r => r.split(""));
+    const over = (rows, keepOutline) => rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== "." && g[y]) g[y][x] = ch; }));
+    if (pose !== "down") over(BIRD_WINGS[pose]); else over(BIRD_WINGS.down);
+    if (T.extra) over(T.extra);
+    return g.map(r => r.join(""));
+  });
+}
+// Cada bioma con su volador (el fondo marino sigue con el pez payaso y la base lunar con el dron)
+const BIRD_BY_BIOME = { desert: "vulture", jungle: "parrot", volcano: "phoenix", glacier: "owl", night: "crow", beach: "gull", mushroom: "moth", graveyard: "bat", santuario: "crystal" };
+for (const b of BIOMES) if (BIRD_BY_BIOME[b.id]) b.obstacles.flyer = "bird-" + BIRD_BY_BIOME[b.id];
+const BIRD_SPRITES = {};
+for (const k in BIRD_TYPES) BIRD_SPRITES[k] = birdFrames(k).map(rows => compileSprite(rows, BIRD_TYPES[k].pal));
+const _obDrawBird = Obstacle.prototype.draw;
+Obstacle.prototype.draw = function (ctx) {
+  const type = this.kind === "flyer" && typeof this.style === "string" && this.style.startsWith("bird-") ? this.style.slice(5) : null;
+  if (!type || !BIRD_SPRITES[type]) return _obDrawBird.call(this, ctx);
+  const T = BIRD_TYPES[type], fr = BIRD_SPRITES[type], i = Math.floor(this.t * 11) % fr.length, spr = fr[i], top = -this.y - spr.h;
+  const bob = (i === 0 ? -2 : i === 2 ? 2 : 0);   // sube y baja un poco con cada aletazo
+  drawShadow(ctx, 30, 40, this.y + 60);
+  if (T.glow) {   // brillo suave (fuego, polilla luminosa, cristal, ojos del cuervo)
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = T.glow;
+    for (const [r, al] of [[34, 0.07], [24, 0.09], [14, 0.1]]) { ctx.globalAlpha = al * (1 + 0.3 * Math.sin(this.t * 8)); ctx.beginPath(); ctx.ellipse(33, top + 20 + bob, r * 1.4, r, 0, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+  }
+  drawSkinSprite(ctx, spr, 0, top + bob);
+  if (type === "phoenix" && Math.floor(this.t * 20) % 2 === 0) { ctx.fillStyle = choice(["#ffd23f", "#ff9a1e", "#ff3b1e"]); ctx.fillRect(60 + rand(0, 12), top + 20 + rand(-6, 6), 3, 3); }   // brasas
+  if (T.prism) { ctx.fillStyle = "#ffffff"; const k = Math.floor(this.t * 6) % 4; ctx.fillRect(18 + k * 9, top + 18 + bob, 3, 3); }                                    // destello del cristal
+};
+
 // Hitboxes retocadas (v17): un poco más pequeñas que el dibujo para que solo cuenten los choques que se ven
 Obstacle.prototype.hitbox = function () {
   switch (this.kind) {
@@ -6639,7 +6911,7 @@ const SECRET_BIOME = { id: "santuario", name: "Santuario prismático", accent: "
   patternBiome: "night",
   pal: { skyTop: "#05020f", skyMid: "#1c0a3a", skyBot: "#3a1468", far: "#2a1450", near: "#3a1c6a", ground: "#2a1a44", band: "#3c2860", bandHi: "#ff9de6", bandEdge: "#160c2a", pebble: "#7df9ff", accent: "#ff9de6" },
   far: { min: 30, max: 100, rough: 0.4, step: 12 }, near: { min: 10, max: 40, rough: 0.3, step: 10 },
-  obstacles: { ground: "crystal", rock: "icerock", flyer: "bat" } };
+  obstacles: { ground: "crystal", rock: "icerock", flyer: "bird-crystal" } };
 BOSS_NAMES.push("Rex Prismático");
 BOSS_IDS.push("rex");
 const BOSS_COUNT = 10;   // jefes normales (el secreto no cuenta para «los 10 bosses»)
@@ -7015,8 +7287,15 @@ class UI {
     x = Math.round(x); y = Math.round(y); w = Math.round(w); h = Math.round(h);
     c.fillStyle = "rgba(14,11,22,0.55)"; c.fillRect(x + 4, y + 4, w, h);
     c.fillStyle = UI_T.line; c.fillRect(x - 2, y - 2, w + 4, h + 4);
-    c.fillStyle = bg; c.fillRect(x, y, w, h);
+    if (bg === UI_T.panel) {   // degradado vertical con brillo arriba (v19)
+      const k = x + "," + y + "," + h; this.grads = this.grads || {};
+      let g = this.grads[k]; if (!g) { g = this.grads[k] = c.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, "rgba(58,45,92,0.94)"); g.addColorStop(1, "rgba(24,18,40,0.92)"); }
+      c.fillStyle = g;
+    } else c.fillStyle = bg;
+    c.fillRect(x, y, w, h);
     c.fillStyle = UI_T.bevel; c.fillRect(x, y, w, 2);
+    c.fillStyle = "rgba(255,255,255,0.06)"; c.fillRect(x, y + 2, w, 2);
+    c.fillStyle = "rgba(255,185,56,0.85)"; c.fillRect(x, y, 6, 2); c.fillRect(x, y, 2, 6); c.fillRect(x + w - 6, y + h - 2, 6, 2); c.fillRect(x + w - 2, y + h - 6, 2, 6);   // esquinas doradas
   }
   // Píldora con texto (avisos del HUD)
   pill(c, str, cx, cy, size, fg, bg = UI_T.pill) {
@@ -7233,6 +7512,17 @@ class Shop {
     for (const skin of EXCLUSIVE_SKINS) this.makeCard($("exclGrid"), skin.id, "exclusive");
     for (const skin of SEASON_SKINS) this.makeCard($("seasonGrid"), skin.id, "season");
     for (const skin of EGG_SKINS) this.makeCard($("eggSkinGrid"), skin.id, "egg");
+    // Accesorios: vista previa con tu skin equipada
+    this.hatCards = HATS.map(h => {
+      const card = document.createElement("div"); card.className = "skin hat";
+      card.innerHTML = `<canvas width="120" height="84"></canvas><div class="skin-name">${h.name}</div><div class="fx-label">${h.desc}</div>
+        <div class="skin-price"><span class="coin"></span> ${h.price}</div><button class="btn small"></button><div class="toast">¡Comprado!</div>`;
+      const e = { h, card, btn: card.querySelector("button"), ctx: card.querySelector("canvas").getContext("2d"), st: { tick: randInt(0, 7), speed: 2, trail: null, advance: true, hat: h.id } };
+      e.ctx.imageSmoothingEnabled = false;
+      e.btn.addEventListener("click", ev => { ev.currentTarget.blur(); this.hatAction(e); });
+      card.addEventListener("animationend", ev => { if (ev.target === card) card.classList.remove("bought", "denied"); });
+      $("hatGrid").appendChild(card); return e;
+    });
     this.eggs = new EggShop(game, this);
     this.designGrid = $("designGrid");
     this.editor = new SkinEditor(game, this);
@@ -7240,6 +7530,7 @@ class Shop {
   makeCard(parent, id, kind) {
     const skin = SkinCatalog.get(id), featured = id === "emperador-solar";
     const card = document.createElement("div"); card.className = "skin" + (featured ? " featured" : "") + (kind === "exclusive" ? " excl" : "");
+    card.style.setProperty("--rc", RARITY_COLORS[skin.rarity] || "#d6d3cb");   // color de la rareza en el borde
     const w = featured ? 240 : 120;
     const ach = kind === "exclusive" ? ACHIEVEMENTS.find(a => a.id === skin.unlockedBy) : null;
     card.innerHTML = `<canvas width="${w}" height="84"></canvas>
@@ -7279,7 +7570,7 @@ class Shop {
   setTab(tab) {
     this.tab = tab;
     this.el.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
-    for (const [id, t] of [["skinsPane", "skins"], ["cpPane", "checkpoints"], ["editorPane", "editor"], ["eggPane", "eggs"]]) document.getElementById(id).classList.toggle("hidden", tab !== t);
+    for (const [id, t] of [["skinsPane", "skins"], ["hatPane", "hats"], ["cpPane", "checkpoints"], ["editorPane", "editor"], ["eggPane", "eggs"]]) document.getElementById(id).classList.toggle("hidden", tab !== t);
     if (tab === "editor") this.editor.open();
     this.refresh();
   }
@@ -7323,8 +7614,22 @@ class Shop {
       e.btn.textContent = owned ? "Comprado" : !unlocked ? "🔒 Bloqueado" : affordable ? "Comprar" : "Sin monedas suficientes";
       e.info.textContent = owned ? "Elígelo en «Jugar»." : !unlocked ? `Completa el nivel ${e.level - 1} para desbloquear` : `Empieza con ${(e.level - 1) * CONFIG.POINTS_PER_LEVEL} puntos.`;
     }
+    for (const e of this.hatCards) {
+      const own = s.ownsHat(e.h.id), on = s.data.hat === e.h.id, can = s.data.coins >= e.h.price;
+      e.card.classList.toggle("equipped", on); e.card.classList.toggle("locked", !own && !can);
+      e.btn.className = "btn small" + (on ? "" : own ? " primary" : can ? " gold" : "");
+      e.btn.disabled = !own && !can; e.btn.textContent = on ? "Quitar" : own ? "Ponérselo" : can ? "Comprar" : "Sin monedas suficientes";
+      e.card.querySelector(".skin-price").classList.toggle("hidden", own);
+    }
     this.editor.refresh();
     this.eggs.refresh();
+  }
+  hatAction(e) {
+    const g = this.game, s = g.save; g.sfx.unlock();
+    if (s.ownsHat(e.h.id)) { s.equipHat(s.data.hat === e.h.id ? null : e.h.id); g.sfx.click(); }
+    else if (s.buyHat(e.h)) { g.sfx.buy(); this.confirmAnim(e.card); this.flashWallet(); g.ach.event("purchase", { kind: "hat", price: e.h.price }); }
+    else { g.sfx.denied(); e.card.classList.add("denied"); }
+    this.refresh();
   }
   action(e) {
     const g = this.game, s = g.save, skin = SkinCatalog.get(e.id);
@@ -7343,6 +7648,9 @@ class Shop {
       tickStates(list.map(e => e.st), dt);
       for (const e of list) if (e.st.advance) drawSkinPreview(e.ctx, e.id, e.st, e.w, 84, 3);
       if (this.tab === "eggs") this.eggs.update(dt);
+    } else if (this.tab === "hats") {
+      tickStates(this.hatCards.map(e => e.st), dt);
+      for (const e of this.hatCards) if (e.st.advance) { e.st.duck = e.st.tick % 24 >= 18; drawSkinPreview(e.ctx, this.game.skinId, e.st, 120, 84, 3); }
     } else if (this.tab === "editor") this.editor.update(dt);
   }
 }
@@ -7356,14 +7664,18 @@ const PATTERN_NAMES = {
   "raptor-bolt": "Rayo", "raptor-cracks": "Grietas", "raptor-frost": "Escarcha", "raptor-flame": "Llamas",
   "raptor-stars": "Estrellas", "raptor-supreme": "Supremo",
 };
-const PAL_NAMES = { o: "Contorno", b: "Cuerpo", s: "Sombra", l: "Brillo", a: "Vientre", x: "Detalle", y: "Garras", e: "Ojo", p: "Pupila" };
+const PAL_NAMES = { o: "Contorno", b: "Cuerpo", s: "Sombra", l: "Brillo", a: "Vientre", x: "Detalle", y: "Garras", e: "Ojo", p: "Pupila", c: "Extra 1", d: "Extra 2", f: "Extra 3", g: "Extra 4" };
+const EXTRA_COLORS = { c: "#ff3b3b", d: "#41b8ff", f: "#ffd23f", g: "#ffffff" };
+const bodyOf = spriteId => spriteGrid(SKINS_DATA.sprites[spriteId], "idle").slice(0, 16).map(r => r.slice(0, 24).join(""));
+const PX_TOOLS = [["pen", "✏️ Lápiz"], ["erase", "🧽 Goma"], ["fill", "🪣 Rellenar"], ["pick", "💧 Cuentagotas"], ["mirror", "↔️ Voltear"], ["clear", "🗑️ Borrar todo"]];
 const EDITOR_COLORS = ["#1c1b19", "#3a2a1a", "#6b4a2b", "#c8a06a", "#f3e2b8", "#ffffff", "#8a93a6", "#3b4163",
                        "#2e6b2a", "#6cc25a", "#b8f06a", "#41b8ff", "#1a4fb0", "#8a5cff", "#ff5cc8", "#ff3b3b",
                        "#ff9f1c", "#ffd23f"];
 // Letras de paleta que usa un sprite (cuerpo, patas y piezas superiores de todos sus frames)
-function spriteLetters(spriteId) {
+function spriteLetters(spriteId, pixels) {
   const sp = SKINS_DATA.sprites[spriteId], set = new Set(), add = r => { for (const ch of r) if (ch !== ".") set.add(ch); };
-  sp.body.forEach(add);
+  (pixels || sp.body).forEach(add);
+  if (pixels) { for (const f of ["run1", "run2", "idle", "jump"]) sp.frames[f].legs.forEach(add); return PIXEL_LETTERS.split("").filter(k => set.has(k)); }
   for (const f of Object.values(sp.frames)) { (f.legs || []).forEach(add); if (f.top) f.top[1].forEach(add); }
   return "obslaxyep".split("").filter(k => set.has(k));
 }
@@ -7391,7 +7703,7 @@ class SkinEditor {
   // Patrones permitidos: los de skins Común y Raro siempre; los de skins de rareza superior solo si tienes uno de esos skins
   patterns() {
     const s = this.game.save, out = [];
-    for (const sp of Object.keys(SKINS_DATA.sprites)) {
+    for (const sp of Object.keys(PATTERN_NAMES)) {
       const users = [...SkinCatalog.shop, ...EXCLUSIVE_SKINS].filter(k => k.sprite === sp);
       const basic = users.some(k => k.rarity === "Común" || k.rarity === "Raro");
       const via = users.find(k => s.owns(k.id));
@@ -7407,7 +7719,7 @@ class SkinEditor {
   }
   defaultDesign(slot) {
     const base = SkinCatalog.get(CONFIG.DEFAULT_SKIN);
-    return { name: `Mi raptor ${slot + 1}`, sprite: base.sprite, pal: Object.assign({}, base.pal), bg: base.bg || "#1e2a1c", ground: base.ground || "#6cc25a", fx: null, fxFrom: "" };
+    return { name: `Mi raptor ${slot + 1}`, sprite: base.sprite, pal: Object.assign({}, EXTRA_COLORS, base.pal), bg: base.bg || "#1e2a1c", ground: base.ground || "#6cc25a", fx: null, fxFrom: "", pixels: bodyOf(base.sprite) };
   }
   open() { if (!this.work) this.load(this.slot); this.render(); }
   close() { SkinCatalog.preview = null; SkinCatalog.rebuild(); }
@@ -7415,14 +7727,16 @@ class SkinEditor {
     this.slot = slot; this.undo = [];
     const d = this.game.save.data.designs[slot];
     this.work = d ? JSON.parse(JSON.stringify(d)) : this.defaultDesign(slot);
+    if (!validPixels(this.work.pixels)) this.work.pixels = bodyOf(this.work.sprite);   // diseños antiguos: el dibujo sale de su patrón
+    for (const k in EXTRA_COLORS) if (!this.work.pal[k]) this.work.pal[k] = EXTRA_COLORS[k];
     this.dirty = false; this.msg.textContent = ""; this.apply(); this.render();
   }
   snapshot() { this.undo.push(JSON.stringify(this.work)); if (this.undo.length > 40) this.undo.shift(); this.dirty = true; }
   doUndo() { if (!this.undo.length) return; this.work = JSON.parse(this.undo.pop()); this.apply(); this.render(); }
   // Registra el diseño en el motor como skin temporal "editor-preview" (se dibuja con drawDino como cualquier otro)
   apply() {
-    const w = this.work, sk = designSkin(w, 0);
-    sk.id = "editor-preview";
+    const w = this.work, sk = designSkin(w, "preview");
+    sk.id = "editor-preview"; SE.clearSpriteCache();
     SkinCatalog.preview = sk; SkinCatalog.rebuild();
     this.st.trail = null;
   }
@@ -7430,7 +7744,7 @@ class SkinEditor {
   randomize() {
     const pats = this.patterns().filter(p => p.ok), fxs = this.effects();
     this.set(w => {
-      w.sprite = choice(pats).id;
+      w.sprite = choice(pats).id; w.pixels = bodyOf(w.sprite);
       for (const k of spriteLetters(w.sprite)) w.pal[k] = choice(EDITOR_COLORS);
       w.pal.o = choice(["#1c1b19", "#3a2a1a", "#0b0c14", "#2a0608"]); w.pal.e = "#ffffff"; w.pal.p = w.pal.o;
       w.bg = choice(["#14161f", "#1e2a1c", "#2a1a0e", "#0b1a33", "#20233a", "#2a0d12", "#0b0820"]);
@@ -7451,10 +7765,10 @@ class SkinEditor {
     if (!this.owned) return;
     const w = this.work;
     w.name = (this.nameInput.value || w.name || `Mi raptor ${this.slot + 1}`).trim().slice(0, 18);
-    const clean = { name: w.name, sprite: w.sprite, pal: Object.assign({}, w.pal), bg: w.bg, ground: w.ground, fx: w.fx ? JSON.parse(JSON.stringify(w.fx)) : null, fxFrom: w.fxFrom || "" };
+    const clean = { name: w.name, sprite: w.sprite, pal: Object.assign({}, w.pal), bg: w.bg, ground: w.ground, fx: w.fx ? JSON.parse(JSON.stringify(w.fx)) : null, fxFrom: w.fxFrom || "", pixels: w.pixels.slice() };
     s.data.designs[this.slot] = clean; s.save();
     SkinCatalog.designs = s.data.designs.map((x, i) => x && designSkin(x, i));
-    SkinCatalog.rebuild();
+    SkinCatalog.rebuild(); SE.clearSpriteCache();
     if (g.skinId === "design-" + this.slot) g.onSkinChanged();
     g.sfx.buy(); this.dirty = false;
     this.msg.textContent = `Guardado en la ranura ${this.slot + 1}. Equípalo en «Skins › Mis diseños».`;
@@ -7490,7 +7804,7 @@ class SkinEditor {
       b.className = "chip" + (p.id === w.sprite ? " sel" : "");
       b.disabled = !p.ok; b.title = p.ok ? "" : `Necesitas: ${p.need}`;
       b.textContent = (p.ok ? "" : "🔒 ") + PATTERN_NAMES[p.id];
-      b.addEventListener("click", () => { g.sfx.click(); this.set(x => { x.sprite = p.id; }); });
+      b.addEventListener("click", () => { g.sfx.click(); this.set(x => { x.sprite = p.id; x.pixels = bodyOf(p.id); }); });
       pats.appendChild(b);
     }
     // Colores de la paleta (solo las letras que usa el sprite)
@@ -7509,7 +7823,8 @@ class SkinEditor {
       inp.addEventListener("change", () => onPick(inp.value));
       sw.appendChild(inp); r.appendChild(sw); cols.appendChild(r);
     };
-    for (const k of spriteLetters(w.sprite)) row(PAL_NAMES[k] || k, w.pal[k] || "#ff00ff", col => this.set(x => { x.pal[k] = col; }));
+    this.renderPixels();
+    for (const k of spriteLetters(w.sprite, w.pixels)) row(PAL_NAMES[k] || k, w.pal[k] || "#ff00ff", col => this.set(x => { x.pal[k] = col; }));
     row("Fondo", w.bg, col => this.set(x => { x.bg = col; }));
     row("Suelo", w.ground, col => this.set(x => { x.ground = col; }));
     // Efecto
@@ -7524,6 +7839,62 @@ class SkinEditor {
     if (opts.length === 1) { const p = document.createElement("span"); p.className = "fx-label"; p.textContent = "Consigue skins Épicos o Legendarios para desbloquear sus efectos."; fx.appendChild(p); }
     $("edUndo").disabled = !this.undo.length;
   }
+  // ----- Dibujo píxel a píxel -----
+  setupPixels() {
+    if (this.pxReady) return; this.pxReady = true;
+    const cv = document.getElementById("edPixels"); this.pxCv = cv; this.pxCtx = cv.getContext("2d"); this.tool = "pen"; this.brush = "b";
+    const cell = e => { const r = cv.getBoundingClientRect(); return { x: Math.floor((e.clientX - r.left) / r.width * 24), y: Math.floor((e.clientY - r.top) / r.height * 20) }; };
+    cv.addEventListener("pointerdown", e => {
+      e.preventDefault(); const c = cell(e); if (c.y >= 16 || c.x < 0 || c.x >= 24 || c.y < 0) return;
+      if (this.tool === "pick") { const ch = this.work.pixels[c.y][c.x]; if (ch !== ".") { this.brush = ch; this.tool = "pen"; } this.render(); return; }
+      this.snapshot(); this.painting = true; try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+      if (this.tool === "fill") { this.flood(c.x, c.y, this.brush); this.painting = false; this.apply(); this.render(); return; }
+      this.paint(c.x, c.y);
+    });
+    cv.addEventListener("pointermove", e => { if (this.painting) { const c = cell(e); this.paint(c.x, c.y); } });
+    const end = () => { if (!this.painting) return; this.painting = false; this.apply(); this.render(); };
+    cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+  }
+  setPx(x, y, ch) { const r = this.work.pixels[y]; if (!r || x < 0 || x >= 24 || r[x] === ch) return false; this.work.pixels[y] = r.slice(0, x) + ch + r.slice(x + 1); return true; }
+  paint(x, y) { if (y >= 16) return; if (this.setPx(x, y, this.tool === "erase" ? "." : this.brush)) { this.apply(); this.drawPixels(); } }
+  flood(x, y, ch) {
+    const from = this.work.pixels[y][x]; if (from === ch) return;
+    const q = [[x, y]];
+    while (q.length) { const [a, b] = q.pop(); if (b < 0 || b >= 16 || a < 0 || a >= 24 || this.work.pixels[b][a] !== from) continue; this.setPx(a, b, ch); q.push([a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]); }
+  }
+  renderPixels() {
+    this.setupPixels(); const g = this.game, $ = id => document.getElementById(id);
+    const tools = $("edTools"); tools.innerHTML = "";
+    for (const [id, label] of PX_TOOLS) {
+      const b = document.createElement("button"); b.className = "chip" + (this.tool === id ? " sel" : ""); b.textContent = label;
+      b.addEventListener("click", () => {
+        g.sfx.click();
+        if (id === "mirror") this.set(w => { w.pixels = w.pixels.map(r => r.split("").reverse().join("")); });
+        else if (id === "clear") this.set(w => { w.pixels = w.pixels.map(() => ".".repeat(24)); });
+        else { this.tool = id; this.render(); }
+      });
+      tools.appendChild(b);
+    }
+    const br = $("edBrushes"); br.innerHTML = "";
+    for (const k of PIXEL_LETTERS) {
+      const b = document.createElement("button"); b.className = "px-brush" + (this.brush === k && this.tool !== "erase" ? " sel" : "");
+      b.style.setProperty("--c", this.work.pal[k] || "#ff00ff"); b.title = PAL_NAMES[k]; b.innerHTML = `<i></i><span>${PAL_NAMES[k]}</span>`;
+      b.addEventListener("click", () => { g.sfx.click(); this.brush = k; if (this.tool === "erase" || this.tool === "pick") this.tool = "pen"; this.render(); });
+      br.appendChild(b);
+    }
+    this.drawPixels();
+  }
+  drawPixels() {
+    const c = this.pxCtx, w = this.work, S = 16, legs = (SKINS_DATA.sprites[w.sprite] || SKINS_DATA.sprites.raptor).frames.idle.legs;
+    c.clearRect(0, 0, 384, 320);
+    for (let y = 0; y < 20; y++) for (let x = 0; x < 24; x++) {   // cuadrícula de ajedrez = transparente
+      c.fillStyle = (x + y) % 2 ? "#2a2140" : "#231b38"; c.fillRect(x * S, y * S, S, S);
+      const ch = y < 16 ? w.pixels[y][x] : (legs[y - 16] || "")[x] || ".";
+      if (ch !== ".") { c.globalAlpha = y < 16 ? 1 : 0.4; c.fillStyle = w.pal[ch] || "#ff00ff"; c.fillRect(x * S, y * S, S, S); c.globalAlpha = 1; }
+    }
+    c.fillStyle = "rgba(255,255,255,.06)"; for (let i = 1; i < 24; i++) c.fillRect(i * S, 0, 1, 320); for (let i = 1; i < 20; i++) c.fillRect(0, i * S, 384, 1);
+    c.fillStyle = "rgba(255,210,63,.7)"; c.fillRect(0, 16 * S - 1, 384, 2);
+  }
   // Vista previa grande: corre y salta cada pocos segundos
   update(dt) {
     if (!this.owned) {
@@ -7534,7 +7905,7 @@ class SkinEditor {
     if (!SE.get("editor-preview")) this.apply();
     this.jumpT = (this.jumpT + dt) % 3;
     const k = this.jumpT - 2, jumpY = k > 0 && k < 0.8 ? Math.round(Math.sin(k / 0.8 * Math.PI) * 7) : 0;
-    tickStates([this.st], dt);
+    tickStates([this.st], dt); this.st.duck = this.jumpT > 1 && this.jumpT < 1.7;   // también se ve agachado
     if (this.st.advance) drawSkinPreview(this.ctx, "editor-preview", this.st, 240, 150, 5, jumpY);
   }
 }
@@ -8051,6 +8422,7 @@ const demo = (name, label, arg = "", wide = false) =>
 const GROUND_NAMES = { cactus: "Cactus", log: "Tronco", obsidian: "Pincho de obsidiana", iceblock: "Bloque de hielo", crystal: "Cristal", neon: "Barrera de neón", tomb: "Lápida", driftlog: "Tronco de playa", coral: "Coral", icecrystal: "Cristal lunar" };
 const ROCK_NAMES = { rock: "Roca", mossrock: "Roca musgosa", lavarock: "Roca volcánica", icerock: "Roca helada", meteor: "Meteorito", crate: "Caja metálica", sandrock: "Roca de arenisca" };
 const FLYER_NAMES = { ptero: "Pterodáctilo", drone: "Dron", fish: "Pez payaso", gull: "Gaviota", bat: "Murciélago" };
+for (const k in BIRD_TYPES) FLYER_NAMES["bird-" + k] = BIRD_TYPES[k].name;
 const stars = n => "★".repeat(n) + "☆".repeat(Math.max(0, 4 - n));
 const kbd = k => `<kbd>${k}</kbd>`;
 // Cada boss se vence de una forma distinta (ver setRules en sus clases)
@@ -8129,7 +8501,7 @@ const MANUAL_SECTIONS = [
     <table><tr><th>Tipo</th><th>¿Se destruye?</th><th>Cómo esquivarlo</th></tr>
       <tr><td>Suelo (cactus, tronco, obsidiana, hielo, cristal, coral, lápida)</td><td>No (solo con turbo)</td><td>Saltar o cambiar de carril.</td></tr>
       <tr><td>Rocas (arenisca, roca, musgo, volcánica, helada, meteorito)</td><td>Sí: rugido o turbo</td><td>Saltar (las altas con doble salto) o rugir.</td></tr>
-      <tr><td>Voladores (pterodáctilo, gaviota, pez payaso, murciélago, dron)</td><td>Sí: rugido o turbo</td><td>Bajos: saltar. Medios: deslizarse. Altos: pasar por debajo.</td></tr>
+      <tr><td>Voladores (uno por bioma: buitre, guacamayo, pájaro de fuego, búho nival, cuervo, gaviota, polilla, pez payaso, murciélago, dron y ave de cristal)</td><td>Sí: rugido o turbo</td><td>Bajos: saltar. Medios: deslizarse. Altos: pasar por debajo.</td></tr>
       <tr><td>Estalactitas (Glaciar)</td><td>No</td><td>Deslizarse o cambiar de carril.</td></tr>
       <tr><td>Muro (obstáculo alto + pájaro)</td><td>No</td><td>Cambiar de carril.</td></tr>
     </table>
@@ -8205,7 +8577,8 @@ const MANUAL_SECTIONS = [
     <p>Nunca te sale una skin repetida mientras queden otras de ese huevo; si ya las tienes todas, te devuelve ${CONFIG.EGG_REPEAT_COINS} monedas por cada huevo gastado.</p>
     <h4>Rugidos especiales</h4><p>Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un <b>rugido propio</b> y una pose animada al rugir: ${Object.entries(ROAR_STYLES).filter(([id]) => SkinCatalog.get(id)).map(([id, r]) => `${SkinCatalog.get(id).name}: ${r.name.toLowerCase()}`).join(" · ")}. Los diseños del editor heredan el rugido del efecto que elijas. Es solo estético: el alcance y el daño no cambian.</p>
     <h4>Checkpoints</h4><p>Empieza al inicio de un nivel. Precio: ${CONFIG.CHECKPOINT_PRICE_STEP} × (nivel − 1). Se desbloquean al completar el nivel anterior y sirven en todos los modos.</p>
-    <h4>Editor de skins</h4><p>Cuesta ${CONFIG.EDITOR_PRICE} monedas una sola vez. Elige patrón, colores, fondo y efecto y guárdalo en una de sus ${CONFIG.EDITOR_SLOTS} ranuras. Los patrones y efectos de skins Épicos o superiores solo están disponibles si tienes esos skins.</p>`; } },
+    <h4>Editor de skins</h4><p>Cuesta ${CONFIG.EDITOR_PRICE} monedas una sola vez. Dibuja tu raptor <b>píxel a píxel</b> (lápiz, goma, rellenar, cuentagotas, voltear y borrar todo) con 13 colores de paleta que puedes cambiar cuando quieras, o empieza desde una plantilla. Elige fondo, suelo y efecto y guárdalo en una de sus ${CONFIG.EDITOR_SLOTS} ranuras. Las patas se animan solas y la pose agachada se genera a partir de tu dibujo. Las plantillas y efectos de skins Épicos o superiores solo están disponibles si tienes esos skins.</p>
+    <h4>Accesorios</h4><p>En la pestaña <b>🎩 Accesorios</b>: ${HATS.map(h => `${h.name} (${h.price})`).join(", ")}. Se ponen encima de cualquier skin y te siguen al correr, saltar y agacharte. Puedes llevar uno a la vez.</p>`; } },
   { title: "Ruleta", html: () => { const O = CONFIG.ROULETTE_ODDS; return `
     <p>Apuesta monedas del juego (mín. ${CONFIG.ROULETTE_MIN_BET}, máx. ${CONFIG.ROULETTE_MAX_BET}). El resultado se decide con estas probabilidades y la rueda se para exactamente en esa casilla;
     el tamaño de cada casilla se parece a su probabilidad.</p>
@@ -8343,8 +8716,7 @@ function demoGround(c, w, h, gy) {
 function demoRaptor(c, g, x, bottom, frame, t, sc = 2, squash = false) {
   const id = g.skinId, tick = Math.floor(t / CONFIG.SKIN_TICK), f = frame || SE.runFrame(id, tick).frame;
   c.save(); c.translate(Math.round(x), Math.round(bottom - SE.H * sc));
-  if (squash) { c.translate(0, SE.H * sc * 0.5); c.scale(1.25, 0.5); }
-  SE.drawSprite(c, id, f, 0, 0, sc, tick); c.restore();
+  SE.drawSprite(c, id, squash ? (tick % 4 < 2 ? "duck1" : "duck2") : f, 0, 0, sc, tick); c.restore();   // agachado: pose propia
 }
 const DEMOS = {
   run(c, t, d, g) { demoGround(c, d.w, d.h, 86); drawCactus(c, 260 - mod(t * 120, 300), 56, 16, 30); demoRaptor(c, g, 14, 86, null, t);
@@ -8359,7 +8731,7 @@ const DEMOS = {
     demoGround(c, d.w, d.h, 88); c.fillStyle = "#8b9099"; c.fillRect(165 - k * 200, 38, 22, 50); c.fillStyle = "#4a4d55"; c.fillRect(165 - k * 200, 38, 22, 4);
     demoRaptor(c, g, 10, 88 - y, y ? "jump" : null, t); if (k > 0.44 && k < 0.5) { c.fillStyle = "#fff"; c.fillRect(18, 88 - y + 2, 20, 3); } },
   slide(c, t, d, g) { const k = mod(t, 1.6) / 1.6, bx = 170 - k * 200, sliding = bx < 90 && bx > -20;
-    demoGround(c, d.w, d.h, 88); c.save(); c.translate(bx, 44); c.scale(0.5, 0.5); drawSkinSprite(c, BIRD_SPR[Math.floor(t * 7) % 2], 0, 0); c.restore();
+    demoGround(c, d.w, d.h, 88); c.save(); c.translate(bx, 44); c.scale(0.5, 0.5); drawSkinSprite(c, BIRD_SPRITES.vulture[Math.floor(t * 11) % 4], 0, 0); c.restore();
     demoRaptor(c, g, 8, 88, null, t, 2, sliding); },
   fastfall(c, t, d, g) { const k = mod(t, 1.8) / 1.8; let y = 0;
     if (k < 0.35) y = Math.sin(k / 0.35 * Math.PI / 2) * 50; else if (k < 0.5) y = 50 * (1 - (k - 0.35) / 0.15);
@@ -8973,7 +9345,7 @@ class StatsManager {
       case "coinsEarned": this.inc(s, "coinsEarned", d.n); break;
       case "coinsSpent": this.inc(this.o("spent"), d.on || "otros", d.n); break;
       case "purchase": {
-        const n = d.kind === "skin" ? d.skin.price : d.kind === "checkpoint" ? g.checkpoints.price(d.level) : d.kind === "editor" ? CONFIG.EDITOR_PRICE : 0;
+        const n = d.kind === "skin" ? d.skin.price : d.kind === "checkpoint" ? g.checkpoints.price(d.level) : d.kind === "editor" ? CONFIG.EDITOR_PRICE : d.kind === "hat" ? d.price : 0;
         if (n) this.inc(this.o("spent"), "shop", n);
         break;
       }
@@ -10415,7 +10787,7 @@ class Game {
 //  Entrada: teclado, gestos táctiles y botones en pantalla
 // =====================================================================
 const game = new Game(document.getElementById("game"));
-window.__game = game; window.__Obstacle = Obstacle; window.__applyLane = applyLane; // útil para depurar desde la consola
+window.__game = game; window.__Obstacle = Obstacle; window.__applyLane = applyLane; window.__dbg = { HATS, drawRaptor, SE, SKINS_DATA }; // útil para depurar desde la consola
 game.showMenu();
 
 // Letra pulsada en minúscula (acepta mayúsculas, Bloq Mayús y Mayús)
