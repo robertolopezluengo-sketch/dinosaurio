@@ -754,8 +754,13 @@
   .net-p b { font-family: var(--f-title); font-weight: 400; font-size: 10px; } .net-p small { font-size: 11px; color: var(--text-dim); }
   .net-p.ready { outline: 2px solid var(--go); } .net-p.ready small { color: var(--go); } .net-p.me b { color: var(--weak); }
   .net-p.empty { opacity: .45; border-style: dashed; }
+  .net-p:not(.empty) { border-color: var(--pc, var(--line)); } .net-p:not(.empty) b { color: var(--pc, var(--text)); }
+  .net-modes { display: flex; gap: 8px; justify-content: center; margin: 4px 0 2px; flex-wrap: wrap; }
+  .net-modes .btn { opacity: .6; } .net-modes .btn.sel { opacity: 1; outline: 2px solid var(--weak); background: var(--surface-2); }
+  .net-modes .btn:disabled { cursor: default; }
   .net-podium { display: flex; flex-direction: column; gap: 8px; width: min(520px, 100%); margin: 12px auto 18px; }
   .net-podium > div { display: grid; grid-template-columns: 48px 1fr auto 70px; gap: 10px; align-items: center; padding: 10px 14px; background: rgba(35,27,56,.92); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); animation: rise .35s ease-out both; text-align: left; }
+  .net-podium > div { border-left: 6px solid var(--pc, var(--line)); }
   .net-podium > div:nth-child(2) { animation-delay: .1s; } .net-podium > div:nth-child(3) { animation-delay: .2s; } .net-podium > div:nth-child(4) { animation-delay: .3s; }
   .net-podium b { font-family: var(--f-title); font-weight: 400; font-size: 20px; } .net-podium span { font-family: var(--f-title); font-size: 12px; }
   .net-podium em { font-style: normal; font-family: var(--f-title); font-size: 16px; color: var(--weak); } .net-podium small { font-size: 11px; color: var(--text-dim); text-align: right; }
@@ -873,7 +878,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 24 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 25 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -1064,6 +1069,7 @@
     </div>
     <div id="netRoom" class="hidden">
       <div class="net-code">SALA <b id="netCode">ABCD</b><small>Pasa este código a tus amigos para que entren</small></div>
+      <div class="net-modes"><button class="btn" id="netModeRace">🏁 Carrera</button><button class="btn" id="netModeCoop">🤝 Cooperativo</button></div><p class="touch-hint" id="netModeDesc"></p>
       <div id="netPlayers" class="net-players"></div>
       <p class="touch-hint" id="netRoomHint"></p>
       <div class="actions"><button class="btn primary" id="netReady">Estoy listo</button><button class="btn gold hidden" id="netStart">► Empezar</button><button class="btn" id="netLeave">Salir de la sala</button></div>
@@ -3113,6 +3119,12 @@ class Player {
       }
     }
     if (g.effects.magnet > 0) drawIcon(ctx, "magnet", 38, -(this.y + (this.sliding ? 44 : 84)) + Math.sin(g.time * 5) * 2, 7);
+    if (g.netRace && !this.dead && g.state !== "over") {   // online: marca «TÚ» de tu color para no confundirte con los fantasmas
+      const ty = -(this.y + (this.sliding ? 50 : 96)) + Math.sin(g.time * 4) * 2, col = g.net.myColor;
+      ctx.fillStyle = UI_T.line; ctx.fillRect(24, ty - 9, 28, 16); ctx.fillStyle = col; ctx.fillRect(26, ty - 7, 24, 12);
+      ctx.beginPath(); ctx.moveTo(32, ty + 7); ctx.lineTo(44, ty + 7); ctx.lineTo(38, ty + 13); ctx.closePath(); ctx.fill();
+      ctx.font = '10px "Raptor Pixel Display", monospace'; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#16111f"; ctx.fillText("TÚ", 38, ty);
+    }
   }
 }
 
@@ -3214,6 +3226,8 @@ class RunBuild {
     for (const id of this.pacts) yield [PACT_BY_ID[id].mod, 1];
     if (g.randomMod && !g.versus) yield [g.randomMod.mod, 1];   // modo Aleatorio: regla del nivel
     if (g.weather && g.weather.active && g.weather.def.mod) yield [g.weather.def.mod, 1];   // clima del bioma
+    if (g.netCoop) yield [{ bossHpMult: v => v * (1 + NET_CONFIG.BOSS_HP_PER_PLAYER * (g.net.teamN - 1)) }, 1];   // cooperativo: jefes más duros cuantos más seáis
+    if (g.netDraft) yield [{ speedMult: v => v * NET_CONFIG.DRAFT_SPEED }, 1];   // rebufo en la carrera online
   }
   stat(k) {
     if (k in this.cache) return this.cache[k];
@@ -4644,7 +4658,7 @@ class Boss {
   damage(n, kind, at) {
     if (this.state !== "fight" || this.hp <= 0) return false;
     const g = this.game, pt = at || this.target();
-    if (kind !== "test" && Math.random() < g.stat("critChance")) { n *= 2; g.floatText(pt.laneT, pt.x, pt.y + 70, "¡CRÍTICO!", "#ff9a3c", 22); }
+    if (kind !== "test" && kind !== "team" && Math.random() < g.stat("critChance")) { n *= 2; g.floatText(pt.laneT, pt.x, pt.y + 70, "¡CRÍTICO!", "#ff9a3c", 22); }
     g.fury.add(FURY_CONFIG.BOSS_HIT); g.ach.event("bossHit", { n, kind });
     this.hp = Math.max(0, this.hp - n); this.flash = 0.3;
     g.sfx.bossHit(); g.addShake(0.2, 5);
@@ -7740,7 +7754,7 @@ class UI {
       this.text(c, `NIVEL ${L.level} · ${L.biome.name.toUpperCase()}`, W / 2, 22, 16, L.biome.accent, "center");
       // Cuenta atrás hasta el boss del nivel
       const left = B.nextAt - g.distScore, lvl = Math.floor(B.nextAt / CONFIG.POINTS_PER_LEVEL) + 1;
-      if (!B.active && !g.tutorial && !g.netRace && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
+      if (!B.active && !g.tutorial && (!g.netRace || g.netCoop) && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
     }
     if (g.randomMod) this.pill(c, `${g.daily ? "📅 DIARIA · " + g.randomMod.icon : "🎲"} ${g.randomMod.name.toUpperCase()}`, W / 2, B.boss && B.boss.state !== "leave" ? 98 : 74, 10, "#e4d0ff", "rgba(80,40,140,0.85)");
     const Wt = g.weather;   // clima: icono y nombre (al empezar, también qué cambia)
@@ -7793,7 +7807,7 @@ class UI {
         c.fillStyle = "rgba(14,11,22,0.45)"; c.fillRect(0, 0, W, H);
         const n = Math.ceil(g.netWait - 0.5), k = (g.netWait - 0.5) % 1;
         this.text(c, n > 0 ? String(n) : "¡YA!", W / 2, H / 2 - 10, 72 + 30 * Math.max(0, k), n > 0 ? UI_T.weak : UI_T.go, "center");
-        this.text(c, "CARRERA ONLINE · GANA QUIEN LLEGUE MÁS LEJOS", W / 2, H / 2 + 50, 12, UI_T.text, "center");
+        this.text(c, g.netCoop ? "COOPERATIVO · DERROTAD A LOS JEFES JUNTOS" : "CARRERA ONLINE · GANA QUIEN LLEGUE MÁS LEJOS", W / 2, H / 2 + 50, 12, UI_T.text, "center");
       }
     }
   }
@@ -9090,9 +9104,18 @@ const MANUAL_SECTIONS = [
     <p>En <b>Multijugador → 🌐 Online</b> corres contra 1–3 personas a la vez, cada una en su móvil u ordenador (necesitas conexión y un apodo).</p>
     <ul><li><b>Partida rápida</b>: te empareja con quien esté buscando partida (espera ${NET_CONFIG.QUICK_WAIT} s por si entra alguien más).</li>
       <li><b>Crear sala</b>: te da un código de 4 letras para tus amigos; entran con <b>Unirse a una sala</b>. Cuando todos estáis listos, el anfitrión (👑) pulsa Empezar.</li>
-      <li>Todos corréis <b>el mismo recorrido</b> en Normal desde el nivel 1, sin jefes, sin mejoras roguelike y sin el árbol (igualdad para todos). Los rivales se ven como fantasmas con su apodo; si se alejan, una flecha indica la distancia.</li>
-      <li>Cada ${NET_CONFIG.TRAP_EVERY} s ganas una <b>trampa</b> (máximo ${NET_CONFIG.TRAP_MAX}): <kbd>Q</kbd> o el botón 🎯 la lanza al rival que va justo por delante de ti (o al primero si vas en cabeza).</li>
-      <li>Gana quien llegue más lejos. Premios: ${NET_CONFIG.PRIZE_COINS.map((c, i) => `${i + 1}º ${c} monedas`).join(", ")} y XP del pase. Después puedes pedir la revancha en la misma sala.</li></ul>` },
+      <li>Todos corréis <b>el mismo recorrido</b> en Normal desde el nivel 1, sin mejoras roguelike y sin el árbol (igualdad para todos). Cada jugador tiene <b>un color</b>: los demás se ven como fantasmas con el contorno y la etiqueta de su color, y tu raptor lleva encima la marca <b>TÚ</b>. Si compartís carril, el fantasma se vuelve más transparente para que siempre sepas cuál eres. Si se alejan, una flecha indica la distancia.</li>
+      <li>El anfitrión elige el <b>modo</b> en la sala:</li></ul>
+    <p><b>🏁 Carrera</b> (sin jefes): gana quien llegue más lejos.</p>
+    <ul><li>Cada ${NET_CONFIG.TRAP_EVERY} s ganas una <b>trampa</b> (máximo ${NET_CONFIG.TRAP_MAX}): <kbd>Q</kbd> o el botón 🎯 la lanza al rival que va justo por delante de ti (o al primero si vas en cabeza).</li>
+      <li><b>💨 Rebufo</b>: si vas en el mismo carril justo detrás de un rival, corres un ${Math.round((NET_CONFIG.DRAFT_SPEED - 1) * 100)} % más rápido para alcanzarle.</li>
+      <li>Premios: ${NET_CONFIG.PRIZE_COINS.map((c, i) => `${i + 1}º ${c} monedas`).join(", ")} y XP del pase.</li></ul>
+    <p><b>🤝 Cooperativo</b> (con jefes): jugáis en equipo.</p>
+    <ul><li>Cada jefe tiene más vida (+${Math.round(NET_CONFIG.BOSS_HP_PER_PLAYER * 100)} % por cada compañero), pero <b>el daño de todos se suma</b>: cuando un compañero golpea, verás su nombre y el daño sobre tu jefe.</li>
+      <li>Si caes, no se acaba: <b>te levantas</b> en cuanto tu equipo derrota a un jefe o a los ${NET_CONFIG.REVIVE} s (si queda alguien en pie), con escudo y el camino despejado.</li>
+      <li><kbd>Q</kbd> / 🎁 regala un <b>escudo</b> de ${NET_CONFIG.GIFT_TIME} s al compañero que va más atrasado.</li>
+      <li>La partida acaba cuando cae todo el equipo. El premio depende de la puntuación del equipo y de los jefes derrotados; el que más daño hizo es el <b>MVP</b> ⭐.</li></ul>
+    <p>Después puedes pedir la revancha en la misma sala.</p>` },
   { title: "Clima", html: () => `
     <p>A mitad de nivel puede llegar el <b>clima</b> del bioma. Dura unos segundos, se anuncia en el marcador y cambia algo del juego mientras dura (no en multijugador ni durante los jefes):</p>
     <table><tr><th>Bioma</th><th>Clima</th><th>Efecto</th></tr>${Object.entries(WEATHER).map(([b, w]) => `<tr><td>${(BIOMES.find(x => x.id === b) || {}).name || b}</td><td>${w.icon} ${w.name}</td><td>${w.desc}</td></tr>`).join("")}</table>` },
@@ -10817,7 +10840,10 @@ SaveBackup.prototype.setupCloud = function () {
 //  segundo) y las trampas. Los rivales se ven como fantasmas. Gana quien llegue más lejos.
 // =====================================================================
 const NET_CONFIG = { MAX: 4, SEND_MS: 200, JOIN_WAIT: 3000, AUTO_START: 7, COUNTDOWN: 3.5, TRAP_EVERY: 8, TRAP_MAX: 2, QUICK_WAIT: 4, HEARTBEAT: 25000,
-  PRIZE_COINS: [150, 80, 50, 30], PRIZE_XP: [80, 50, 30, 20] };
+  PRIZE_COINS: [150, 80, 50, 30], PRIZE_XP: [80, 50, 30, 20],
+  DRAFT_MIN: 30, DRAFT_MAX: 260, DRAFT_SPEED: 1.1,            // rebufo: ir justo detrás de un rival en tu carril
+  BOSS_HP_PER_PLAYER: 0.6, REVIVE: 15, GIFT_TIME: 6,          // cooperativo: vida extra del jefe por jugador, revivir y regalos
+  COLORS: ["#ffd23f", "#5fb4ff", "#ff5ce1", "#ff9a3c"] };
 // ---------- Cliente mínimo de Supabase Realtime (protocolo Phoenix, JSON vsn 1.0.0) ----------
 class RealtimeClient {
   constructor(url) { this.url = url; this.ws = null; this.ref = 0; this.chans = new Map(); this.waits = new Map(); }
@@ -10873,23 +10899,33 @@ class RealtimeChannel {
   leave() { this.rt.push(this.topic, "phx_leave", {}); this.rt.chans.delete(this.topic); }
 }
 const roomCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
+const NET_MODES = {
+  race: { icon: "🏁", name: "Carrera", desc: "Todos contra todos: gana quien llegue más lejos. Sin jefes. Trampas para el rival de delante y rebufo si vas justo detrás de alguien." },
+  coop: { icon: "🤝", name: "Cooperativo", desc: "En equipo y con jefes: el daño de todos se suma (el jefe tiene más vida). Si caes, te levantas cuando tu equipo derrota a un jefe o a los 15 s. Regalos de escudo para los compañeros." },
+};
 // ---------- Lógica de la partida online ----------
 class NetPlay {
   constructor(game) {
     this.g = game; this.rt = null; this.room = null; this.lobby = null; this.code = ""; this.mode = "idle";   // idle | quick | room | racing | done
     this.members = {}; this.remotes = {}; this.ready = false; this.traps = 0; this.trapT = 0; this.lastSend = 0;
+    this.roomMode = "race"; this.coop = false; this.colors = {};
     this.uidLocal = "p-" + Math.random().toString(36).slice(2, 10);
   }
   get uid() { return this.uidLocal; }   // uno por pestaña: dos pestañas del mismo navegador son dos jugadores distintos
   get nick() { return this.g.online.nick || "Raptor"; }
   get url() { return window.__RT_URL || `${ONLINE_CONFIG.URL.replace(/^http/, "ws")}/realtime/v1/websocket?apikey=${ONLINE_CONFIG.KEY}&vsn=1.0.0`; }
+  get myColor() { return this.colors[this.uid] || NET_CONFIG.COLORS[0]; }
+  get teamN() { return 1 + Object.keys(this.remotes).length; }
   sortedMembers() { return Object.values(this.members).sort((a, b) => (b.c || 0) - (a.c || 0) || a.j - b.j || (a.u < b.u ? -1 : 1)); }
   get host() { const l = this.sortedMembers(); return !!l[0] && l[0].u === this.uid; }
+  // Modo de la sala: lo elige el anfitrión (viaja en su ficha)
+  get hostMode() { const h = this.sortedMembers()[0]; return h && NET_MODES[h.m] ? h.m : "race"; }
   // Mi ficha en la sala. Los diseños del editor no existen en otros móviles: se envía la skin por defecto
   meta() {
     const s = this.g.save.data, sk = /^(design-|editor-)/.test(this.g.skinId) ? CONFIG.DEFAULT_SKIN : this.g.skinId;
-    return { u: this.uid, n: this.nick, sk, h: Object.assign({}, s.acc), ready: this.ready, j: this.joinedAt, c: this.creator ? 1 : 0, racing: this.mode === "racing" };
+    return { u: this.uid, n: this.nick, sk, h: Object.assign({}, s.acc), ready: this.ready, j: this.joinedAt, c: this.creator ? 1 : 0, m: this.roomMode, racing: this.mode === "racing" };
   }
+  setRoomMode(m) { if (!this.host || !NET_MODES[m]) return; this.roomMode = m; if (this.room) this.room.track(this.meta()); this.render(); }
   async ensureRt() { if (!this.rt) this.rt = new RealtimeClient(this.url); await this.rt.connect(); }
   // ----- Salas -----
   async createRoom() { return this.joinRoom(roomCode(), true); }
@@ -10899,32 +10935,37 @@ class NetPlay {
     if (this.mode === "quick" && !auto) this.stopQuick();
     await this.ensureRt(); if (this.room) this.leaveRoom();
     this.code = code; this.joinedAt = Date.now(); this.ready = auto; this.creator = creating; this.members = {}; this.remotes = {}; this.expect = auto ? this.expect : 0;
+    if (creating && !auto) this.roomMode = this.roomMode || "race";
     let gotState; const stateIn = new Promise(r => { gotState = r; });
     const ch = this.room = await this.rt.channel("dino-room-" + code, this.uid);
     ch.on("presence", p => { gotState(); this.onPresence(p); });
     ch.on("b:start", d => this.onStart(d));
     ch.on("b:st", d => this.onState(d));
     ch.on("b:trap", d => { if (d.to === this.uid && this.mode === "racing") this.g.receiveNetTrap(d.type, d.n); });
+    ch.on("b:gift", d => { if (d.to === this.uid && this.mode === "racing") this.g.receiveGift(d.type, d.n); });
+    ch.on("b:bdmg", d => this.onTeamDamage(d));
+    ch.on("b:bdef", d => this.onTeamBoss(d));
     ch.on("close", () => this.onLost(ch));
     await Promise.race([stateIn, new Promise(r => setTimeout(r, NET_CONFIG.JOIN_WAIT))]);   // quién hay ya en la sala
     const others = Object.values(this.members).filter(m => m.u !== this.uid);
-    if (others.some(m => m.racing)) { this.leaveRoom(); throw new Error("Esa sala ya está jugando una carrera. Espera a que acabe."); }
+    if (others.some(m => m.racing)) { this.leaveRoom(); throw new Error("Esa sala ya está jugando una partida. Espera a que acabe."); }
     if (others.length >= NET_CONFIG.MAX) { this.leaveRoom(); throw new Error("La sala está llena (máximo 4)."); }
     this.mode = "room"; await ch.track(this.meta()); this.render();
   }
   leaveRoom() { if (this.room) { const r = this.room; this.room = null; try { r.leave(); } catch (e) {} } this.members = {}; this.mode = "idle"; this.code = ""; this.expect = 0; clearTimeout(this.autoT); }
-  // Conexión perdida: en la sala se vuelve al inicio; en carrera, la partida sigue y al acabar se dan los resultados conocidos
+  // Conexión perdida: en la sala se vuelve al inicio; en partida, sigue y al acabar se dan los resultados conocidos
   onLost(ch) {
     if (this.room !== ch) return;
     this.room = null; this.lost = true;
     if (this.mode === "racing") { this.g.floatText(this.g.player.laneT, this.g.player.x + 40, 170, "SIN CONEXIÓN CON LA SALA", "#ff8a8a", 16); for (const r of Object.values(this.remotes)) if (!r.dead) { r.dead = true; r.left = true; } this.checkEnd(); }
     else { this.mode = "idle"; this.say("Se ha perdido la conexión con la sala.", "err"); this.render(); }
   }
-  leaveAll() { this.leaveRoom(); this.stopQuick(); if (this.rt) { this.rt.close(); this.rt = null; } this.g.netRace = false; }
+  leaveAll() { this.leaveRoom(); this.stopQuick(); if (this.rt) { this.rt.close(); this.rt = null; } this.g.netRace = false; this.g.netCoop = false; this.g.netDraft = false; }
   setReady(v) { this.ready = v; if (this.room) this.room.track(this.meta()); this.render(); this.maybeAutoStart(); }
   onPresence(p) {
     this.members = {}; for (const k in p) if (p[k] && p[k].u) this.members[k] = p[k];
-    if (this.mode === "racing") for (const id in this.remotes) if (!this.members[id] && !this.remotes[id].dead) { this.remotes[id].dead = true; this.remotes[id].left = true; this.checkEnd(); }
+    if (!this.host) this.roomMode = this.hostMode;
+    if (this.mode === "racing") for (const id in this.remotes) if (!this.members[id] && !this.remotes[id].left) { const r = this.remotes[id]; r.dead = true; r.left = true; this.checkEnd(); }
     this.render(); this.maybeAutoStart();
   }
   // Partida rápida: el anfitrión arranca solo cuando todos los emparejados han entrado y están listos
@@ -10937,67 +10978,137 @@ class NetPlay {
     }, NET_CONFIG.AUTO_START * 1000);
   }
   startRace() {
-    const l = Object.values(this.members); if (!this.host || l.length < 2) return;
-    const d = { seed: (Math.random() * 2 ** 31) | 0, players: l.map(m => m.u) };
+    const l = this.sortedMembers(); if (!this.host || l.length < 2) return;
+    const d = { seed: (Math.random() * 2 ** 31) | 0, players: l.map(m => m.u), mode: this.roomMode };
     this.room.send("start", d); this.onStart(d);
   }
   onStart(d) {
     if (!d.players || !d.players.includes(this.uid) || this.mode === "racing") return;
     this.mode = "racing"; this.ready = false; this.result = null; this.traps = 1; this.trapT = 0; this.finishedSent = false; this.lost = false; this.expect = 0; clearTimeout(this.autoT);
-    this.remotes = {};
+    this.coop = d.mode === "coop"; this.roomMode = d.mode || "race";
+    this.remotes = {}; this.colors = {}; this.teamDmg = {}; this.applied = {}; this.dmgBy = {}; this.bossLv = new Set(); this.down = false; this.reviveT = 0; this.revives = 0;
+    d.players.forEach((u, i) => { this.colors[u] = NET_CONFIG.COLORS[i % NET_CONFIG.COLORS.length]; this.dmgBy[u] = 0; });
     for (const u of d.players) if (u !== this.uid) { const m = this.members[u] || {}; this.remotes[u] = { u, n: m.n || "Rival", sk: m.sk, h: m.h || {}, d: 0, pd: 0, t: performance.now(), pt: performance.now(), l: 0, y: 0, sl: 0, s: 0, dead: false, st: { tick: 0, speed: 2, trail: null, trailFx: null } }; }
-    this.g.closeScreens(); this.g.startNet(d.seed);
+    this.g.closeScreens(); this.g.startNet(d.seed, this.coop);
     if (this.room) this.room.track(this.meta());
   }
-  // ----- Durante la carrera -----
+  // ----- Durante la partida -----
   update(dt) {
-    if (this.mode !== "racing" || !this.room) return;
+    if (this.mode !== "racing") return;
     const g = this.g, now = performance.now(), dead = g.state === "over";
     if (!dead && g.netWait <= 0 && this.traps < NET_CONFIG.TRAP_MAX && (this.trapT += dt) >= NET_CONFIG.TRAP_EVERY) { this.traps++; this.trapT = 0; g.sfx.tick(); }
-    if (now - this.lastSend >= NET_CONFIG.SEND_MS && !this.finishedSent) { this.sendState(); this.checkWin(); }
+    if (this.coop) {
+      // Daño del equipo al jefe del nivel: se aplica a mi jefe en cuanto está peleando
+      const B = g.bosses.boss, lv = g.level.level, pend = (this.teamDmg[lv] || 0) - (this.applied[lv] || 0);
+      if (B && B.state === "fight" && B.hp > 0 && pend > 0) { this.applied[lv] = (this.applied[lv] || 0) + pend; B.damage(Math.ceil(pend), "team"); }
+      // Revivir: a los pocos segundos si queda alguien de pie
+      if (dead && this.down && Object.values(this.remotes).some(r => !r.dead) && (this.reviveT -= dt) <= 0) this.revive();
+    } else {
+      // Rebufo: un rival justo delante en tu carril te arrastra
+      const p = g.player, myD = g.distance, draft = !dead && g.netWait <= 0 && Object.values(this.remotes).some(r => !r.dead && Math.abs(r.l - p.laneT) < 0.35 && (this.remoteDist(r) - myD) > NET_CONFIG.DRAFT_MIN && (this.remoteDist(r) - myD) < NET_CONFIG.DRAFT_MAX);
+      if (draft !== !!g.netDraft) { g.netDraft = draft; g.build.cache = {}; }
+    }
+    if (!this.room) return;
+    if (now - this.lastSend >= NET_CONFIG.SEND_MS && (!this.finishedSent || this.coop)) { this.sendState(); this.checkWin(); }
   }
-  // Envía mi posición (al morir, una última vez con la puntuación final)
+  // Envía mi posición (al caer, una vez más con la puntuación)
   sendState() {
     const g = this.g, p = g.player, dead = g.state === "over"; if (!this.room) { if (dead) this.finishedSent = true; return; }
     this.lastSend = performance.now(); if (dead) this.finishedSent = true;
     this.room.send("st", { u: this.uid, d: Math.round(g.distance), l: Math.round(p.laneT * 100) / 100, y: Math.round(p.y), sl: p.sliding ? 1 : 0, s: g.score, dead: dead ? 1 : 0, lv: g.level.level });
   }
   onState(d) {
-    const r = this.remotes[d.u]; if (!r || this.mode !== "racing") return;
+    const r = this.remotes[d.u]; if (!r || this.mode !== "racing" || r.left) return;
     const now = performance.now(); if (d.d < r.d - 5) return;   // mensaje viejo que llega tarde
     r.pd = r.d; r.pt = r.t; r.d = d.d; r.t = now; r.l = d.l; r.y = d.y; r.sl = d.sl; r.s = d.s; r.lv = d.lv;
-    if (d.dead && !r.dead) { r.dead = true; this.g.floatText(this.g.player.laneT, this.g.player.x + 40, 160, `¡${r.n.toUpperCase()} ELIMINADO!`, "#ff8a8a", 16); this.checkEnd(); }
+    const g = this.g;
+    if (d.dead && !r.dead) { r.dead = true; g.floatText(g.player.laneT, g.player.x + 40, 160, this.coop ? `¡${r.n.toUpperCase()} HA CAÍDO!` : `¡${r.n.toUpperCase()} ELIMINADO!`, "#ff8a8a", 16); this.checkEnd(); }
+    else if (!d.dead && r.dead && this.coop) { r.dead = false; g.floatText(g.player.laneT, g.player.x + 40, 160, `¡${r.n.toUpperCase()} HA VUELTO!`, UI_T.go, 16); }
   }
   // Distancia estimada de un rival ahora mismo (extrapola entre mensajes)
   remoteDist(r) { if (r.dead) return r.d; const v = r.t > r.pt ? (r.d - r.pd) / (r.t - r.pt) : 0; return r.d + Math.max(0, v) * Math.min(400, performance.now() - r.t); }
+  // Botón de acción (Q / 🎯): trampa al rival de delante en la carrera, escudo para el compañero más atrasado en el cooperativo
   throwTrap() {
-    const g = this.g; if (this.mode !== "racing" || g.state !== "playing" || g.netWait > 0) return;
+    const g = this.g; if (this.mode !== "racing" || g.state !== "playing" || g.netWait > 0 || !this.room) return;
     const alive = Object.values(this.remotes).filter(r => !r.dead); if (!alive.length || this.traps <= 0) { g.sfx.denied(); return; }
+    if (this.coop) {
+      const target = alive.sort((a, b) => this.remoteDist(a) - this.remoteDist(b))[0]; this.traps--;
+      this.room.send("gift", { to: target.u, type: "shield", n: this.nick });
+      g.sfx.powerup(); g.floatText(g.player.laneT, g.player.x + 40, g.player.y + 120, `ESCUDO PARA ${target.n.toUpperCase()}`, UI_T.go, 16);
+      return;
+    }
     const me = g.distance, ahead = alive.filter(r => this.remoteDist(r) >= me).sort((a, b) => this.remoteDist(a) - this.remoteDist(b));
     const target = ahead[0] || alive.sort((a, b) => this.remoteDist(b) - this.remoteDist(a))[0];
     const type = choice(TRAP_TYPES).id; this.traps--;
-    if (!this.room) return; this.room.send("trap", { to: target.u, type, n: this.nick });
+    this.room.send("trap", { to: target.u, type, n: this.nick });
     g.sfx.toss(); g.floatText(g.player.laneT, g.player.x + 40, g.player.y + 120, `TRAMPA PARA ${target.n.toUpperCase()}`, UI_T.weak, 16);
   }
-  onLocalDeath() { if (this.mode === "racing") this.sendState(); this.checkEnd(); }
-  // Comprueba si el último que queda ya ha superado a todos: entonces gana y se acaba la carrera
+  // ----- Cooperativo: jefes compartidos -----
+  sendBossDmg(n) {
+    if (!this.coop || this.mode !== "racing" || n <= 0) return;
+    const lv = this.g.level.level; this.dmgBy[this.uid] = (this.dmgBy[this.uid] || 0) + n;
+    if (this.room) this.room.send("bdmg", { u: this.uid, lv, a: n });
+  }
+  onTeamDamage(d) {
+    if (!this.coop || this.mode !== "racing" || d.u === this.uid) return;
+    this.teamDmg[d.lv] = (this.teamDmg[d.lv] || 0) + d.a; this.dmgBy[d.u] = (this.dmgBy[d.u] || 0) + d.a;
+    const r = this.remotes[d.u], B = this.g.bosses.boss;
+    if (r && B && B.state === "fight" && this.g.level.level === d.lv) { const pt = B.target(); this.g.floatText(pt.laneT, pt.x, pt.y + 60, `${r.n.toUpperCase()} -${d.a}`, this.colors[d.u], 16); }
+  }
+  onLocalBossDefeated() {
+    if (!this.coop || this.mode !== "racing") return;
+    const lv = this.g.level.level; this.bossLv.add(lv);
+    if (this.room) this.room.send("bdef", { u: this.uid, lv });
+  }
+  onTeamBoss(d) {
+    if (!this.coop || this.mode !== "racing") return;
+    const first = !this.bossLv.has(d.lv); this.bossLv.add(d.lv);
+    if (this.down && this.g.state === "over") { this.revive(); return; }   // ¡el equipo te levanta!
+    const r = this.remotes[d.u]; if (first && r) this.g.floatText(this.g.player.laneT, this.g.player.x + 40, 190, `¡${r.n.toUpperCase()} HA TUMBADO AL JEFE!`, UI_T.weak, 16);
+  }
+  revive() {
+    if (!this.down || this.mode !== "racing") return;
+    this.down = false; this.revives++; this.finishedSent = false; this.g.netRevive(); this.sendState();
+  }
+  onLocalDeath() {
+    if (this.mode !== "racing") return;
+    this.sendState();
+    if (this.coop) { this.down = true; this.reviveT = NET_CONFIG.REVIVE; }
+    this.checkEnd();
+  }
+  // Carrera: el último que queda gana en cuanto supera a todos
   checkWin() {
     const g = this.g, rs = Object.values(this.remotes);
-    if (this.mode !== "racing" || g.state !== "playing" || !rs.length || rs.some(r => !r.dead)) return;
+    if (this.coop || this.mode !== "racing" || g.state !== "playing" || !rs.length || rs.some(r => !r.dead)) return;
     if (g.score > Math.max(...rs.map(r => r.s))) { g.floatText(g.player.laneT, g.player.x + 40, 150, "¡ERES EL ÚLTIMO EN PIE!", UI_T.weak, 22); g.netFinish(); }
   }
   standings() {
-    const g = this.g, me = { u: this.uid, n: this.nick, s: g.score, dead: g.state === "over", me: true, d: g.distance };
-    return [me, ...Object.values(this.remotes).map(r => ({ u: r.u, n: r.n, s: r.s, dead: r.dead, left: r.left, d: this.remoteDist(r) }))].sort((a, b) => b.s - a.s);
+    const g = this.g, me = { u: this.uid, n: this.nick, s: g.score, dead: g.state === "over", me: true, d: g.distance, dmg: this.dmgBy[this.uid] || 0 };
+    return [me, ...Object.values(this.remotes).map(r => ({ u: r.u, n: r.n, s: r.s, dead: r.dead, left: r.left, d: this.remoteDist(r), dmg: this.dmgBy[r.u] || 0 }))].sort((a, b) => b.s - a.s);
   }
   checkEnd() {
     if (this.mode !== "racing") return;
     if (this.g.state !== "over" || Object.values(this.remotes).some(r => !r.dead)) { this.renderWait(); return; }
-    this.mode = "done"; const list = this.standings(), place = list.findIndex(x => x.me), n = list.length;
-    const lost = !!this.lost, coins = n > 1 && !lost ? NET_CONFIG.PRIZE_COINS[place] || 0 : 0, xp = n > 1 && !lost ? NET_CONFIG.PRIZE_XP[place] || 0 : 0;   // sin conexión no hay premio
-    const s = this.g.save; s.data.coins += coins; const ups = this.g.season.addXP(xp); s.save();
-    s.data.netWins = (s.data.netWins || 0) + (place === 0 && n > 1 && !lost ? 1 : 0); s.save();
-    this.result = { list, place, coins, xp, ups, lost };
+    if (this.coop && !this.lost && !this.endConfirm) {   // el cooperativo espera un momento por si alguien se acaba de levantar
+      this.endConfirm = setTimeout(() => { this.endConfirm = null; if (this.mode === "racing" && this.g.state === "over" && Object.values(this.remotes).every(r => r.dead)) this.finish(); else this.renderWait(); }, 1500);
+      return;
+    }
+    if (!this.coop || this.lost) this.finish();
+  }
+  finish() {
+    if (this.mode !== "racing") return;
+    this.mode = "done"; clearTimeout(this.endConfirm); this.endConfirm = null;
+    const g = this.g, list = this.standings(), place = list.findIndex(x => x.me), n = list.length, lost = !!this.lost;
+    g.bankRun();   // las monedas de la partida (en online se guardan al final)
+    let coins = 0, xp = 0, team = 0;
+    if (this.coop) {
+      team = list.reduce((a, p) => a + p.s, 0);
+      if (!lost && n > 1) { coins = Math.min(400, Math.round(team / 25)) + 60 * this.bossLv.size; xp = Math.min(250, Math.round(team / 40)) + 40 * this.bossLv.size; }
+    } else if (!lost && n > 1) { coins = NET_CONFIG.PRIZE_COINS[place] || 0; xp = NET_CONFIG.PRIZE_XP[place] || 0; }
+    const s = g.save; s.data.coins += coins; const ups = g.season.addXP(xp);
+    if (!this.coop) s.data.netWins = (s.data.netWins || 0) + (place === 0 && n > 1 && !lost ? 1 : 0);
+    s.save();
+    this.result = { list, place, coins, xp, ups, lost, coop: this.coop, team, bosses: this.bossLv.size };
     if (this.room) this.room.track(this.meta());
     this.showResult();
   }
@@ -11006,10 +11117,10 @@ class NetPlay {
   render() { if (this.g.netScreen) this.g.netScreen.render(); }
   renderWait() { if (this.g.state === "over" && this.g.overShown && this.mode === "racing") this.g.netScreen.showWaiting(); }
   showResult() { this.g.netScreen.showResult(this.result); }
-  // ----- Partida rápida (sala de espera común) -----
+  // ----- Partida rápida (sala de espera común; siempre en modo Carrera) -----
   async quickMatch() {
     await this.ensureRt(); this.stopQuick(); if (this.room) this.leaveRoom();
-    this.mode = "quick"; this.joinedAt = Date.now();
+    this.mode = "quick"; this.joinedAt = Date.now(); this.roomMode = "race";
     const lb = this.lobby = await this.rt.channel("dino-lobby", this.uid);
     lb.on("presence", p => this.onLobby(p));
     lb.on("b:match", d => { if (d.members.includes(this.uid) && this.mode === "quick") this.goMatch(d); });
@@ -11021,50 +11132,66 @@ class NetPlay {
     this.lobbyCount = list.length; this.render();
     if (!list.length || list[0].u !== this.uid || list.length < 2) { clearTimeout(this.mmTimer); this.mmTimer = null; return; }
     const go = () => { if (this.mode !== "quick" || !this.lobby) return; const cur = Object.values(this.lobby.presence).filter(m => m && m.u).sort((a, b) => a.j - b.j);
-      if (cur.length < 2) return; const d = { code: roomCode(), members: cur.slice(0, NET_CONFIG.MAX).map(m => m.u) }; this.lobby.send("match", d); this.goMatch(d); };
+      if (cur.length < 2) return; const d = { code: roomCode(), members: cur.slice(0, NET_CONFIG.MAX).map(m => m.u), host: this.uid }; this.lobby.send("match", d); this.goMatch(d); };
     if (list.length >= NET_CONFIG.MAX) { clearTimeout(this.mmTimer); go(); }
     else if (!this.mmTimer) this.mmTimer = setTimeout(go, NET_CONFIG.QUICK_WAIT * 1000);   // espera unos segundos por si entra alguien más
   }
   async goMatch(d) {
     this.stopQuick(); this.expect = d.members.length;
-    try { await this.joinRoom(d.code, true, true); this.say("¡Rival encontrado! Empezando…", "ok"); }
+    try { await this.joinRoom(d.code, d.host === this.uid, true); this.say("¡Rival encontrado! Empezando…", "ok"); }
     catch (e) { this.say(e.message, "err"); }
   }
   stopQuick() { clearTimeout(this.mmTimer); this.mmTimer = null; if (this.lobby) { try { this.lobby.leave(); } catch (e) {} this.lobby = null; } if (this.mode === "quick") this.mode = "idle"; }
-  // ----- Dibujo de los rivales (fantasmas con su apodo) -----
+  // ----- Dibujo de los rivales: semitransparentes, con el contorno de su color y su apodo -----
   drawGhosts(c) {
     if (this.mode !== "racing" && this.mode !== "done") return;
-    const g = this.g, myD = g.distance, S = CONFIG.RAPTOR_SCALE;
+    const g = this.g, myD = g.distance, S = CONFIG.RAPTOR_SCALE, pl = g.player;
     Object.values(this.remotes).forEach((r, idx) => {
-      const x = g.player.x + (this.remoteDist(r) - myD) * (r.dead ? 1 : 1), lane = clamp(r.l, 0, 1), sk = SE.get(r.sk) ? r.sk : CONFIG.DEFAULT_SKIN;
+      if (r.left) return;
+      const x = pl.x + (this.remoteDist(r) - myD), lane = clamp(r.l, 0, 1), sk = SE.get(r.sk) ? r.sk : CONFIG.DEFAULT_SKIN, col = this.colors[r.u] || "#ffffff";
       if (x < -60 || x > W + 10) {   // fuera de la pantalla: flecha con la distancia
         if (r.dead) return;
-        const right = x > W, pts = Math.round(Math.abs(this.remoteDist(r) - myD) / CONFIG.PX_PER_POINT), p = toScreen(lane, right ? W - 40 : 40, 60);
-        g.ui.pill(c, `${right ? "" : "◀ "}${r.n} ${right ? "+" : "-"}${pts}${right ? " ▶" : ""}`, right ? W - 90 : 90, 230 + idx * 24, 9, "#e8f4ff", "rgba(30,60,110,0.85)");
+        const right = x > W, pts = Math.round(Math.abs(this.remoteDist(r) - myD) / CONFIG.PX_PER_POINT);
+        g.ui.pill(c, `${right ? "" : "◀ "}${r.n} ${right ? "+" : "-"}${pts}${right ? " ▶" : ""}`, right ? W - 90 : 90, 230 + idx * 24, 9, "#16111f", col);
         return;
       }
+      const overlap = Math.abs(lane - pl.laneT) < 0.35 && Math.abs(x - pl.x) < 60;   // encima de ti: más transparente
       r.st.tick = Math.floor(g.time / CONFIG.SKIN_TICK); r.st.duck = !!r.sl; r.st.hat = r.h || null;
-      c.save(); applyLane(c, lane); c.translate(x, 0); c.globalAlpha = r.dead ? 0.25 : 0.55;
-      drawRaptor(c, sk, r.st, r.y / S, r.dead, false); c.restore();
-      const tp = toScreen(lane, x + 36, r.y + (r.sl ? 50 : 90) + idx * 20);   // etiquetas escalonadas si van a la par
-      g.ui.pill(c, r.n.toUpperCase() + (r.dead ? " ✖" : ""), clamp(tp.x, 70, W - 70), tp.y, 9, r.dead ? "#ff8a8a" : "#e8f4ff", "rgba(30,60,110,0.8)");
+      const jumpY = r.y / S, frame = r.dead ? "idle" : jumpY > 0 ? "jump" : r.sl ? (r.st.tick % 4 < 2 ? "duck1" : "duck2") : SE.runFrame(sk, r.st.tick).frame, oy = Math.round(-1 - SE.H + 1 - jumpY);
+      c.save(); applyLane(c, lane); c.translate(x, 0);
+      const a = r.dead ? 0.2 : overlap ? 0.28 : 0.45;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) SE.drawSprite(c, sk, frame, dx * 0.7, oy + dy * 0.7, S, r.st.tick, { tint: col, alpha: a + 0.25 });   // contorno de su color
+      c.globalAlpha = a; drawRaptor(c, sk, r.st, jumpY, r.dead, false);
+      c.restore();
+      const tp = toScreen(lane, x + 36, r.y + (r.sl ? 50 : 90) + idx * 20 + (overlap ? 26 : 0));   // etiquetas escalonadas; si va encima de ti, más arriba
+      g.ui.pill(c, r.n.toUpperCase() + (r.dead ? (this.coop ? " 💤" : " ✖") : ""), clamp(tp.x, 70, W - 70), tp.y, 9, "#16111f", r.dead ? "#8a8098" : col);
     });
   }
-  // Marcador de la carrera (debajo del panel de puntos)
+  // Marcador (a la derecha): posiciones en la carrera, estado del equipo en el cooperativo
   drawHud(c, ui) {
     const g = this.g; if (this.mode !== "racing" && this.mode !== "done") return;
-    const list = this.standings(), x = W - 210, y = 132, h = 18 * list.length + 30;
+    const list = this.standings(), x = W - 210, y = 132, h = 18 * list.length + 30 + (this.coop ? 18 : 0);
     ui.panel(c, x, y, 196, h);
-    ui.text(c, `🌐 CARRERA · SALA ${this.code}`, x + 10, y + 12, 9, UI_T.dim);
+    ui.text(c, this.coop ? `🤝 EQUIPO · SALA ${this.code}` : `🏁 CARRERA · SALA ${this.code}`, x + 10, y + 12, 9, UI_T.dim);
     list.forEach((p, i) => {
-      const yy = y + 30 + i * 18, col = p.me ? UI_T.weak : p.dead ? "#8a8098" : UI_T.text;
-      ui.text(c, `${i + 1}º ${p.n.slice(0, 10)}${p.dead ? " ✖" : ""}`, x + 10, yy, 10, col);
-      ui.text(c, fmtInt(p.s), x + 186, yy, 10, col, "right");
+      const yy = y + 30 + i * 18, col = p.dead ? "#8a8098" : UI_T.text, dot = this.colors[p.u] || "#fff";
+      c.fillStyle = UI_T.line; c.fillRect(x + 8, yy - 6, 12, 12); c.fillStyle = dot; c.fillRect(x + 10, yy - 4, 8, 8);
+      ui.text(c, `${this.coop ? "" : i + 1 + "º "}${p.n.slice(0, 10)}${p.me ? " (tú)" : ""}${p.dead ? (this.coop ? " 💤" : " ✖") : ""}`, x + 26, yy, 10, p.me ? UI_T.weak : col);
+      ui.text(c, fmtInt(p.s), x + 186, yy, 10, p.me ? UI_T.weak : col, "right");
     });
-    const ty = y + h + 18;
-    ui.pill(c, `🎯 TRAMPAS ×${this.traps}${this.g.touchMode ? "" : " · Q"}`, x + 98, ty, 9, this.traps ? "#16111f" : UI_T.dim, this.traps ? UI_T.weak : UI_T.pill);
+    if (this.coop) ui.text(c, `JEFES DERROTADOS: ${this.bossLv.size} · EQUIPO ${fmtInt(list.reduce((a, p) => a + p.s, 0))}`, x + 10, y + h - 12, 9, UI_T.weak);
+    const ty = y + h + 18, key = this.g.touchMode ? "" : " · Q";
+    ui.pill(c, this.coop ? `🎁 ESCUDOS ×${this.traps}${key}` : `🎯 TRAMPAS ×${this.traps}${key}`, x + 98, ty, 9, this.traps ? "#16111f" : UI_T.dim, this.traps ? (this.coop ? UI_T.go : UI_T.weak) : UI_T.pill);
+    if (g.netDraft && g.state === "playing") ui.pill(c, "💨 ¡REBUFO! +10 % VELOCIDAD", W / 2, H - 40, 10, "#16111f", UI_T.info);
   }
 }
+// Daño a los jefes: en el cooperativo se comparte con el equipo (el daño que llega del equipo no se reenvía)
+const _bossDamageNet = Boss.prototype.damage;
+Boss.prototype.damage = function (n, kind, at) {
+  const h0 = this.hp, r = _bossDamageNet.call(this, n, kind, at);
+  if (r && kind !== "team" && this.game.netCoop) this.game.net.sendBossDmg(h0 - this.hp);
+  return r;
+};
 // ---------- Pantalla Online (apodo, partida rápida, crear / unirse a sala, sala de espera) y resultados ----------
 class NetScreen {
   constructor(game) {
@@ -11079,14 +11206,16 @@ class NetScreen {
       game.online.setNick(n).catch(() => {});   // también para el ranking (si el servidor lo permite)
     });
     bind("netQuick", async () => { this.needNick(); net.say("Buscando rival…"); await net.quickMatch(); });
-    bind("netCreate", async () => { this.needNick(); await net.createRoom(); net.say("Sala creada. Pasa el código a tus amigos.", "ok"); });
+    bind("netCreate", async () => { this.needNick(); await net.createRoom(); net.say("Sala creada. Elige el modo y pasa el código a tus amigos.", "ok"); });
     bind("netJoin", async () => { this.needNick(); await net.joinRoom($("netCodeIn").value);
       if (Object.keys(net.members).length < 2) net.say("No hay nadie en esa sala todavía: comprueba el código o espera a tus amigos.", "err"); else net.say("¡Dentro! Pulsa «Estoy listo».", "ok"); });
     bind("netCancel", () => { net.stopQuick(); net.say(""); this.render(); });
     bind("netReady", () => net.setReady(!net.ready));
+    bind("netModeRace", () => net.setRoomMode("race"));
+    bind("netModeCoop", () => net.setRoomMode("coop"));
     bind("netStart", () => { if (Object.keys(net.members).length < 2) throw new Error("Hacen falta al menos 2 jugadores."); net.startRace(); });
     bind("netLeave", () => { net.leaveRoom(); net.say(""); this.render(); });
-    bind("nrAgain", () => { if (!net.room) { net.leaveAll(); this.g.showMenu(); return; } this.res.classList.add("hidden"); net.mode = "room"; net.ready = false; game.netRace = false; game.state = "net"; game.reset(); game.closeScreens(); this.el.classList.remove("hidden"); if (net.room) net.room.track(net.meta()); this.render(); });
+    bind("nrAgain", () => { if (!net.room) { net.leaveAll(); this.g.showMenu(); return; } this.res.classList.add("hidden"); net.mode = "room"; net.ready = false; game.netRace = false; game.netCoop = false; game.netDraft = false; game.state = "net"; game.reset(); game.closeScreens(); this.el.classList.remove("hidden"); if (net.room) net.room.track(net.meta()); this.render(); });
     bind("nrExit", () => { this.res.classList.add("hidden"); net.leaveAll(); game.showMenu(); });
     for (const id of ["netNick", "netCodeIn"]) $(id).addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") $(id === "netNick" ? "netNickOk" : "netJoin").click(); });
   }
@@ -11107,10 +11236,14 @@ class NetScreen {
     if (net.mode === "quick") $("netSearchTxt").textContent = `Buscando rival… (${Math.max(0, (net.lobbyCount || 1) - 1)} esperando)`;
     if (!inRoom) return;
     $("netCode").textContent = net.code;
+    const mode = net.host ? net.roomMode : net.hostMode, M = NET_MODES[mode];
+    for (const [id, m] of [["netModeRace", "race"], ["netModeCoop", "coop"]]) { const b = $(id); b.classList.toggle("sel", mode === m); b.disabled = !net.host && mode !== m; }
+    $("netModeDesc").textContent = `${M.icon} ${M.desc}${net.host ? "" : " (lo elige el anfitrión)"}`;
     const list = net.sortedMembers(), box = $("netPlayers"); box.innerHTML = "";
     list.forEach((m, i) => {
       const d = document.createElement("div"); d.className = "net-p" + (m.ready ? " ready" : "") + (m.u === net.uid ? " me" : "");
-      d.innerHTML = `<canvas width="96" height="60"></canvas><b>${escapeHtml(m.n)}${i === 0 ? " 👑" : ""}</b><small>${m.ready ? "✔ Listo" : "Esperando…"}</small>`;
+      d.style.setProperty("--pc", NET_CONFIG.COLORS[i % NET_CONFIG.COLORS.length]);
+      d.innerHTML = `<canvas width="96" height="60"></canvas><b>${escapeHtml(m.n)}${i === 0 ? " 👑" : ""}${m.u === net.uid ? " (tú)" : ""}</b><small>${m.ready ? "✔ Listo" : "Esperando…"}</small>`;
       const cv = d.querySelector("canvas"), x = cv.getContext("2d"); x.imageSmoothingEnabled = false;
       drawSkinPreview(x, SE.get(m.sk) ? m.sk : CONFIG.DEFAULT_SKIN, { tick: 3, speed: 2, trail: null, hat: m.h || null, trailFx: null }, 96, 60, 2);
       box.appendChild(d);
@@ -11119,22 +11252,34 @@ class NetScreen {
     $("netReady").textContent = net.ready ? "✔ Listo (quitar)" : "Estoy listo";
     $("netStart").classList.toggle("hidden", !net.host);
     $("netStart").disabled = list.length < 2 || !list.every(m => m.ready);
-    $("netRoomHint").textContent = net.host ? (list.length < 2 ? "Esperando a que entre alguien con el código…" : list.every(m => m.ready) ? "¡Todos listos! Pulsa Empezar." : "Esperando a que todos estén listos…") : "El anfitrión (👑) empezará la carrera cuando todos estéis listos.";
+    $("netRoomHint").textContent = net.host ? (list.length < 2 ? "Esperando a que entre alguien con el código…" : list.every(m => m.ready) ? "¡Todos listos! Pulsa Empezar." : "Esperando a que todos estén listos…") : "El anfitrión (👑) empezará la partida cuando todos estéis listos.";
   }
   showWaiting() {
     const net = this.g.net, $ = id => document.getElementById(id);
-    $("nrTitle").textContent = "¡ELIMINADO!"; $("nrSub").textContent = "Esperando a que terminen los demás…";
-    $("nrList").innerHTML = net.standings().map((p, i) => `<div class="${p.me ? "me" : ""}"><b>${i + 1}º</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.dead ? (p.left ? "se fue" : "✖") : "🏃 corriendo"}</small></div>`).join("");
+    if (net.coop) {
+      const anyAlive = Object.values(net.remotes).some(r => !r.dead);
+      $("nrTitle").textContent = "¡HAS CAÍDO!";
+      $("nrSub").textContent = anyAlive ? `Te levantas en ${Math.max(0, Math.ceil(net.reviveT))} s o en cuanto tu equipo derrote a un jefe` : "Todo el equipo ha caído…";
+    } else { $("nrTitle").textContent = "¡ELIMINADO!"; $("nrSub").textContent = "Esperando a que terminen los demás…"; }
+    $("nrList").innerHTML = net.standings().map((p, i) => `<div class="${p.me ? "me" : ""}" style="--pc:${net.colors[p.u] || "#fff"}"><b>${net.coop ? "●" : i + 1 + "º"}</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.dead ? (p.left ? "se fue" : net.coop ? "💤 caído" : "✖") : "🏃 corriendo"}</small></div>`).join("");
     $("nrActions").classList.add("hidden"); this.res.classList.remove("hidden");
   }
   showResult(r) {
-    const $ = id => document.getElementById(id), n = r.list.length;
-    $("nrTitle").textContent = r.lost ? "CONEXIÓN PERDIDA" : n < 2 ? "FIN DE LA CARRERA" : r.place === 0 ? "¡HAS GANADO!" : `${r.place + 1}º PUESTO`;
-    $("nrSub").textContent = r.lost ? "Se cortó la conexión con la sala: la carrera no cuenta (las monedas recogidas sí)." : n < 2 ? "Te has quedado solo en la sala." : `+${r.coins} monedas · +${r.xp} XP del pase${r.ups.length ? " · ¡subes de nivel en el pase!" : ""}`;
-    $("nrList").innerHTML = r.list.map((p, i) => `<div class="${p.me ? "me" : ""} p${i + 1}"><b>${["🥇", "🥈", "🥉", "4º"][i] || i + 1 + "º"}</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.left ? "se fue" : ""}</small></div>`).join("");
-    $("nrAgain").classList.toggle("hidden", !this.g.net.room);   // sin conexión no hay revancha
+    const $ = id => document.getElementById(id), n = r.list.length, net = this.g.net;
+    if (r.coop) {
+      const mvp = r.list.slice().sort((a, b) => b.dmg - a.dmg)[0];
+      $("nrTitle").textContent = r.lost ? "CONEXIÓN PERDIDA" : "¡BUEN TRABAJO, EQUIPO!";
+      $("nrSub").textContent = r.lost ? "Se cortó la conexión con la sala: la partida no cuenta (las monedas recogidas sí)."
+        : `Equipo: ${fmtInt(r.team)} puntos · ${r.bosses} jefe${r.bosses === 1 ? "" : "s"} derrotado${r.bosses === 1 ? "" : "s"} · +${r.coins} monedas · +${r.xp} XP${r.ups.length ? " · ¡subes de nivel en el pase!" : ""}`;
+      $("nrList").innerHTML = r.list.map(p => `<div class="${p.me ? "me" : ""}" style="--pc:${net.colors[p.u] || "#fff"}"><b>${mvp && mvp.u === p.u && mvp.dmg > 0 ? "⭐" : "●"}</b><span>${escapeHtml(p.n)}${mvp && mvp.u === p.u && mvp.dmg > 0 ? " · MVP" : ""}</span><em>${fmtInt(p.s)}</em><small>${p.left ? "se fue" : `💥 ${p.dmg} al jefe`}</small></div>`).join("");
+    } else {
+      $("nrTitle").textContent = r.lost ? "CONEXIÓN PERDIDA" : n < 2 ? "FIN DE LA CARRERA" : r.place === 0 ? "¡HAS GANADO!" : `${r.place + 1}º PUESTO`;
+      $("nrSub").textContent = r.lost ? "Se cortó la conexión con la sala: la carrera no cuenta (las monedas recogidas sí)." : n < 2 ? "Te has quedado solo en la sala." : `+${r.coins} monedas · +${r.xp} XP del pase${r.ups.length ? " · ¡subes de nivel en el pase!" : ""}`;
+      $("nrList").innerHTML = r.list.map((p, i) => `<div class="${p.me ? "me" : ""} p${i + 1}" style="--pc:${net.colors[p.u] || "#fff"}"><b>${["🥇", "🥈", "🥉", "4º"][i] || i + 1 + "º"}</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.left ? "se fue" : ""}</small></div>`).join("");
+    }
+    $("nrAgain").classList.toggle("hidden", !net.room);   // sin conexión no hay revancha
     $("nrActions").classList.remove("hidden"); this.res.classList.remove("hidden");
-    if (r.place === 0 && n > 1 && !r.lost) this.g.sfx.jackpot();
+    if (!r.lost && (r.coop || (r.place === 0 && n > 1))) this.g.sfx.jackpot();
   }
 }
 
@@ -11262,7 +11407,7 @@ class Game {
     if (["playing", "paused", "choice", "tip"].includes(this.state) || (this.state === "over" && !this.banked)) this.bankRun();   // al abandonar se guardan las monedas
     const fromSub = MENU_STATES.includes(this.state) && this.state !== "menu" && this.state !== "play" || this.history.visible;   // vuelve al submenú de donde vino
     if (this.net && (this.netRace || this.net.mode !== "idle")) this.net.leaveAll();   // salir del online
-    this.versus = false; this.daily = false; this.netRace = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
+    this.versus = false; this.daily = false; this.netRace = this.netCoop = this.netDraft = false; this.endTutorial(); this.reset(); this.state = "menu"; this.closeScreens(); this.ui.showMenu(fromSub);
   }
   // ----- Tutorial (nivel de práctica) -----
   // Nivel secreto: partida completa desde el nivel 1 sin morir (ni perder vidas ni revivir)
@@ -11271,7 +11416,7 @@ class Game {
   startTutorial() {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = false; this.daily = false; this.netRace = false; this.mode = MODES.normal; this.startLevel = 1;
+    this.versus = false; this.daily = false; this.netRace = this.netCoop = this.netDraft = false; this.mode = MODES.normal; this.startLevel = 1;
     this.tutorial = new Tutorial(this);
     this.reset(); this.fury.reset(0); this.state = "playing"; this.closeScreens();
     this.level.banner = 0; this.bosses.nextAt = 1e9; this.tutSkip.classList.remove("hidden");
@@ -11293,7 +11438,7 @@ class Game {
   start(modeId = this.mode.id, startLevel = this.startLevel, daily = false) {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = false; this.daily = daily; this.netRace = false; this.endTutorial();
+    this.versus = false; this.daily = daily; this.netRace = this.netCoop = this.netDraft = false; this.endTutorial();
     if (daily) { modeId = "normal"; startLevel = 1; }   // carrera diaria: Normal desde el nivel 1
     this.mode = MODES[modeId] || MODES.normal; if (!daily) { this.save.data.lastMode = this.mode.id; this.save.save(); }
     if (startLevel > 1 && !this.checkpoints.owned(startLevel)) startLevel = 1;
@@ -11315,7 +11460,7 @@ class Game {
   startVersus(modeId = this.versus ? this.mode.id : CONFIG.VERSUS_MODE) {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
-    this.versus = true; this.daily = false; this.netRace = false; this.endTutorial(); this.mode = MODES[modeId] || MODES.normal; this.startLevel = 1;
+    this.versus = true; this.daily = false; this.netRace = this.netCoop = this.netDraft = false; this.endTutorial(); this.mode = MODES[modeId] || MODES.normal; this.startLevel = 1;
     this.p2SkinId = this.pickP2Skin();
     this.reset(); this.player.setLane(0); this.p2.setLane(1);
     for (const p of this.players) p.lives = this.mode.lives;   // Fácil: 3 vidas por raptor
@@ -11324,11 +11469,11 @@ class Game {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
   // Carrera online: Normal desde el nivel 1, sin jefes ni mejoras, con el recorrido de la semilla de la sala
-  startNet(seed) {
+  startNet(seed, coop = false) {
     this.sfx.unlock();
     if (["playing", "paused", "choice", "tip"].includes(this.state)) this.bankRun();
     this.versus = false; this.daily = false; this.netRace = true; this.endTutorial(); this.mode = MODES.normal; this.startLevel = 1;
-    this.reset(); this.netRace = true;
+    this.reset(); this.netRace = true; this.netCoop = !!coop; this.netDraft = false; this.build.cache = {};
     this.netRng = { spawn: mulberry32(seed), mount: mulberry32(seed ^ 0x51ed27), rogue: mulberry32(seed ^ 0xa5a5a5), pool: mulberry32(seed ^ 0x3c6ef3), weather: mulberry32(seed ^ 0x7f4a7c) };
     this.state = "playing"; this.closeScreens(); this.netWait = NET_CONFIG.COUNTDOWN;
     this.run.lastPowerup = this.run.lastRoar = this.run.lastLane = 0;
@@ -11339,7 +11484,24 @@ class Game {
   // Carrera online ganada (eres el último y ya vas primero): se acaba como una partida normal, sin choque
   netFinish() {
     if (this.state !== "playing") return;
-    this.state = "over"; this.overTime = 0; this.overShown = false; this.sfx.victory(); this.bankRun(); this.net.onLocalDeath();
+    this.state = "over"; this.overTime = 0; this.overShown = false; this.sfx.victory(); this.net.onLocalDeath();   // las monedas se guardan al cerrar la carrera
+  }
+  // Cooperativo: el equipo te levanta (tras un jefe derrotado o pasados unos segundos)
+  netRevive() {
+    if (!this.netRace || this.state !== "over") return;
+    const p = this.player;
+    this.obstacles = this.obstacles.filter(o => o.x > PLAYER_X + 700);   // despeja el camino
+    p.y = 0; p.vy = 0; p.onGround = true; p.slideTime = 0; p.dead = false;
+    this.state = "playing"; this.overShown = false; this.overTime = 0; this.lives = 1; this.grace = 3;
+    this.effects.shield = this.effectMax.shield = 3;
+    this.netScreen.res.classList.add("hidden"); this.netScreen.el.classList.add("hidden");
+    this.floatText(p.laneT, p.x + 40, 150, "¡DE VUELTA!", UI_T.go, 24); this.sfx.powerup();
+  }
+  // Cooperativo: un compañero te regala un escudo
+  receiveGift(type, from) {
+    if (this.state !== "playing" || !(type in this.effects)) return;
+    this.effects[type] = this.effectMax[type] = NET_CONFIG.GIFT_TIME;
+    this.floatText(this.player.laneT, this.player.x + 40, this.player.y + 120, `🎁 ${String(from || "").toUpperCase()} TE PROTEGE`, UI_T.info, 16); this.sfx.powerup();
   }
   // Trampa que te lanza un rival online (aparece en tu carril, delante de ti)
   receiveNetTrap(typeId, from) {
@@ -11561,8 +11723,9 @@ class Game {
     if (!s.bossesDefeated.includes(id)) s.bossesDefeated.push(id);
     B.defeatedRun.add(id); this.save.save();
     this.sfx.bossDefeat(); this.addShake(0.6, 10);
+    if (this.netCoop) this.net.onLocalBossDefeated();   // avisa al equipo (y levanta a los caídos)
     this.bossBanner = B.pending.secret ? { t: 4, text: "¡JEFE SECRETO DERROTADO!", sub: `+${fmtNum(coins)} monedas · +${SECRET_CONFIG.SEASON_XP} XP del pase · ¡Eres una leyenda!`, color: "#ff5ce1" }
-      : { t: 2.5, text: "¡BOSS DERROTADO!", sub: `+${fmtNum(coins)} monedas · +${CONFIG.BOSS_POINTS} puntos`, color: "#ffd23f" };
+      : { t: 2.5, text: this.netCoop ? "¡JEFE DERROTADO EN EQUIPO!" : "¡BOSS DERROTADO!", sub: `+${fmtNum(coins)} monedas · +${CONFIG.BOSS_POINTS} puntos`, color: "#ffd23f" };
     this.ach.event("bossDefeated", { id, flawless: !B.hitTaken, fury: b.fury, tier: B.pending.tier, time: b.fightT });
     this.build.bossesBeaten++;
     if (this.rogue) this.rogue.queue("boss", 2.6);   // tras la animación de victoria: ELIGE UNA MEJORA
@@ -11643,8 +11806,8 @@ class Game {
     const c = this.player.center, sk = SkinCatalog.get(this.skinId), cols = sk ? [sk.pal.b, sk.pal.o, "#ffffff"] : ["#ffffff"];
     for (let i = 0; i < 20; i++) this.particles.push(new Particle(this.player.logicalLane, c.x, c.y, rand(-250, 250), rand(100, 500), rand(0.5, 1), choice(cols), rand(3, 6)));
     if (navigator.vibrate) try { navigator.vibrate(150); } catch (e) {}
+    if (this.netRace) { this.net.onLocalDeath(); return; }   // online: se guarda al cerrar la carrera (en cooperativo puedes volver)
     this.bankRun();
-    if (this.netRace) this.net.onLocalDeath();
   }
 
   // ----- Actualización (dt en segundos) -----
@@ -11710,7 +11873,7 @@ class Game {
     }
     if (!this.versus) this.mounts.update(gdt, dt);
     if (this.tutorial) { this.tutorial.update(gdt, dt); }
-    else if (this.versus || this.netRace) { this.level.check(); this.spawner.update(); }   // multijugador (local u online): sin jefes
+    else if (this.versus || (this.netRace && !this.netCoop)) { this.level.check(); this.spawner.update(); }   // multijugador (local u online): sin jefes
     else if (!this.bosses.active) {
       this.level.check();                                    // durante un boss el cambio de nivel espera
       this.bosses.update(gdt, dt);                           // a mitad de nivel: "¡PELIGRO!" y llega el boss
