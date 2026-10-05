@@ -873,7 +873,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 23 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 24 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -10588,7 +10588,7 @@ function petCanvas(id, body, accent, f) {
   const sp = PET_BY_ID[id]; if (!sp) return null;
   cv = document.createElement("canvas"); cv.width = 16; cv.height = 12; const c = cv.getContext("2d");
   const pal = { o: "#1a1424", b: body, s: shadeHex(body, -0.3), l: shadeHex(body, 0.45), a: accent, e: "#ffffff", p: "#15161c" };
-  sp.frames[f % sp.frames.length].forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") { c.fillStyle = pal[ch] || "#f0f"; c.fillRect(x, y, 1, 1); } }));
+  const n = sp.frames.length; sp.frames[(((f | 0) % n) + n) % n].forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") { c.fillStyle = pal[ch] || "#f0f"; c.fillRect(x, y, 1, 1); } }));
   if (_petCache.size > 200) _petCache.clear();
   _petCache.set(k, cv); return cv;
 }
@@ -10607,7 +10607,7 @@ class PetManager {
   get x() { return this.g.player.x - PET_CONFIG.BEHIND; }
   // Animación (también en la portada) y, durante la partida, recoger monedas
   update(dt, playing) {
-    if (!this.on) return;
+    if (!this.on || !(dt > 0)) return;
     this.t += dt; this.tag = Math.max(0, this.tag - dt);
     const pl = this.g.player, jumping = pl.y > 2 && pl.vy > 0;
     if (jumping && !this.wasJump) this.hopDelay = 0.12;   // salta un poco después que tú
@@ -12159,14 +12159,14 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && gam
 // =====================================================================
 //  Bucle principal: requestAnimationFrame + delta time
 // =====================================================================
-let last = performance.now();
+let last = performance.now(), loopErrors = 0;
 function loop(now) {
-  const dt = Math.min((now - last) / 1000, 0.05);   // limita saltos grandes (pestaña en segundo plano)
-  if (!document.hidden) game.frameStat(now - last);
-  last = now;
-  game.update(dt);
-  game.draw();
-  requestAnimationFrame(loop);
+  requestAnimationFrame(loop);   // se pide el siguiente fotograma primero: un error no puede congelar el juego
+  const dt = clamp((now - last) / 1000, 0, 0.05);   // nunca negativo (el primer fotograma puede llegar «antes») y sin saltos grandes
+  if (!document.hidden && now > last) game.frameStat(now - last);
+  last = Math.max(last, now);
+  try { game.update(dt); game.draw(); }
+  catch (e) { if (loopErrors++ < 5) console.error("Error en el bucle del juego:", e); }
 }
 requestAnimationFrame(loop);
 })();
