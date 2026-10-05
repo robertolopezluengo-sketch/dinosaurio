@@ -711,6 +711,13 @@
   #touch button.t-pause { flex: 0 0 64px; }
   /* Avisos y logros */
   .ach-toast { background: linear-gradient(180deg, #3d3160, #231b38); box-shadow: 4px 4px 0 var(--line), 0 0 24px rgba(255,210,63,.25); animation: slidein .3s cubic-bezier(.2,1.4,.4,1); }
+  /* Mascotas */
+  .pet-custom { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; background: linear-gradient(180deg, var(--surface-2), #261d3e); border: 2px solid var(--line); box-shadow: inset 0 2px 0 var(--bevel), 4px 4px 0 var(--line); padding: 12px; margin-bottom: 14px; text-align: left; }
+  .pet-custom canvas { width: 240px; height: 120px; image-rendering: pixelated; border: 2px solid var(--line); }
+  .pet-ctrl { flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px; }
+  #petName { font-family: var(--f-text); font-size: 16px; background: #14101f; color: var(--text); border: 2px solid var(--line); padding: 6px 8px; }
+  .pet-ctrl .btn { align-self: flex-start; }
+  .skin.item canvas { image-rendering: pixelated; }
 </style>
 </head>
 <body>
@@ -812,7 +819,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 19 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 20 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -1043,7 +1050,7 @@
       <button class="btn purple ghost" id="shopRoulette">Ruleta</button>
       <button class="btn" id="shopBack">← Volver</button>
     </div>
-    <div class="tabs"><button class="tab active" data-tab="skins">Skins</button><button class="tab" data-tab="hats">🎩 Accesorios</button><button class="tab" data-tab="checkpoints">Checkpoints</button><button class="tab" data-tab="editor">Editor</button><button class="tab" data-tab="eggs">🥚 Huevos</button></div>
+    <div class="tabs"><button class="tab active" data-tab="skins">Skins</button><button class="tab" data-tab="hats">🎩 Accesorios</button><button class="tab" data-tab="fx">✨ Estelas y rugidos</button><button class="tab" data-tab="pets">🐾 Mascotas</button><button class="tab" data-tab="checkpoints">Checkpoints</button><button class="tab" data-tab="editor">Editor</button><button class="tab" data-tab="eggs">🥚 Huevos</button></div>
     <div id="skinsPane">
       <div id="skinGrid" class="grid"></div>
       <h3 class="shop-sec">🔒 Exclusivas de logros</h3>
@@ -1054,8 +1061,29 @@
       <div id="designGrid" class="grid"></div>
     </div>
     <div id="hatPane" class="hidden">
-      <p class="touch-hint">Los accesorios se ponen encima de cualquier skin (también de tus diseños) y te siguen al correr, saltar y agacharte. Puedes llevar uno a la vez.</p>
-      <div id="hatGrid" class="grid"></div>
+      <p class="touch-hint">Tres huecos: cabeza, espalda y zapatillas. Puedes llevar uno de cada a la vez, encima de cualquier skin (también de tus diseños), y te siguen al correr, saltar y agacharte.</p>
+      <h3 class="shop-sec">🎩 Cabeza</h3><div id="hatGrid-head" class="grid"></div>
+      <h3 class="shop-sec">🎒 Espalda</h3><div id="hatGrid-back" class="grid"></div>
+      <h3 class="shop-sec">👟 Zapatillas</h3><div id="hatGrid-feet" class="grid"></div>
+    </div>
+    <div id="fxPane" class="hidden">
+      <p class="touch-hint">Valen para cualquier skin. La estela comprada se suma a la de tu skin y el rugido comprado sustituye al suyo (solo cambia el aspecto: el alcance es el mismo).</p>
+      <h3 class="shop-sec">💫 Estelas</h3><div id="trailGrid" class="grid"></div>
+      <h3 class="shop-sec">📢 Rugidos</h3><div id="roarGrid" class="grid"></div>
+    </div>
+    <div id="petPane" class="hidden">
+      <p class="touch-hint">Tu mascota corre por el carril del medio, entre los dos carriles, y cada pocos segundos te trae una moneda que tengas cerca. Ponle nombre y colores.</p>
+      <div id="petCustom" class="pet-custom hidden">
+        <canvas id="petPreview" width="240" height="120"></canvas>
+        <div class="pet-ctrl">
+          <div class="ed-row"><span class="ed-lbl">Nombre</span><input id="petName" maxlength="14" placeholder="Nombre"></div>
+          <small class="touch-hint">Especie: <b id="petSpecies"></b></small>
+          <div class="ed-row"><span class="ed-lbl">Cuerpo</span><div class="swatches" id="petBody"></div></div>
+          <div class="ed-row"><span class="ed-lbl">Detalle</span><div class="swatches" id="petAccent"></div></div>
+          <button class="btn ghost" id="petNone">Ir sin mascota</button>
+        </div>
+      </div>
+      <div id="petGrid" class="grid"></div>
     </div>
     <div id="cpPane" class="hidden">
       <div id="cpGrid" class="grid"></div>
@@ -1856,7 +1884,10 @@ const SECRET_CODE = "P1kach0$6767";
 function unlockAllUpgrades(g) {
   const s = g.save.data;
   for (const n of TREE_NODES) s.tree[n.id] = n.max;                                  // árbol de mejoras completo
-  for (const h of HATS) if (!s.hats.includes(h.id)) s.hats.push(h.id);                // todos los accesorios
+  for (const h of HATS) if (!s.hats.includes(h.id)) s.hats.push(h.id);                // todos los accesorios, estelas, rugidos y mascotas
+  for (const t of SHOP_TRAILS) if (!s.trails.includes(t.id)) s.trails.push(t.id);
+  for (const r of SHOP_ROARS) if (!s.roars.includes(r.id)) s.roars.push(r.id);
+  for (const p of PET_SPECIES) if (!s.pets.includes(p.id)) s.pets.push(p.id);
   for (const u of UPGRADES) s.album.ups[u.id] = 1;                                    // álbum completo
   for (const x of SYNERGIES) s.album.syn[x.id] = 1;
   for (const p of PACTS) s.album.pacts[p.id] = 1;
@@ -2072,6 +2103,34 @@ const rgbaHex = (hex, a) => { const [r, g, b] = hexRgb(hex); return `rgba(${r},$
 // =====================================================================
 const SE = window.DinoSkinsEngine;
 // ---------------------------------------------------------------------
+//  Estelas y rugidos comprables: se equipan aparte y valen para cualquier skin (la estela se suma a la del skin
+//  y el rugido comprado sustituye al suyo). Las estelas usan el motor del kit con «skins fantasma» trailfx-*.
+// ---------------------------------------------------------------------
+let TRAIL_EQUIPPED = null, ROAR_EQUIPPED = null;
+const SHOP_TRAILS = [
+  { id: "nieve", name: "Copos de nieve", price: 600, desc: "Nieve que cae detrás de ti", trail: { type: "snow", colors: ["#ffffff", "#c7f0ff", "#8fd3ff"] } },
+  { id: "llamas", name: "Llamas", price: 700, desc: "Fuego naranja que sube", trail: { type: "fire", colors: ["#fff3b0", "#ffd23f", "#ff9f1c", "#ff5a1f"] } },
+  { id: "confeti", name: "Confeti", price: 800, desc: "Destellos de colores", trail: { type: "sparkle", colors: ["#ff3b5c", "#ffd23f", "#3ddc84", "#41b8ff", "#ff5ce1"] } },
+  { id: "llamas-azules", name: "Llamas azules", price: 1000, desc: "El fuego más caliente", trail: { type: "fire", colors: ["#e0fbff", "#7df9ff", "#41b8ff", "#1a4fb0"] } },
+  { id: "estrellas", name: "Polvo de estrellas", price: 1100, desc: "Estrellas que parpadean", trail: { type: "stars", colors: ["#ffffff", "#ffe14d", "#8fd3ff"] } },
+  { id: "aura", name: "Aura esmeralda", price: 1300, desc: "Energía verde que te rodea", trail: { type: "aura", colors: ["#3ddc84", "#b8ffc8", "#ffffff"] } },
+  { id: "arcoiris", name: "Arcoíris", price: 1700, desc: "La estela clásica de 6 colores", trail: { type: "rainbow", colors: ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"] } },
+  { id: "prisma", name: "Cinta prismática", price: 2300, desc: "Arcoíris que va rotando con destellos", trail: { type: "prism", colors: ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"] } },
+];
+const SHOP_ROARS = [
+  { id: "r-fuego", name: "Rugido de fuego", price: 800, type: "fire", colors: ["#ffd23f", "#ff7a1a", "#ff3d00"] },
+  { id: "r-hielo", name: "Rugido helado", price: 800, type: "ice", colors: ["#ffffff", "#c7f0ff", "#8fd3ff"] },
+  { id: "r-rayo", name: "Rugido eléctrico", price: 1000, type: "bolt", colors: ["#41e1ff", "#ffffff", "#1a8fff"] },
+  { id: "r-cristal", name: "Rugido de cristal", price: 1000, type: "shards", colors: ["#b07cf0", "#e4d0ff", "#ffffff", "#7e45c9"] },
+  { id: "r-fantasma", name: "Rugido espectral", price: 1300, type: "ghost", colors: ["#e8ecff", "#a9b8ff", "#ffffff"] },
+  { id: "r-estelar", name: "Rugido estelar", price: 1400, type: "stars", colors: ["#ffffff", "#5ce1ff", "#ff8fd8", "#8a5cff"] },
+  { id: "r-arcoiris", name: "Rugido arcoíris", price: 1800, type: "rainbow", colors: ["#ff3b5c", "#ff9f1c", "#ffd23f", "#3ddc84", "#41b8ff", "#8a5cff"] },
+  { id: "r-dragon", name: "Rugido del dragón", price: 2200, type: "fire", colors: ["#e0ffe8", "#a0ffd0", "#2ac07a", "#ffe14d"], wings: true },
+  { id: "r-solar", name: "Rugido solar", price: 2600, type: "sun", colors: ["#ffffff", "#ffe680", "#ffc629", "#ff3df2"], flash: true, wings: true },
+];
+const TRAIL_BY_ID = Object.fromEntries(SHOP_TRAILS.map(t => [t.id, t])), SHOP_ROAR_BY_ID = Object.fromEntries(SHOP_ROARS.map(r => [r.id, r]));
+const TRAIL_SKINS = SHOP_TRAILS.map(t => ({ id: "trailfx-" + t.id, name: t.name, sprite: "raptor", rarity: "Común", price: 0, pal: {}, fx: { trail: t.trail }, hidden: true }));
+// ---------------------------------------------------------------------
 //  Pose agachada: se genera a partir del dibujo de cada sprite (cabeza adelantada y baja, cuerpo tumbado,
 //  patas flexionadas que alternan como al correr), así cada skin conserva sus manchas, crestas y cristales.
 // ---------------------------------------------------------------------
@@ -2113,7 +2172,7 @@ const SkinCatalog = {
   rebuild() {
     const extra = this.designs.filter(Boolean);
     if (this.preview) extra.push(this.preview);
-    SE.init({ sprites: SKINS_DATA.sprites, skins: [...this.base, ...EXCLUSIVE_SKINS, ...EGG_SKINS, ...SEASON_SKINS, ...extra] });
+    SE.init({ sprites: SKINS_DATA.sprites, skins: [...this.base, ...EXCLUSIVE_SKINS, ...EGG_SKINS, ...SEASON_SKINS, ...TRAIL_SKINS, ...extra] });
   },
   get shop() { return this.base; },                 // los 16 skins de la tienda, en orden
   get(id) { return SE.get(id); },
@@ -2131,8 +2190,9 @@ function drawRaptor(ctx, id, st, jumpY, dead, advance, sc = CONFIG.RAPTOR_SCALE,
   st.duck = !!st.duck && !dead && !(jumpY > 0);
   const frame = dead ? "idle" : jumpY > 0 ? "jump" : st.duck ? (st.tick % 4 < 2 ? "duck1" : "duck2") : SE.runFrame(id, st.tick).frame;
   const shifted = (fn, d) => { if (!st.duck) return fn(); ctx.save(); ctx.translate(d.x * sc, d.y * sc); fn(); ctx.restore(); };
-  const hat = st.hat === null ? null : HAT_BY_ID[st.hat || HAT_EQUIPPED];
-  if (hat && hat.slot === "back") drawHat(ctx, hat.id, id, ox, oy, sc, st.tick, frame, st.duck);   // accesorio equipado (espalda: detrás)
+  const eq = st.hat === null ? null : (st.hat || HAT_EQUIPPED);   // accesorios: { head, back, feet } (null = sin accesorios)
+  if (st.trailFx !== null) drawShopTrail(ctx, st, ox, oy, sc, frame, advance && !dead);     // estela comprada
+  if (eq && eq.back) drawHat(ctx, eq.back, id, ox, oy, sc, st.tick, frame, st.duck);   // espalda: por detrás del raptor
   if (acc && acc.back) shifted(() => acc.back(ctx, ox, oy, sc, st.tick, frame), DUCK_BACK);
   if (advance) {
     SE.drawDino(ctx, id, ox, groundY, sc, st, jumpY, dead);
@@ -2143,7 +2203,8 @@ function drawRaptor(ctx, id, st, jumpY, dead, advance, sc = CONFIG.RAPTOR_SCALE,
     SE.drawSprite(ctx, id, frame, ox, oy, sc, st.tick);
   }
   if (acc && acc.front) shifted(() => acc.front(ctx, ox, oy, sc, st.tick, frame), DUCK_HEAD);
-  if (hat && hat.slot !== "back") drawHat(ctx, hat.id, id, ox, oy, sc, st.tick, frame, st.duck);    // accesorio equipado (cabeza o cuello)
+  if (eq && eq.feet) drawHat(ctx, eq.feet, id, ox, oy, sc, st.tick, frame, st.duck);
+  if (eq && eq.head) drawHat(ctx, eq.head, id, ox, oy, sc, st.tick, frame, st.duck);
 }
 // =====================================================================
 //  Skins del pase de temporada: color que cambia (Prisma Celestial) y accesorios animados
@@ -2276,6 +2337,16 @@ const ROAR_STYLES = {
   "cristal-temporada": { name: "Rugido de cristal prismático", type: "shards", colors: ["#7df9ff", "#ffd0f0", "#fff6b0", "#c8b8ff"] },
   "nebulosa":         { name: "Rugido de nebulosa",  type: "stars",   colors: ["#ffffff", "#ff8fd8", "#5ce1ff", "#c8a0ff"], flash: true },
 };
+// Rugido que usa el jugador: el comprado y equipado o, si no, el del skin
+function roarStyleFor(id) { return SHOP_ROAR_BY_ID[ROAR_EQUIPPED] || roarStyle(id); }
+// Estela comprada: un emisor aparte del motor que sigue al raptor (st.trailFx: id forzado, null = ninguna)
+function drawShopTrail(ctx, st, ox, oy, sc, frame, advance) {
+  const id = st.trailFx || TRAIL_EQUIPPED; if (!id || !TRAIL_BY_ID[id]) return;
+  if (!st.trail2 || st.trail2.id !== "trailfx-" + id) st.trail2 = new SE.Trail("trailfx-" + id);
+  const tr = st.trail2;
+  if (advance) { tr.step(st.speed || 2); tr.emit(ox + (st.duck ? 0 : 0), oy + (st.duck ? 4 : 0), st.tick, st.speed || 2, frame); if (tr.p.length > CONFIG.TRAIL_MAX) tr.p.splice(0, tr.p.length - CONFIG.TRAIL_MAX); }
+  tr.draw(ctx, sc, st.tick);
+}
 function roarStyle(id) {
   const s = SE.get(id); if (!s) return null;
   return ROAR_STYLES[id] || (s.custom && ROAR_STYLES[s.fxFrom]) || null;
@@ -2332,7 +2403,7 @@ function roarPose(c, style, k, cx, cy, sc = 1) {
 function drawSkinPreview(c, id, st, w, h, sc, jumpY = 0) {
   const s = SE.get(id); if (!s) return;
   c.fillStyle = s.bg || "#2f3658"; c.fillRect(0, 0, w, h);
-  const gy = h - 10, style = roarStyle(id), rk = (st.tick % 46) / 8;   // ~0,7 s de rugido cada ~4 s
+  const gy = h - 10, style = st.roar !== undefined ? st.roar : roarStyle(id), rk = (st.tick % 46) / 8;   // ~0,7 s de rugido cada ~4 s
   c.fillStyle = s.ground || "#3a4166"; c.fillRect(0, gy, w, 3);
   c.globalAlpha = 0.35; for (let i = 0; i < 5; i++) c.fillRect(mod(i * 31 - st.tick * 6, w + 10) - 10, gy + 5, 6, 2); c.globalAlpha = 1;
   const x0 = Math.round((w - SE.W * sc) / 2) - sc * 2, roaring = style && rk < 1 && !jumpY;
@@ -2354,44 +2425,83 @@ function tickStates(states, dt, speed = 2) {
   }
 }
 // =====================================================================
-//  Accesorios equipables: se ponen encima de cualquier skin (cabeza, cuello o espalda) y siguen al raptor
-//  al correr, saltar y agacharse. Coordenadas en píxeles del sprite (24 × 20); se compran en la tienda.
+//  Accesorios equipables en 3 huecos: CABEZA, ESPALDA y ZAPATILLAS. Se ponen encima de cualquier skin y siguen
+//  al raptor al correr, saltar y agacharse. Coordenadas en píxeles del sprite (24 × 20); se compran en la tienda.
+//  anchor = dónde se dibuja (head / neck / back); slot = hueco que ocupa.
 // =====================================================================
-let HAT_EQUIPPED = null;
+let HAT_EQUIPPED = { head: null, back: null, feet: null };
+const HAT_SLOTS = [["head", "🎩 Cabeza"], ["back", "🎒 Espalda"], ["feet", "👟 Zapatillas"]];
 const HAT_LINE = "#1a1424";
 const HATS = [
-  { id: "gorra", name: "Gorra roja", price: 300, slot: "head", desc: "Visera hacia delante, estilo corredor",
+  // Cabeza
+  { id: "gorra", name: "Gorra roja", price: 300, slot: "head", anchor: "head", desc: "Visera hacia delante, estilo corredor",
     parts: () => [["#d63a3a", 14, -1, 6, 2], ["#a52630", 19, 0, 5, 1], ["#ff7a7a", 15, -1, 2, 1], ["#ffffff", 16, -2, 2, 1]] },
-  { id: "pajarita", name: "Pajarita", price: 350, slot: "neck", desc: "Elegancia hasta en la carrera",
+  { id: "pajarita", name: "Pajarita", price: 350, slot: "head", anchor: "neck", desc: "Elegancia hasta en la carrera",
     parts: t => [["#d63a3a", 12, 8, 2, 3], ["#d63a3a", 16, 8, 2, 3], ["#ff7a7a", 14, 9, 2, 1], ["#ff9a9a", 12, 8, 1, 1]] },
-  { id: "gafas", name: "Gafas de sol", price: 450, slot: "head", desc: "Demasiado guay para mirar atrás",
+  { id: "gafas", name: "Gafas de sol", price: 450, slot: "head", anchor: "head", desc: "Demasiado guay para mirar atrás",
     parts: t => [["#16111f", 15, 3, 4, 2], ["#16111f", 19, 3, 3, 2], ["#16111f", 13, 3, 2, 1], [t % 12 < 2 ? "#ffffff" : "#7fd0ff", 16, 3, 1, 1], [t % 12 < 2 ? "#ffffff" : "#7fd0ff", 20, 3, 1, 1]] },
-  { id: "fiesta", name: "Gorro de fiesta", price: 600, slot: "head", desc: "Cada partida es una celebración",
+  { id: "fiesta", name: "Gorro de fiesta", price: 600, slot: "head", anchor: "head", desc: "Cada partida es una celebración",
     parts: t => [["#ff5ce1", 14, -1, 6, 2], ["#ffd23f", 15, -3, 4, 2], ["#5fb4ff", 16, -5, 2, 2], ["#ffffff", 16 + (t % 8 < 4 ? 0 : 1), -6, 1, 1], ["#ffffff", 15, -1, 1, 1], ["#ffffff", 18, -1, 1, 1], ["#ffffff", 17, -3, 1, 1]] },
-  { id: "bufanda", name: "Bufanda al viento", price: 750, slot: "neck", desc: "Ondea detrás de ti al correr",
-    parts: t => { const w = Math.round(Math.sin(t * 0.8)), w2 = Math.round(Math.sin(t * 0.8 + 1.5));
-      return [["#ff9a3c", 11, 7, 7, 2], ["#ffffff", 13, 7, 1, 2], ["#ffffff", 16, 7, 1, 2], ["#ff9a3c", 8, 8 + w, 3, 2], ["#ffffff", 9, 8 + w, 1, 2], ["#ff9a3c", 5, 9 + w2, 3, 2], ["#ffd23f", 4, 10 + w2, 1, 1]]; } },
-  { id: "chistera", name: "Sombrero de copa", price: 900, slot: "head", desc: "Un raptor con clase",
+  { id: "chistera", name: "Sombrero de copa", price: 900, slot: "head", anchor: "head", desc: "Un raptor con clase",
     parts: () => [["#16111f", 13, 0, 9, 1], ["#2a2140", 15, -5, 5, 5], ["#d63a3a", 15, -1, 5, 1], ["#574a82", 16, -4, 1, 3]] },
-  { id: "auriculares", name: "Auriculares", price: 1100, slot: "head", desc: "Con notas que salen al ritmo",
+  { id: "auriculares", name: "Auriculares", price: 1100, slot: "head", anchor: "head", desc: "Con notas que salen al ritmo",
     parts: t => { const n = t % 16, ny = -2 - Math.floor((t % 8) / 2);
       return [["#2a2140", 14, -1, 6, 1], ["#2a2140", 13, 0, 1, 1], ["#2a2140", 20, 0, 1, 1], ["#5fd15a", 12, 1, 2, 3], ["#9bf08f", 12, 1, 1, 1],
         ...(n < 8 ? [["#ffd23f", 22, ny, 1, 2], ["#ffd23f", 23, ny, 1, 1]] : [["#5fb4ff", 9, ny + 1, 1, 2], ["#5fb4ff", 10, ny + 1, 1, 1]])]; } },
-  { id: "corona", name: "Corona real", price: 1500, slot: "head", desc: "Para el rey de la carrera, con brillo",
+  { id: "corona", name: "Corona real", price: 1500, slot: "head", anchor: "head", desc: "Para el rey de la carrera, con brillo",
     parts: t => { const sh = t % 20; return [["#ffb938", 14, -1, 6, 2], ["#ffb938", 14, -3, 1, 2], ["#ffb938", 16, -2, 2, 1], ["#ffb938", 19, -3, 1, 2], ["#ff3b5c", 16, -1, 1, 1], ["#41b8ff", 18, -1, 1, 1],
       ...(sh < 6 ? [["#ffffff", 14 + sh, -1, 1, 1]] : [])]; } },
-  { id: "jetpack", name: "Mochila cohete", price: 2500, slot: "back", desc: "Llamas animadas en la espalda",
+  // Espalda
+  { id: "bufanda", name: "Bufanda al viento", price: 750, slot: "back", anchor: "neck", desc: "Ondea detrás de ti al correr",
+    parts: t => { const w = Math.round(Math.sin(t * 0.8)), w2 = Math.round(Math.sin(t * 0.8 + 1.5));
+      return [["#ff9a3c", 11, 7, 7, 2], ["#ffffff", 13, 7, 1, 2], ["#ffffff", 16, 7, 1, 2], ["#ff9a3c", 8, 8 + w, 3, 2], ["#ffffff", 9, 8 + w, 1, 2], ["#ff9a3c", 5, 9 + w2, 3, 2], ["#ffd23f", 4, 10 + w2, 1, 1]]; } },
+  { id: "mochila", name: "Mochila de aventura", price: 650, slot: "back", anchor: "back", desc: "Con saco de dormir enrollado",
+    parts: () => [["#3f7d3f", 4, 6, 5, 5], ["#5fa85a", 5, 7, 2, 2], ["#2a5a2a", 4, 9, 5, 1], ["#c8a06a", 4, 4, 5, 2], ["#8a6a3a", 6, 4, 1, 2]] },
+  { id: "capa", name: "Capa de héroe", price: 1300, slot: "back", anchor: "back", desc: "Roja, larga y ondeando",
+    parts: t => { const w = Math.round(Math.sin(t * 0.7)); return [["#d63a3a", 6, 6, 5, 3], ["#d63a3a", 3, 8 + w, 5, 3], ["#b02a30", 0, 10 + w, 4, 2], ["#ffd23f", 9, 6, 2, 1]]; } },
+  { id: "alas", name: "Alas de ángel", price: 2000, slot: "back", anchor: "back", desc: "Aletean mientras corres",
+    parts: t => { const u = t % 4 < 2; return u ? [["#ffffff", 5, 2, 5, 2], ["#ffffff", 3, 4, 6, 2], ["#e2ecff", 2, 6, 6, 2], ["#c8d8f0", 4, 8, 4, 1]]
+      : [["#ffffff", 4, 6, 6, 2], ["#ffffff", 2, 8, 6, 2], ["#e2ecff", 1, 10, 5, 2], ["#c8d8f0", 3, 12, 3, 1]]; } },
+  { id: "jetpack", name: "Mochila cohete", price: 2500, slot: "back", anchor: "back", desc: "Llamas animadas en la espalda",
     parts: t => [["#8a93a8", 4, 6, 4, 5], ["#d63a3a", 4, 6, 4, 1], ["#c7cedb", 5, 7, 1, 3], ["#5a6278", 4, 11, 4, 1],
       ["#ffd23f", 4, 12, 4, 1 + (t % 2)], ["#ff6a00", 5, 13 + (t % 2), 2, 1 + ((t >> 1) % 2)]] },
+  // Zapatillas: se dibujan sobre los pies de cada fotograma (main, detalle, suela)
+  { id: "deportivas", name: "Deportivas rojas", price: 400, slot: "feet", desc: "Para correr más ligero", shoe: () => ["#e23b3b", "#ffffff", "#f3f3f3"] },
+  { id: "botas", name: "Botas de nieve", price: 600, slot: "feet", desc: "Con borde de pelo", shoe: () => ["#8a5a32", "#ffffff", "#3a2414"] },
+  { id: "patines", name: "Patines", price: 900, slot: "feet", desc: "Ruedas que giran", shoe: t => ["#41b8ff", "#ffffff", t % 2 ? "#ffd23f" : "#ff9a1e"], wheels: true },
+  { id: "doradas", name: "Zapatillas doradas", price: 1400, slot: "feet", desc: "Brillan a cada paso", shoe: t => ["#ffb938", t % 6 < 2 ? "#ffffff" : "#ffe08a", "#c77a12"] },
+  { id: "luces", name: "Zapatillas de luces", price: 1800, slot: "feet", desc: "La suela cambia de color", shoe: t => ["#2a2140", "#ffffff", ["#ff3b5c", "#ffd23f", "#3ddc84", "#41b8ff", "#ff5ce1"][t % 5]] },
 ];
 const HAT_BY_ID = Object.fromEntries(HATS.map(h => [h.id, h]));
 const HAT_DUCK = { head: DUCK_HEAD, neck: { x: 5, y: 5 }, back: { x: 0, y: 3 } };
-const equippedHat = () => HAT_EQUIPPED;
-// Dibuja el accesorio: primero el contorno oscuro de todas las piezas y después los colores (se lee bien sobre cualquier skin)
+// Pies de un fotograma: tramos de "y" (garras) en las filas de las patas, cacheados por sprite y fotograma
+const _feet = {};
+function feetOf(spriteId, frame) {
+  const k = spriteId + "|" + frame; if (_feet[k]) return _feet[k];
+  const spr = SKINS_DATA.sprites[spriteId]; if (!spr) return [];
+  const G = spriteGrid(spr, frame), out = [];
+  for (let y = 15; y < 20; y++) { let x0 = -1; for (let x = 0; x <= G[y].length; x++) { const f = G[y][x] === "y"; if (f && x0 < 0) x0 = x; if (!f && x0 >= 0) { out.push([x0, x - 1, y]); x0 = -1; } } }
+  return (_feet[k] = out);
+}
+// Dibuja un accesorio: primero el contorno oscuro de todas las piezas y después los colores (se lee bien sobre cualquier skin)
 function drawHat(c, id, skinId, ox, oy, sc, t, frame, duck) {
   const h = HAT_BY_ID[id]; if (!h) return;
-  const sk = SE.get(skinId), spr = sk && SKINS_DATA.sprites[sk.sprite], dy = (spr && spr.frames[frame] && spr.frames[frame].dy) || 0, d = duck ? HAT_DUCK[h.slot] : { x: 0, y: 0 };
-  const parts = h.parts(t || 0), X = ox + d.x, Y = oy + dy + d.y;
+  const sk = SE.get(skinId), spr = sk && SKINS_DATA.sprites[sk.sprite], dy = (spr && spr.frames[frame] && spr.frames[frame].dy) || 0;
+  let parts;
+  if (h.slot === "feet") {   // zapatillas: cubren cada pie, puntera hacia delante y suela debajo
+    const [m, a, so] = h.shoe(t || 0); parts = [];
+    for (const [x0, x1, y] of feetOf(sk.sprite, frame)) {
+      parts.push([m, x0, y - 1, x1 - x0 + 2, 2], [a, x0, y - 1, 1, 1], [so, x0, y + 1, x1 - x0 + 2, 1]);
+      if (h.wheels) parts.push(["#16111f", x0, y + 2, 1, 1], ["#16111f", x1 + 1, y + 2, 1, 1]);
+    }
+    if (!parts.length) return;
+    const X = ox, Y = oy + dy; c.fillStyle = HAT_LINE;
+    for (const [, x, y, w, hh] of parts) c.fillRect((X + x - 1) * sc, (Y + y) * sc, (w + 2) * sc, hh * sc);
+    for (const [col, x, y, w, hh] of parts) { c.fillStyle = col; c.fillRect((X + x) * sc, (Y + y) * sc, w * sc, hh * sc); }
+    return;
+  }
+  const d = duck ? HAT_DUCK[h.anchor] : { x: 0, y: 0 };
+  parts = h.parts(t || 0); const X = ox + d.x, Y = oy + dy + d.y;
   c.fillStyle = HAT_LINE;
   for (const [, x, y, w, hh] of parts) c.fillRect((X + x - 1) * sc, (Y + y - 1) * sc, (w + 2) * sc, (hh + 2) * sc);
   for (const [col, x, y, w, hh] of parts) { c.fillStyle = col; c.fillRect((X + x) * sc, (Y + y) * sc, w * sc, hh * sc); }
@@ -2573,7 +2683,8 @@ class SaveManager {
       stats: {}, tree: {}, fossils: 0, treeResets: 0, lastWeeklySpin: "",
       tips: { seen: {}, off: false }, tutorialDone: false, tutorialRewarded: false,
       season: { id: 1, xp: 0, tier: 0, seen: 0 }, codeUsed: false, allUpgrades: false,
-      hats: [], hat: null,   // accesorios comprados y equipado
+      hats: [], acc: { head: null, back: null, feet: null },   // accesorios comprados y equipados (3 huecos)
+      trails: [], trail: null, roars: [], roar: null, pets: [], pet: null,   // estelas, rugidos y mascota
     };
     this.load();
     if (DEBUG) {
@@ -2614,7 +2725,15 @@ class SaveManager {
         if (obj(d.daily)) { const y = d.daily; this.data.daily = { date: typeof y.date === "string" ? y.date : "", best: num(y.best), attempts: num(y.attempts), streak: num(y.streak), lastDay: typeof y.lastDay === "string" ? y.lastDay : "", bestEver: num(y.bestEver), days: num(y.days),
           history: Array.isArray(y.history) ? y.history.filter(h => h && typeof h.date === "string").map(h => ({ date: h.date, best: num(h.best) })).slice(0, 14) : [] }; }
         if (Array.isArray(d.hats)) this.data.hats = [...new Set(d.hats.filter(h => HAT_BY_ID[h]))];
-        if (typeof d.hat === "string" && this.data.hats.includes(d.hat)) this.data.hat = d.hat;
+        if (typeof d.hat === "string" && this.data.hats.includes(d.hat)) this.data.acc[HAT_BY_ID[d.hat].slot] = d.hat;   // guardados de la v19 (un solo accesorio)
+        if (obj(d.acc)) for (const [k] of HAT_SLOTS) { const h = HAT_BY_ID[d.acc[k]]; if (h && h.slot === k && this.data.hats.includes(h.id)) this.data.acc[k] = h.id; }
+        if (Array.isArray(d.trails)) this.data.trails = d.trails.filter(t => TRAIL_BY_ID[t]);
+        if (this.data.trails.includes(d.trail)) this.data.trail = d.trail;
+        if (Array.isArray(d.roars)) this.data.roars = d.roars.filter(t => SHOP_ROAR_BY_ID[t]);
+        if (this.data.roars.includes(d.roar)) this.data.roar = d.roar;
+        if (Array.isArray(d.pets)) this.data.pets = d.pets.filter(t => PET_BY_ID[t]);
+        if (obj(d.pet) && this.data.pets.includes(d.pet.id)) { const hx = v => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
+          this.data.pet = { id: d.pet.id, body: hx(d.pet.body) ? d.pet.body : PET_BY_ID[d.pet.id].body, accent: hx(d.pet.accent) ? d.pet.accent : PET_BY_ID[d.pet.id].accent, name: String(d.pet.name || PET_BY_ID[d.pet.id].name).slice(0, 14) }; }
         this.data.secretUnlocked = !!d.secretUnlocked;
         this.data.codeUsed = !!d.codeUsed; this.data.allUpgrades = !!d.allUpgrades;
         this.data.tutorialDone = !!d.tutorialDone; this.data.tutorialRewarded = !!d.tutorialRewarded;
@@ -2631,7 +2750,7 @@ class SaveManager {
       }
     } catch (e) { /* datos corruptos o almacenamiento bloqueado: se usan los valores por defecto */ }
     SkinCatalog.designs = this.data.designs.map((x, i) => x && designSkin(x, i));
-    SkinCatalog.rebuild(); HAT_EQUIPPED = this.data.hat;
+    SkinCatalog.rebuild(); this.syncCosmetics();
   }
   save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch (e) {} }
   record(modeId) { return this.data.records[modeId] || 0; }
@@ -2647,9 +2766,23 @@ class SaveManager {
   }
   equip(id) { if (this.owns(id) && SkinCatalog.exists(id)) { this.data.equipped = id; this.save(); } }
   // Accesorios
+  // Lo equipado se copia a variables globales que lee el dibujo del raptor
+  syncCosmetics() { HAT_EQUIPPED = Object.assign({}, this.data.acc); TRAIL_EQUIPPED = this.data.trail; ROAR_EQUIPPED = this.data.roar; }
   ownsHat(id) { return this.data.hats.includes(id); }
-  buyHat(h) { if (this.ownsHat(h.id) || this.data.coins < h.price) return false; this.data.coins -= h.price; this.data.hats.push(h.id); this.equipHat(h.id); return true; }
-  equipHat(id) { this.data.hat = id && this.ownsHat(id) ? id : null; HAT_EQUIPPED = this.data.hat; this.save(); }
+  buyHat(h) { if (this.ownsHat(h.id) || this.data.coins < h.price) return false; this.data.coins -= h.price; this.data.hats.push(h.id); this.equipHat(h.slot, h.id); return true; }
+  equipHat(slot, id) { const h = HAT_BY_ID[id]; this.data.acc[slot] = h && h.slot === slot && this.ownsHat(id) ? id : null; this.syncCosmetics(); this.save(); }
+  // Estelas, rugidos y mascotas: kind = "trails" | "roars" | "pets"
+  buyItem(kind, it) {
+    if (this.data[kind].includes(it.id) || this.data.coins < it.price) return false;
+    this.data.coins -= it.price; this.data[kind].push(it.id); this.equipItem(kind, it.id); return true;
+  }
+  equipItem(kind, id) {
+    const own = id && this.data[kind].includes(id);
+    if (kind === "trails") this.data.trail = own ? id : null;
+    else if (kind === "roars") this.data.roar = own ? id : null;
+    else if (kind === "pets") { const sp = PET_BY_ID[id]; this.data.pet = own ? { id, body: sp.body, accent: sp.accent, name: (this.data.pet && this.data.pet.name && this.data.pet.id === id) ? this.data.pet.name : sp.name } : null; }
+    this.syncCosmetics(); this.save();
+  }
   addCoins(n) { this.data.coins += n; this.save(); }
 }
 // Un diseño del editor convertido al formato de SKINS_DATA
@@ -2713,7 +2846,7 @@ class Particle {
 //  Hitbox: columnas 8–16 y filas 2–19 del sprite (cuerpo); al deslizarse, una caja baja.
 // =====================================================================
 class Player {
-  constructor(game, num = 1) { this.game = game; this.num = num; this.skinState = { tick: 0, speed: 2, trail: null, hat: num === 1 ? undefined : null }; this.reset(); }   // el J2 va sin accesorio
+  constructor(game, num = 1) { this.game = game; this.num = num; this.skinState = { tick: 0, speed: 2, trail: null, hat: num === 1 ? undefined : null, trailFx: num === 1 ? undefined : null }; this.reset(); }   // el J2 va sin accesorio
   reset() {
     this.x = PLAYER_X; this.y = 0; this.vy = 0; this.prevY = 0;
     this.onGround = true; this.jumps = 0; this.fastFall = false; this.slideTime = 0; this.downHeld = false;
@@ -2760,7 +2893,7 @@ class Player {
     if (this.game.stat("swapLanes")) dir = -dir;   // modo Aleatorio: carriles cruzados
     const target = clamp(this.lane + dir, 0, 1), M = this.mount;
     if (target === this.lane || (M && !M.canChangeLane())) return;
-    this.laneTime = M ? M.laneTime : CONFIG.LANE_SWITCH_TIME;
+    this.laneTime = M ? M.laneTime : CONFIG.LANE_SWITCH_TIME * (this.game.versus ? 1 : this.game.stat("laneTimeMult"));   // la lluvia lo hace más lento
     this.laneFrom = this.laneT; this.lane = target; this.laneProgress = 0;
     this.game.sfx.lane(); this.game.ach.event("laneChange");
     if (!M) { const g = this.game; g.puff(this.x + 30, this.y, Math.round(this.laneFrom), 7, "#ffffff");   // impulso: polvo y líneas de velocidad
@@ -2929,7 +3062,7 @@ function drawTrapIcon(c, id, x, y) {
 //  el árbol de mejoras, las mejoras de la partida, las sinergias y los pactos.
 // =====================================================================
 const STAT_ONE = new Set(["jumpMult", "slideMult", "powerupDurMult", "furyRate", "coinMult", "eggMult", "bossCoinMult", "bossVulnMult",
-  "bossHpMult", "mountDurMult", "obstacleFreq", "speedMult", "scoreMult", "unmountedSpeed", "graceMult", "teleMult", "superRoarUses", "airJumps", "gravityMult", "powerupFreq"]);
+  "bossHpMult", "mountDurMult", "obstacleFreq", "speedMult", "scoreMult", "unmountedSpeed", "graceMult", "teleMult", "superRoarUses", "airJumps", "gravityMult", "powerupFreq", "laneTimeMult"]);
 function statBase(g, k) {
   switch (k) {
     case "roarRange": return CONFIG.ROAR_RANGE;
@@ -2972,6 +3105,7 @@ class RunBuild {
     for (const id of this.synergies) yield [SYNERGIES.find(s => s.id === id).mod, 1];
     for (const id of this.pacts) yield [PACT_BY_ID[id].mod, 1];
     if (g.randomMod && !g.versus) yield [g.randomMod.mod, 1];   // modo Aleatorio: regla del nivel
+    if (g.weather && g.weather.active && g.weather.def.mod) yield [g.weather.def.mod, 1];   // clima del bioma
   }
   stat(k) {
     if (k in this.cache) return this.cache[k];
@@ -7072,6 +7206,126 @@ class PrismRexBoss extends Boss {
 BOSS_CLASSES.push(PrismRexBoss);
 
 // =====================================================================
+//  Clima: cada bioma tiene su fenómeno (lluvia, tormenta de arena, ventisca, niebla…). Aparece a mitad de nivel
+//  durante unos segundos, se anuncia en el marcador y cambia algo del juego mientras dura (no en multijugador).
+// =====================================================================
+const WEATHER_CONFIG = { CHANCE: 0.8, START: [60, 260], DURATION: [18, 28], FADE: 1.4, MAX_P: 160 };
+const WEATHER = {
+  desert:    { id: "arena", name: "Tormenta de arena", icon: "🌪️", desc: "se ve menos a lo lejos · puntos ×1,2", kind: "sand", haze: [168, 112, 50], mod: { scoreMult: v => v * 1.2 } },
+  jungle:    { id: "lluvia", name: "Lluvia", icon: "🌧️", desc: "el suelo resbala: cambiar de carril es más lento", kind: "rain", mod: { laneTimeMult: v => v * 1.35 } },
+  volcano:   { id: "calor", name: "Ola de calor", icon: "🔥", desc: "la furia se llena un 50 % más rápido", kind: "heat", mod: { furyRate: v => v * 1.5 } },
+  glacier:   { id: "ventisca", name: "Ventisca", icon: "❄️", desc: "viento en contra: saltas un poco menos", kind: "blizzard", haze: [230, 240, 255], mod: { jumpMult: v => v * 0.92 } },
+  night:     { id: "tormenta", name: "Tormenta eléctrica", icon: "⛈️", desc: "los rayos atraen monedas: ×1,25", kind: "storm", mod: { coinMult: v => v * 1.25 } },
+  beach:     { id: "chubasco", name: "Chubasco tropical", icon: "🌦️", desc: "suelo mojado: cambiar de carril es más lento", kind: "rain", mod: { laneTimeMult: v => v * 1.25 } },
+  mushroom:  { id: "esporas", name: "Lluvia de esporas", icon: "✨", desc: "esporas mágicas: el doble de power-ups", kind: "spores", mod: { powerupFreq: v => v * 2 } },
+  ocean:     { id: "corriente", name: "Corriente marina", icon: "🌊", desc: "a favor: +12 % de velocidad y puntos ×1,15", kind: "current", mod: { speedMult: v => v * 1.12, scoreMult: v => v * 1.15 } },
+  graveyard: { id: "niebla", name: "Niebla espesa", icon: "🌫️", desc: "casi no se ve nada · puntos ×1,25", kind: "fog", haze: [170, 190, 180], mod: { scoreMult: v => v * 1.25 } },
+  moon:      { id: "meteoros", name: "Lluvia de meteoritos", icon: "☄️", desc: "polvo de estrellas: monedas ×1,5", kind: "meteors", mod: { coinMult: v => v * 1.5 } },
+};
+class WeatherManager {
+  constructor(game) { this.g = game; this.reset(); }
+  reset() { this.plan = {}; this.def = null; this.on = false; this.k = 0; this.timer = 0; this.p = []; this.flash = 0; this.bolt = null; this.boltCd = 3; this.announce = 0; this.wasActive = false; }
+  get active() { return !!this.def && this.k > 0.5 && !this.g.versus && !this.g.tutorial; }
+  // Al empezar cada nivel (lo llama Game.onLevelStart; en la carrera diaria usa la semilla del día)
+  planLevel(level) {
+    const g = this.g, def = WEATHER[g.level.biome.id];
+    if (g.tutorial || !def || Math.random() >= WEATHER_CONFIG.CHANCE) return;
+    const [a, b] = WEATHER_CONFIG.START, [c, d] = WEATHER_CONFIG.DURATION;
+    this.plan[level] = { at: rand(a, b), dur: rand(c, d), done: false };
+  }
+  update(dt) {
+    const g = this.g, L = g.level, pl = this.plan[L.level], inLevel = g.distScore - (L.level - 1) * CONFIG.POINTS_PER_LEVEL;
+    if (pl && !pl.done && !this.on && inLevel >= pl.at && !g.bosses.active && !L.portal) {
+      pl.done = true; this.on = true; this.def = WEATHER[L.biome.id]; this.timer = pl.dur; this.announce = 3.5;
+      if (this.def) g.sfx.tone(this.def.kind === "storm" || this.def.kind === "rain" ? 220 : 520, null, 0.3, "triangle", 0.04);
+    }
+    if (this.on && ((this.timer -= dt) <= 0 || g.bosses.active || L.portal || !this.def || WEATHER[L.biome.id] !== this.def)) this.on = false;
+    this.k = clamp(this.k + (this.on ? 1 : -1) * dt / WEATHER_CONFIG.FADE, 0, 1);
+    if (this.k <= 0 && !this.on) this.def = null;
+    this.announce = Math.max(0, this.announce - dt);
+    if (this.active !== this.wasActive) { this.wasActive = this.active; g.build.cache = {}; }   // los efectos entran y salen de la build
+    this.tickParticles(dt);
+  }
+  // ----- Partículas y efectos -----
+  tickParticles(dt) {
+    const d = this.def, k = this.k; this.flash = Math.max(0, this.flash - dt * 2.5);
+    if (this.bolt && (this.bolt.t -= dt) <= 0) this.bolt = null;
+    if (d && k > 0) {
+      const R = { rain: 70, storm: 90, sand: 170, blizzard: 90, heat: 14, spores: 16, current: 18, fog: 0, meteors: 1.2 }[d.kind] || 0;
+      this.acc = (this.acc || 0) + dt * R * k;
+      while (this.acc >= 1 && this.p.length < WEATHER_CONFIG.MAX_P) { this.acc--; this.p.push(this.spawn(d.kind)); }
+      if ((d.kind === "storm" || d.kind === "rain") && (this.boltCd -= dt) <= 0) {   // relámpagos
+        this.boltCd = d.kind === "storm" ? rand(2.2, 4.5) : rand(6, 11);
+        if (k > 0.6) { this.flash = 0.5; const x = rand(200, W - 60); this.bolt = { t: 0.18, pts: Array.from({ length: 6 }, (_, i) => [x + rand(-24, 24), i * 26]) }; this.g.sfx.noise(0.6, 0.05, 400, "lowpass"); }
+      }
+    }
+    for (const q of this.p) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; if (q.kind === "spore") q.x += Math.sin(q.life * 3 + q.ph) * 20 * dt; }
+    this.p = this.p.filter(q => q.life > 0 && q.x > -60 && q.x < W + 80 && q.y < H + 20 && q.y > -40);
+  }
+  spawn(kind) {
+    switch (kind) {
+      case "rain": case "storm": return { kind: "rain", x: rand(0, W + 200), y: -10, vx: -160, vy: rand(620, 760), life: 2, len: rand(10, 16) };
+      case "sand": return { kind: "sand", x: W + 10, y: rand(0, H), vx: -rand(600, 900), vy: rand(-20, 40), life: 2, w: rand(8, 22), c: choice(["#c89048", "#a8702e", "#e8b868", "#8a5a24"]) };
+      case "blizzard": return { kind: "snow", x: W + 10, y: rand(-20, H), vx: -rand(380, 620), vy: rand(40, 120), life: 3, s: rand(2, 4) };
+      case "heat": return { kind: "ember", x: rand(0, W), y: H + 5, vx: rand(-30, 10), vy: -rand(60, 140), life: 4, c: choice(["#ffd23f", "#ff9a1e", "#ff5a1e"]) };
+      case "spores": return { kind: "spore", x: rand(0, W), y: H + 5, vx: -rand(20, 60), vy: -rand(30, 70), life: 7, ph: rand(0, 6), c: choice(["#ff7ad0", "#7df9ff", "#ffe14d", "#c9a6ff"]) };
+      case "current": return { kind: "bubble", x: W + 10, y: rand(140, H - 10), vx: -rand(260, 420), vy: -rand(5, 25), life: 4, s: rand(3, 6) };
+      case "meteors": return { kind: "meteor", x: rand(W * 0.3, W + 150), y: -20, vx: -rand(320, 480), vy: rand(200, 300), life: 2.2 };
+    }
+    return { kind: "none", x: 0, y: 0, vx: 0, vy: 0, life: 0 };
+  }
+  // Por detrás de los carriles: rayos de luz, meteoritos y relámpagos en el cielo
+  drawBack(c) {
+    const d = this.def, k = this.k; if (!d || k <= 0) return;
+    if (d.kind === "current") {
+      c.save(); c.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 5; i++) { const x = ((i * 220 + this.g.time * 30) % (W + 300)) - 150; c.globalAlpha = 0.06 * k; c.fillStyle = "#bff8ff";
+        c.beginPath(); c.moveTo(x, 0); c.lineTo(x + 70, 0); c.lineTo(x - 60, H); c.lineTo(x - 140, H); c.fill(); }
+      c.restore();
+    }
+    if (d.kind === "heat") { c.globalAlpha = 0.18 * k; c.fillStyle = "#ff6a1a"; c.fillRect(0, 0, W, H); c.globalAlpha = 1; }
+    for (const q of this.p) if (q.kind === "meteor") {
+      c.globalAlpha = k; c.strokeStyle = "#ffd9a0"; c.lineWidth = 2; c.beginPath(); c.moveTo(q.x, q.y); c.lineTo(q.x + 40, q.y - 25); c.stroke();
+      c.fillStyle = "#ffffff"; c.fillRect(q.x - 2, q.y - 2, 4, 4); c.globalAlpha = 1;
+    }
+    if (this.bolt) {
+      c.strokeStyle = "#f4f0ff"; c.lineWidth = 3; c.globalAlpha = 0.9; c.beginPath();
+      this.bolt.pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); c.globalAlpha = 1;
+    }
+  }
+  // Por delante: lluvia, arena, nieve, esporas, burbujas y la neblina que tapa lo que viene
+  drawFront(c) {
+    const d = this.def, k = this.k; if (!d || k <= 0) return;
+    if (d.kind === "rain" || d.kind === "storm") { c.fillStyle = `rgba(20,30,60,${0.22 * k})`; c.fillRect(0, 0, W, H); }
+    if (d.kind === "sand") { c.fillStyle = `rgba(176,118,52,${0.3 * k})`; c.fillRect(0, 0, W, H); }
+    if (d.kind === "blizzard") { c.fillStyle = `rgba(220,235,255,${0.18 * k})`; c.fillRect(0, 0, W, H); }
+    for (const q of this.p) {
+      if (q.kind === "rain") { c.globalAlpha = 0.55 * k; c.strokeStyle = "#cfe4ff"; c.lineWidth = 1.5; c.beginPath(); c.moveTo(q.x, q.y); c.lineTo(q.x - q.len * 0.22, q.y - q.len); c.stroke(); }
+      else if (q.kind === "sand") { c.globalAlpha = 0.8 * k; c.fillStyle = q.c; c.fillRect(q.x, q.y, q.w, 3); }
+      else if (q.kind === "snow") { c.globalAlpha = 0.9 * k; c.fillStyle = "#ffffff"; c.fillRect(q.x, q.y, q.s, q.s); }
+      else if (q.kind === "ember") { c.globalAlpha = Math.min(1, q.life) * k; c.fillStyle = q.c; c.fillRect(q.x, q.y, 3, 3); }
+      else if (q.kind === "spore") { c.globalAlpha = (0.5 + 0.5 * Math.sin(q.life * 6 + q.ph)) * k; c.fillStyle = q.c; c.fillRect(q.x, q.y, 3, 3); }
+      else if (q.kind === "bubble") { c.globalAlpha = 0.6 * k; c.strokeStyle = "#e8fbff"; c.lineWidth = 1.5; c.beginPath(); c.arc(q.x, q.y, q.s, 0, Math.PI * 2); c.stroke(); }
+    }
+    c.globalAlpha = 1;
+    if (d.haze) {   // neblina: tapa la parte derecha (lo que se acerca)
+      const [r, g, b] = d.haze, a = (d.kind === "fog" ? 0.85 : 0.6) * k;
+      if (!this.hazeGrad || this.hazeKey !== d.id + Math.round(a * 20)) {
+        const gr = c.createLinearGradient(420, 0, 760, 0); gr.addColorStop(0, `rgba(${r},${g},${b},0)`); gr.addColorStop(1, `rgba(${r},${g},${b},${a})`);
+        this.hazeGrad = gr; this.hazeKey = d.id + Math.round(a * 20);
+      }
+      c.fillStyle = this.hazeGrad; c.fillRect(420, 0, W - 420, H);
+      if (d.kind === "fog") for (let i = 0; i < 4; i++) {   // bancos de niebla que se mueven
+        c.globalAlpha = 0.25 * k; c.fillStyle = `rgb(${r},${g},${b})`;
+        c.fillRect(((i * 260 - this.g.time * 40) % (W + 260) + W + 260) % (W + 260) - 200, 210 + i * 32, 240, 14);
+      }
+      c.globalAlpha = 1;
+    }
+    if (this.flash > 0) { c.fillStyle = `rgba(240,240,255,${this.flash * 0.6})`; c.fillRect(0, 0, W, H); }
+  }
+}
+
+// =====================================================================
 //  UI: marcador en el canvas y pantallas HTML (menú, jugar, pausa, game over)
 // =====================================================================
 // Colores de la interfaz (tokens de la propuesta de Claude Design)
@@ -7376,6 +7630,8 @@ class UI {
       if (!B.active && !g.tutorial && left >= 0 && lvl === L.level) this.pill(c, `BOSS: ${B.nameOf(lvl).toUpperCase()} EN ${left} PTS`, W / 2, 48, 10, "#ff8a9a");
     }
     if (g.randomMod) this.pill(c, `${g.daily ? "📅 DIARIA · " + g.randomMod.icon : "🎲"} ${g.randomMod.name.toUpperCase()}`, W / 2, B.boss && B.boss.state !== "leave" ? 98 : 74, 10, "#e4d0ff", "rgba(80,40,140,0.85)");
+    const Wt = g.weather;   // clima: icono y nombre (al empezar, también qué cambia)
+    if (Wt.def && Wt.k > 0.05) { c.globalAlpha = Wt.k; this.pill(c, `${Wt.def.icon} ${Wt.def.name.toUpperCase()}${Wt.announce > 0 ? " · " + Wt.def.desc.toUpperCase() : ""}`, W / 2, (B.boss && B.boss.state !== "leave" ? 98 : 74) + (g.randomMod ? 24 : 0), 10, "#e8f4ff", "rgba(30,60,110,0.85)"); c.globalAlpha = 1; }
     if (DEBUG) this.text(c, "DEBUG · 1–9, 0 nivel · B boss", W / 2, H - 42, 10, "#ff8a8a", "center");
 
     // Modo: vidas (Fácil) o aviso (Difícil)
@@ -7512,17 +7768,13 @@ class Shop {
     for (const skin of EXCLUSIVE_SKINS) this.makeCard($("exclGrid"), skin.id, "exclusive");
     for (const skin of SEASON_SKINS) this.makeCard($("seasonGrid"), skin.id, "season");
     for (const skin of EGG_SKINS) this.makeCard($("eggSkinGrid"), skin.id, "egg");
-    // Accesorios: vista previa con tu skin equipada
-    this.hatCards = HATS.map(h => {
-      const card = document.createElement("div"); card.className = "skin hat";
-      card.innerHTML = `<canvas width="120" height="84"></canvas><div class="skin-name">${h.name}</div><div class="fx-label">${h.desc}</div>
-        <div class="skin-price"><span class="coin"></span> ${h.price}</div><button class="btn small"></button><div class="toast">¡Comprado!</div>`;
-      const e = { h, card, btn: card.querySelector("button"), ctx: card.querySelector("canvas").getContext("2d"), st: { tick: randInt(0, 7), speed: 2, trail: null, advance: true, hat: h.id } };
-      e.ctx.imageSmoothingEnabled = false;
-      e.btn.addEventListener("click", ev => { ev.currentTarget.blur(); this.hatAction(e); });
-      card.addEventListener("animationend", ev => { if (ev.target === card) card.classList.remove("bought", "denied"); });
-      $("hatGrid").appendChild(card); return e;
-    });
+    // Accesorios (3 huecos), estelas, rugidos y mascotas: tarjetas con vista previa animada
+    this.items = [];
+    for (const [slot] of HAT_SLOTS) for (const h of HATS.filter(x => x.slot === slot)) this.makeItem($("hatGrid-" + slot), "hats", h, { hat: { [slot]: h.id }, trailFx: null });
+    for (const t of SHOP_TRAILS) this.makeItem($("trailGrid"), "trails", t, { hat: null, trailFx: t.id });
+    for (const r of SHOP_ROARS) this.makeItem($("roarGrid"), "roars", r, { hat: null, trailFx: null, roar: r });
+    for (const p of PET_SPECIES) this.makeItem($("petGrid"), "pets", p, {});
+    this.petEditor = new PetEditor(game, this);
     this.eggs = new EggShop(game, this);
     this.designGrid = $("designGrid");
     this.editor = new SkinEditor(game, this);
@@ -7570,7 +7822,7 @@ class Shop {
   setTab(tab) {
     this.tab = tab;
     this.el.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
-    for (const [id, t] of [["skinsPane", "skins"], ["hatPane", "hats"], ["cpPane", "checkpoints"], ["editorPane", "editor"], ["eggPane", "eggs"]]) document.getElementById(id).classList.toggle("hidden", tab !== t);
+    for (const [id, t] of [["skinsPane", "skins"], ["hatPane", "hats"], ["fxPane", "fx"], ["petPane", "pets"], ["cpPane", "checkpoints"], ["editorPane", "editor"], ["eggPane", "eggs"]]) document.getElementById(id).classList.toggle("hidden", tab !== t);
     if (tab === "editor") this.editor.open();
     this.refresh();
   }
@@ -7614,20 +7866,38 @@ class Shop {
       e.btn.textContent = owned ? "Comprado" : !unlocked ? "🔒 Bloqueado" : affordable ? "Comprar" : "Sin monedas suficientes";
       e.info.textContent = owned ? "Elígelo en «Jugar»." : !unlocked ? `Completa el nivel ${e.level - 1} para desbloquear` : `Empieza con ${(e.level - 1) * CONFIG.POINTS_PER_LEVEL} puntos.`;
     }
-    for (const e of this.hatCards) {
-      const own = s.ownsHat(e.h.id), on = s.data.hat === e.h.id, can = s.data.coins >= e.h.price;
+    for (const e of this.items) {
+      const own = this.ownsItem(e), on = this.isOn(e), can = s.data.coins >= e.it.price;
       e.card.classList.toggle("equipped", on); e.card.classList.toggle("locked", !own && !can);
       e.btn.className = "btn small" + (on ? "" : own ? " primary" : can ? " gold" : "");
-      e.btn.disabled = !own && !can; e.btn.textContent = on ? "Quitar" : own ? "Ponérselo" : can ? "Comprar" : "Sin monedas suficientes";
+      e.btn.disabled = !own && !can;
+      e.btn.textContent = on ? "Quitar" : own ? (e.kind === "pets" ? "Elegir" : e.kind === "hats" ? "Ponérselo" : "Equipar") : can ? "Comprar" : "Sin monedas suficientes";
       e.card.querySelector(".skin-price").classList.toggle("hidden", own);
     }
+    this.petEditor.refresh();
     this.editor.refresh();
     this.eggs.refresh();
   }
-  hatAction(e) {
-    const g = this.game, s = g.save; g.sfx.unlock();
-    if (s.ownsHat(e.h.id)) { s.equipHat(s.data.hat === e.h.id ? null : e.h.id); g.sfx.click(); }
-    else if (s.buyHat(e.h)) { g.sfx.buy(); this.confirmAnim(e.card); this.flashWallet(); g.ach.event("purchase", { kind: "hat", price: e.h.price }); }
+  makeItem(parent, kind, it, st) {
+    const card = document.createElement("div"); card.className = "skin item " + kind;
+    const extra = kind === "roars" ? `<div class="fx-label roar-label">🔊 ${{ fire: "Fuego", ice: "Hielo", bolt: "Rayos", shards: "Cristales", ghost: "Ecos", stars: "Estrellas", rainbow: "Arcoíris", sun: "Destello solar", prism: "Prisma" }[it.type] || ""}${it.wings ? " · alas" : ""}</div>` : `<div class="fx-label">${it.desc || ""}</div>`;
+    card.innerHTML = `<canvas width="120" height="84"></canvas><div class="skin-name">${it.name}</div>${extra}
+      <div class="skin-price"><span class="coin"></span> ${it.price}</div><button class="btn small"></button><div class="toast">¡Comprado!</div>`;
+    const e = { kind, it, card, btn: card.querySelector("button"), ctx: card.querySelector("canvas").getContext("2d"), st: Object.assign({ tick: randInt(0, 7), speed: 2, trail: null, advance: true }, st) };
+    e.ctx.imageSmoothingEnabled = false;
+    e.btn.addEventListener("click", ev => { ev.currentTarget.blur(); this.itemAction(e); });
+    card.addEventListener("animationend", ev => { if (ev.target === card) card.classList.remove("bought", "denied"); });
+    parent.appendChild(card); this.items.push(e); return e;
+  }
+  ownsItem(e) { const d = this.game.save.data; return e.kind === "hats" ? d.hats.includes(e.it.id) : d[e.kind].includes(e.it.id); }
+  isOn(e) {
+    const d = this.game.save.data;
+    return e.kind === "hats" ? d.acc[e.it.slot] === e.it.id : e.kind === "trails" ? d.trail === e.it.id : e.kind === "roars" ? d.roar === e.it.id : !!d.pet && d.pet.id === e.it.id;
+  }
+  itemAction(e) {
+    const g = this.game, s = g.save, on = this.isOn(e); g.sfx.unlock();
+    if (this.ownsItem(e)) { if (e.kind === "hats") s.equipHat(e.it.slot, on ? null : e.it.id); else s.equipItem(e.kind, on ? null : e.it.id); g.sfx.click(); if (e.kind === "pets") g.pets.tag = 3; }
+    else if (e.kind === "hats" ? s.buyHat(e.it) : s.buyItem(e.kind, e.it)) { g.sfx.buy(); this.confirmAnim(e.card); this.flashWallet(); g.ach.event("purchase", { kind: e.kind, price: e.it.price }); }
     else { g.sfx.denied(); e.card.classList.add("denied"); }
     this.refresh();
   }
@@ -7648,9 +7918,15 @@ class Shop {
       tickStates(list.map(e => e.st), dt);
       for (const e of list) if (e.st.advance) drawSkinPreview(e.ctx, e.id, e.st, e.w, 84, 3);
       if (this.tab === "eggs") this.eggs.update(dt);
-    } else if (this.tab === "hats") {
-      tickStates(this.hatCards.map(e => e.st), dt);
-      for (const e of this.hatCards) if (e.st.advance) { e.st.duck = e.st.tick % 24 >= 18; drawSkinPreview(e.ctx, this.game.skinId, e.st, 120, 84, 3); }
+    } else if (this.tab === "hats" || this.tab === "fx" || this.tab === "pets") {
+      const kinds = { hats: ["hats"], fx: ["trails", "roars"], pets: ["pets"] }[this.tab], list = this.items.filter(e => kinds.includes(e.kind));
+      tickStates(list.map(e => e.st), dt);
+      for (const e of list) if (e.st.advance) {
+        if (e.kind === "pets") { drawPetPreview(e.ctx, { id: e.it.id }, e.st, 120, 84, 4); e.st.advance = false; continue; }
+        if (e.kind === "hats") e.st.duck = e.st.tick % 24 >= 18;
+        drawSkinPreview(e.ctx, this.game.skinId, e.st, 120, 84, 3);
+      }
+      if (this.tab === "pets") this.petEditor.update(dt);
     } else if (this.tab === "editor") this.editor.update(dt);
   }
 }
@@ -7908,6 +8184,45 @@ class SkinEditor {
     tickStates([this.st], dt); this.st.duck = this.jumpT > 1 && this.jumpT < 1.7;   // también se ve agachado
     if (this.st.advance) drawSkinPreview(this.ctx, "editor-preview", this.st, 240, 150, 5, jumpY);
   }
+}
+
+// Vista previa de una mascota corriendo (tienda y editor de mascota)
+function drawPetPreview(c, pet, st, w, h, sc) {
+  const sp = PET_BY_ID[pet.id]; if (!sp) return;
+  c.fillStyle = "#2f3658"; c.fillRect(0, 0, w, h); const gy = h - 10;
+  c.fillStyle = "#4a5282"; c.fillRect(0, gy, w, 3);
+  c.globalAlpha = 0.35; for (let i = 0; i < 5; i++) c.fillRect(mod(i * 31 - st.tick * 6, w + 10) - 10, gy + 5, 6, 2); c.globalAlpha = 1;
+  c.save(); c.translate(Math.round(w / 2 - 8 * sc), gy); drawPetSprite(c, pet, st.tick * CONFIG.SKIN_TICK, sc, 0); c.restore();
+}
+// =====================================================================
+//  PetEditor: personaliza la mascota elegida (nombre, color del cuerpo y color de detalle)
+// =====================================================================
+class PetEditor {
+  constructor(game, shop) {
+    this.g = game; this.shop = shop; const $ = id => document.getElementById(id);
+    this.box = $("petCustom"); this.cv = $("petPreview"); this.ctx = this.cv.getContext("2d"); this.ctx.imageSmoothingEnabled = false;
+    this.name = $("petName"); this.st = { tick: 0, speed: 2 };
+    this.name.addEventListener("keydown", e => e.stopPropagation());
+    this.name.addEventListener("input", () => { const p = game.save.data.pet; if (p) { p.name = this.name.value.slice(0, 14); game.save.save(); } });
+    $("petNone").addEventListener("click", e => { e.currentTarget.blur(); game.sfx.click(); game.save.equipItem("pets", null); shop.refresh(); });
+  }
+  swatches(el, value, pick) {
+    el.innerHTML = "";
+    for (const col of PET_COLORS) {
+      const b = document.createElement("button"); b.className = "sw" + (col.toLowerCase() === String(value).toLowerCase() ? " sel" : ""); b.style.background = col; b.title = col;
+      b.addEventListener("click", () => { this.g.sfx.click(); pick(col); }); el.appendChild(b);
+    }
+    const inp = document.createElement("input"); inp.type = "color"; inp.value = value; inp.addEventListener("change", () => pick(inp.value)); el.appendChild(inp);
+  }
+  refresh() {
+    const p = this.g.save.data.pet; this.box.classList.toggle("hidden", !p); if (!p) return;
+    if (document.activeElement !== this.name) this.name.value = p.name || "";
+    const set = (k, v) => { p[k] = v; this.g.save.save(); this.refresh(); };
+    this.swatches(document.getElementById("petBody"), p.body, v => set("body", v));
+    this.swatches(document.getElementById("petAccent"), p.accent, v => set("accent", v));
+    document.getElementById("petSpecies").textContent = PET_BY_ID[p.id].name;
+  }
+  update(dt) { const p = this.g.save.data.pet; if (!p) return; tickStates([this.st], dt); if (this.st.advance) { drawPetPreview(this.ctx, p, this.st, 240, 120, 6); this.st.advance = false; } }
 }
 
 // =====================================================================
@@ -8578,7 +8893,9 @@ const MANUAL_SECTIONS = [
     <h4>Rugidos especiales</h4><p>Los skins Épicos, Legendarios, el Supremo y los exclusivos tienen un <b>rugido propio</b> y una pose animada al rugir: ${Object.entries(ROAR_STYLES).filter(([id]) => SkinCatalog.get(id)).map(([id, r]) => `${SkinCatalog.get(id).name}: ${r.name.toLowerCase()}`).join(" · ")}. Los diseños del editor heredan el rugido del efecto que elijas. Es solo estético: el alcance y el daño no cambian.</p>
     <h4>Checkpoints</h4><p>Empieza al inicio de un nivel. Precio: ${CONFIG.CHECKPOINT_PRICE_STEP} × (nivel − 1). Se desbloquean al completar el nivel anterior y sirven en todos los modos.</p>
     <h4>Editor de skins</h4><p>Cuesta ${CONFIG.EDITOR_PRICE} monedas una sola vez. Dibuja tu raptor <b>píxel a píxel</b> (lápiz, goma, rellenar, cuentagotas, voltear y borrar todo) con 13 colores de paleta que puedes cambiar cuando quieras, o empieza desde una plantilla. Elige fondo, suelo y efecto y guárdalo en una de sus ${CONFIG.EDITOR_SLOTS} ranuras. Las patas se animan solas y la pose agachada se genera a partir de tu dibujo. Las plantillas y efectos de skins Épicos o superiores solo están disponibles si tienes esos skins.</p>
-    <h4>Accesorios</h4><p>En la pestaña <b>🎩 Accesorios</b>: ${HATS.map(h => `${h.name} (${h.price})`).join(", ")}. Se ponen encima de cualquier skin y te siguen al correr, saltar y agacharte. Puedes llevar uno a la vez.</p>`; } },
+    <h4>Accesorios</h4><p>En la pestaña <b>🎩 Accesorios</b>, con 3 huecos (uno de cada a la vez): ${HAT_SLOTS.map(([k, n]) => `<b>${n}</b>: ${HATS.filter(h => h.slot === k).map(h => `${h.name} (${h.price})`).join(", ")}`).join(". ")}. Se ponen encima de cualquier skin y te siguen al correr, saltar y agacharte.</p>
+    <h4>Estelas y rugidos</h4><p>En <b>✨ Estelas y rugidos</b>. Estelas: ${SHOP_TRAILS.map(t => `${t.name} (${t.price})`).join(", ")}. Rugidos: ${SHOP_ROARS.map(r => `${r.name} (${r.price})`).join(", ")}. Valen para cualquier skin: la estela se suma a la del skin y el rugido sustituye al suyo (solo cambia el aspecto).</p>
+    <h4>Mascotas</h4><p>En <b>🐾 Mascotas</b>: ${PET_SPECIES.map(p => `${p.name} (${p.price})`).join(", ")}. Corren por el carril del medio, saltan cuando saltas y cada ${PET_CONFIG.CD} s te traen una moneda cercana. Elige su nombre, el color del cuerpo y el de los detalles.</p>`; } },
   { title: "Ruleta", html: () => { const O = CONFIG.ROULETTE_ODDS; return `
     <p>Apuesta monedas del juego (mín. ${CONFIG.ROULETTE_MIN_BET}, máx. ${CONFIG.ROULETTE_MAX_BET}). El resultado se decide con estas probabilidades y la rueda se para exactamente en esa casilla;
     el tamaño de cada casilla se parece a su probabilidad.</p>
@@ -8647,6 +8964,9 @@ const MANUAL_SECTIONS = [
     <p>Dificultad Normal, pero cada nivel trae una <b>regla sorpresa</b> que se anuncia al empezar el nivel (y se ve arriba en el marcador). Tiene su propio récord.</p>
     <table><tr><th>Regla</th><th>Qué hace</th></tr>${RANDOM_MODS.map(m => `<tr><td>${m.icon} ${m.name}</td><td>${m.desc}</td></tr>`).join("")}</table>
     <div class="tip">Dicen que quien recorre los 10 niveles de un tirón, sin caer ni una sola vez, encuentra un portal dorado…</div>` },
+  { title: "Clima", html: () => `
+    <p>A mitad de nivel puede llegar el <b>clima</b> del bioma. Dura unos segundos, se anuncia en el marcador y cambia algo del juego mientras dura (no en multijugador ni durante los jefes):</p>
+    <table><tr><th>Bioma</th><th>Clima</th><th>Efecto</th></tr>${Object.entries(WEATHER).map(([b, w]) => `<tr><td>${(BIOMES.find(x => x.id === b) || {}).name || b}</td><td>${w.icon} ${w.name}</td><td>${w.desc}</td></tr>`).join("")}</table>` },
   { title: "Carrera diaria", html: () => `
     <p>En la portada, <b>📅 Carrera diaria</b>: cada día hay un recorrido nuevo, <b>el mismo para todos</b> (obstáculos, monturas, altares y cartas de mejora salen de una semilla con la fecha). Se juega en Normal desde el nivel 1 con una <b>regla del día</b> fija toda la partida (una de las del modo Aleatorio).</p>
     <ul><li>Intentos ilimitados: cuenta tu <b>mejor marca del día</b> (tiene su propio récord y no toca el del modo Normal).</li>
@@ -9345,7 +9665,7 @@ class StatsManager {
       case "coinsEarned": this.inc(s, "coinsEarned", d.n); break;
       case "coinsSpent": this.inc(this.o("spent"), d.on || "otros", d.n); break;
       case "purchase": {
-        const n = d.kind === "skin" ? d.skin.price : d.kind === "checkpoint" ? g.checkpoints.price(d.level) : d.kind === "editor" ? CONFIG.EDITOR_PRICE : d.kind === "hat" ? d.price : 0;
+        const n = d.kind === "skin" ? d.skin.price : d.kind === "checkpoint" ? g.checkpoints.price(d.level) : d.kind === "editor" ? CONFIG.EDITOR_PRICE : ["hat", "hats", "trails", "roars", "pets"].includes(d.kind) ? d.price : 0;
         if (n) this.inc(this.o("spent"), "shop", n);
         break;
       }
@@ -9946,7 +10266,7 @@ class DailyRace {
   // Empieza un intento: un generador con semilla para cada sistema (así no se descuadran entre ellos)
   begin() {
     const s = this.seed;
-    this.rng = { spawn: mulberry32(s), mount: mulberry32(s ^ 0x51ed27), rogue: mulberry32(s ^ 0xa5a5a5), pool: mulberry32(s ^ 0x3c6ef3) };
+    this.rng = { spawn: mulberry32(s), mount: mulberry32(s ^ 0x51ed27), rogue: mulberry32(s ^ 0xa5a5a5), pool: mulberry32(s ^ 0x3c6ef3), weather: mulberry32(s ^ 0x7f4a7c) };
     this.d.attempts++; this.g.save.save();
   }
   // Al acabar (Game.bankRun): mejor marca del día, racha y premio del primer intento
@@ -9977,9 +10297,221 @@ class DailyRace {
   }
 }
 // Las partes del juego que deciden el recorrido usan el generador del día durante la carrera diaria
-for (const [proto, name, key] of [[Spawner.prototype, "update", "spawn"], [MountManager.prototype, "planLevel", "mount"], [RogueManager.prototype, "onLevelStart", "rogue"], [UpgradePool.prototype, "roll", "pool"]]) {
+for (const [proto, name, key] of [[Spawner.prototype, "update", "spawn"], [MountManager.prototype, "planLevel", "mount"], [RogueManager.prototype, "onLevelStart", "rogue"], [UpgradePool.prototype, "roll", "pool"], [WeatherManager.prototype, "planLevel", "weather"]]) {
   const f = proto[name];
   proto[name] = function (...a) { const g = this.game || this.g, R = g && g.daily && g.dailyRace.rng; return R ? withRng(R[key], () => f.apply(this, a)) : f.apply(this, a); };
+}
+
+// =====================================================================
+//  Mascotas: corren por el carril del medio, entre los dos carriles, un poco por detrás del raptor.
+//  Se personalizan (especie, color del cuerpo, color de detalle y nombre) y cada pocos segundos te traen una moneda.
+// =====================================================================
+const PET_CONFIG = { CD: 3, RANGE: 280, SCALE: 3, BEHIND: 64 };
+// Especies de mascota: 2 fotogramas de 16 × 12 (o = contorno, b = cuerpo, s = sombra, l = vientre, a = detalle, e = ojo, p = pupila)
+const PET_SPECIES = [
+  { id: "raptorin", name: "Raptorín", price: 500, desc: "Una cría de raptor que te imita", body: "#6cc25a", accent: "#ffd23f",
+    frames: [[
+      "................",
+      "..........oooo..",
+      ".........obbbbo.",
+      ".........obbepbo",
+      ".........obbbbbo",
+      "..oo....obbbaoo.",
+      ".obbo..obbbbo...",
+      "..obbbbbbbllo...",
+      "...osbbbbllo....",
+      "....oosssbo.....",
+      ".....obo.obo....",
+      ".....oao..oao...",
+    ], [
+      "................",
+      "..........oooo..",
+      ".........obbbbo.",
+      ".........obbepbo",
+      ".........obbbbbo",
+      "..oo....obbbaoo.",
+      ".obbo..obbbbo...",
+      "..obbbbbbbllo...",
+      "...osbbbbllo....",
+      "....oosssbo.....",
+      "......obobo.....",
+      "......oaoao.....",
+    ]] },
+  { id: "trici", name: "Trici", price: 800, desc: "Triceratops bebé con su gola", body: "#ff9a3c", accent: "#fff3c4",
+    frames: [[
+      "................",
+      "................",
+      "..........oo.o..",
+      "........ooaoao..",
+      ".......oaaobbbo.",
+      "..oooooaabbbepbo",
+      ".obbbbbbbbbbbbbo",
+      "obbbbbbbbbbbbbo.",
+      "osbbbbbbbbllbo..",
+      ".osssssssslloo..",
+      "..obo.obo.obo...",
+      "..oao.oao.oao...",
+    ], [
+      "................",
+      "................",
+      "..........oo.o..",
+      "........ooaoao..",
+      ".......oaaobbbo.",
+      "..oooooaabbbepbo",
+      ".obbbbbbbbbbbbbo",
+      "obbbbbbbbbbbbbo.",
+      "osbbbbbbbbllbo..",
+      ".osssssssslloo..",
+      "...obo.obo.obo..",
+      "...oao.oao.oao..",
+    ]] },
+  { id: "huevito", name: "Huevito", price: 600, desc: "Un huevo que aún no ha nacido… pero corre", body: "#f3e2b8", accent: "#6cc25a",
+    frames: [[
+      "................",
+      "......oooo......",
+      ".....obbbbo.....",
+      "....obbabbbo....",
+      "....obbbbepo....",
+      "...obaabbbbbo...",
+      "...obbbbbbabo...",
+      "...obbbobbbbo...",
+      "...osbbbobbso...",
+      "....ossssssbo...",
+      ".....oaooao.....",
+      "....oao..oao....",
+    ], [
+      "................",
+      "................",
+      "......oooo......",
+      ".....obbbbo.....",
+      "....obbabbbo....",
+      "....obbbbepo....",
+      "...obaabbbbbo...",
+      "...obbbbbbabo...",
+      "...obbbobbbbo...",
+      "...osbbbobbso...",
+      "....ossssssbo...",
+      ".....oaooao.....",
+    ]] },
+  { id: "anky", name: "Anky", price: 900, desc: "Anquilosaurio bebé con maza en la cola", body: "#8a6a4a", accent: "#e8d8b0",
+    frames: [[
+      "................",
+      "................",
+      "................",
+      "......oaoaoao...",
+      ".oo..oabababao..",
+      "oaao.obbbbbbbboo",
+      "oaaoobbbbbbbbepo",
+      ".oobbbbbbbbbbbbo",
+      "...osbbbbbbllbo.",
+      "....ossssslloo..",
+      ".....obo..obo...",
+      ".....oao..oao...",
+    ], [
+      "................",
+      "................",
+      "................",
+      "......oaoaoao...",
+      ".oo..oabababao..",
+      "oaao.obbbbbbbboo",
+      "oaaoobbbbbbbbepo",
+      ".oobbbbbbbbbbbbo",
+      "...osbbbbbbllbo.",
+      "....ossssslloo..",
+      "......obo.obo...",
+      "......oao.oao...",
+    ]] },
+  { id: "ptero", name: "Pterín", price: 1100, desc: "Pterodáctilo bebé: va volando", body: "#5fb4ff", accent: "#ffd23f", fly: true,
+    frames: [[
+      "....oo..........",
+      "...obbo.........",
+      "...obbbo...oo...",
+      "....obbbo.obbo..",
+      ".....obbbobepoaa",
+      "......obbbbbboo.",
+      ".....oobbbllo...",
+      "....obbbbbbo....",
+      "...obbbsoo......",
+      "...oo.oo........",
+      "................",
+      "................",
+    ], [
+      "................",
+      "................",
+      "................",
+      "...........oo...",
+      "..........obbo..",
+      "..........bepoaa",
+      ".oooooooobbbboo.",
+      "obbbbbbbbbbllo..",
+      ".oossbbbbbbbo...",
+      "...oossbbbo.....",
+      ".......oo.......",
+      "................",
+    ]] },
+];
+const PET_BY_ID = Object.fromEntries(PET_SPECIES.map(p => [p.id, p]));
+const PET_COLORS = ["#6cc25a", "#3ddc84", "#2e6b2a", "#5fb4ff", "#1a4fb0", "#8a5cff", "#ff5cc8", "#ff3b3b", "#ff9a3c", "#ffd23f", "#f3e2b8", "#8a6a4a", "#3a2a1a", "#ffffff", "#8a93a6", "#1c1b19"];
+const _petCache = new Map();
+// Lienzo de 16 × 12 con los colores elegidos (se cachea por especie, colores y fotograma)
+function petCanvas(id, body, accent, f) {
+  const k = id + body + accent + f; let cv = _petCache.get(k); if (cv) return cv;
+  const sp = PET_BY_ID[id]; if (!sp) return null;
+  cv = document.createElement("canvas"); cv.width = 16; cv.height = 12; const c = cv.getContext("2d");
+  const pal = { o: "#1a1424", b: body, s: shadeHex(body, -0.3), l: shadeHex(body, 0.45), a: accent, e: "#ffffff", p: "#15161c" };
+  sp.frames[f % sp.frames.length].forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") { c.fillStyle = pal[ch] || "#f0f"; c.fillRect(x, y, 1, 1); } }));
+  if (_petCache.size > 200) _petCache.clear();
+  _petCache.set(k, cv); return cv;
+}
+// Dibuja una mascota con los pies en (0, 0) (coordenadas de carril)
+function drawPetSprite(c, pet, t, sc = PET_CONFIG.SCALE, y = 0) {
+  const sp = PET_BY_ID[pet.id]; if (!sp) return;
+  const f = Math.floor(t * (sp.fly ? 6 : 10)) % 2, cv = petCanvas(pet.id, pet.body || sp.body, pet.accent || sp.accent, f);
+  const fy = sp.fly ? 26 + Math.sin(t * 4) * 4 : 0;
+  c.imageSmoothingEnabled = false; c.drawImage(cv, 0, Math.round(-12 * sc - y - fy), 16 * sc, 12 * sc);
+}
+class PetManager {
+  constructor(game) { this.g = game; this.reset(); }
+  get pet() { const p = this.g.save.data.pet; return p && PET_BY_ID[p.id] ? p : null; }
+  get on() { return !!this.pet && !this.g.versus && !this.g.tutorial; }
+  reset() { this.y = 0; this.vy = 0; this.t = 0; this.cd = PET_CONFIG.CD; this.beams = []; this.wasJump = false; this.hopDelay = 0; this.tag = 3; }
+  get x() { return this.g.player.x - PET_CONFIG.BEHIND; }
+  // Animación (también en la portada) y, durante la partida, recoger monedas
+  update(dt, playing) {
+    if (!this.on) return;
+    this.t += dt; this.tag = Math.max(0, this.tag - dt);
+    const pl = this.g.player, jumping = pl.y > 2 && pl.vy > 0;
+    if (jumping && !this.wasJump) this.hopDelay = 0.12;   // salta un poco después que tú
+    this.wasJump = jumping;
+    if (this.hopDelay > 0 && (this.hopDelay -= dt) <= 0 && this.y <= 0) this.vy = 560;
+    if (this.y > 0 || this.vy > 0) { this.vy -= 2000 * dt; this.y = Math.max(0, this.y + this.vy * dt); if (this.y === 0) this.vy = 0; }
+    for (const b of this.beams) b.t += dt; this.beams = this.beams.filter(b => b.t < 0.35);
+    if (!playing) return;
+    if ((this.cd -= dt) > 0) return;
+    const g = this.g; let best = null;
+    for (const c of g.coinsArr) if (!c.taken && c.x > this.x && c.x < this.x + PET_CONFIG.RANGE && (!best || c.x < best.x)) best = c;
+    if (!best) { this.cd = 0.3; return; }
+    best.taken = true; const v = g.coinValue; g.runCoins += v; g.sfx.coin();
+    this.beams.push({ from: toScreen(best.laneT, best.x, best.y), t: 0 });
+    this.cd = PET_CONFIG.CD; g.ach.event("coinCollected");
+  }
+  // En el carril del medio (entre los dos), con su sombra
+  draw(c) {
+    if (!this.on) return; const pet = this.pet, x = this.x;
+    c.save(); applyLane(c, 0.5); c.translate(x, 0);
+    drawShadow(c, 24, 36 * (1 - Math.min(0.5, this.y / 120)), this.y);
+    drawPetSprite(c, pet, this.t, PET_CONFIG.SCALE, this.y);
+    c.restore();
+    const to = toScreen(0.5, x + 24, 20 + this.y);
+    for (const b of this.beams) {   // la moneda vuela hasta la mascota
+      const k = b.t / 0.35, px = b.from.x + (to.x - b.from.x) * k, py = b.from.y + (to.y - b.from.y) * k - Math.sin(k * Math.PI) * 30;
+      c.fillStyle = "#ffd23f"; c.beginPath(); c.arc(px, py, 6 * (1 - k * 0.4), 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#fff3b0"; c.fillRect(px - 2, py - 3, 2, 3);
+    }
+    if (this.tag > 0 && pet.name) {   // su nombre al empezar
+      c.globalAlpha = Math.min(1, this.tag); this.g.ui.pill(c, pet.name.toUpperCase(), to.x, to.y - 52, 9, "#fff3c4"); c.globalAlpha = 1;
+    }
+  }
 }
 
 // Causa de un golpe (estadística «qué te mata más»)
@@ -10025,6 +10557,7 @@ class Game {
     this.rogue = new RogueManager(this); this.history = new BuildHistory(this); this.album = new UpgradeAlbum(this);
     this.backup = new SaveBackup(this); this.statsMgr = new StatsManager(this); this.tree = new SkillTree(this); this.tips = new TipManager(this); this.season = new SeasonPass(this);
     this.dailyRace = new DailyRace(this); this.daily = false;   // carrera diaria
+    this.weather = new WeatherManager(this); this.pets = new PetManager(this);   // clima y mascota
     this.tutSkip = document.getElementById("tutSkip");
     this.tutSkip.addEventListener("click", e => { e.currentTarget.blur(); this.sfx.click(); this.skipTutorial(); });
     this.state = "menu"; this.time = 0; this.scroll = 0; this.touchMode = false; this.pausedFrom = "playing";
@@ -10061,6 +10594,7 @@ class Game {
     this.bossHearts = 0; this.pendingHeart = 0; this.bonusScore = 0; this.timeCd = 0; this.echoT = 0; this.echoWave = null; this.superWave = null;
     this.ghosts = [{ x: 120, cd: 0 }, { x: 200, cd: 0 }]; this.randomMod = null;
     if (this.rogue) { this.rogue.reset(); this.rogue.screen.el.classList.add("hidden"); }
+    if (this.weather) { this.weather.reset(); this.pets.reset(); }
   }
   stat(k) { return this.build.stat(k); }
   // Avisos del roguelike (RunBuild)
@@ -10206,7 +10740,7 @@ class Game {
     if (M && !M.canRoar()) { this.sfx.denied(); return; }
     const cd = this.stat("roarNoCd") ? 1 : this.stat("roarCooldown");
     this.roarCd = this.roarCdMax = cd * (boss && boss.state === "fight" ? boss.roarCdMult : 1);   // algunos bosses se vencen a rugidos
-    this.roarWave = { t: 0, lane: this.player.logicalLane, style: roarStyle(this.skinId), range: this.stat("roarRange"), both: !!this.stat("roarBothLanes"), back: !!this.stat("roarBack") };
+    this.roarWave = { t: 0, lane: this.player.logicalLane, style: roarStyleFor(this.skinId), range: this.stat("roarRange"), both: !!this.stat("roarBothLanes"), back: !!this.stat("roarBack") };
     if (this.stat("roarEcho")) this.echoT = 0.5;
     this.roarAnim = 0.6; this.addShake(0.35, 7); this.sfx.roar();
     const st = this.roarWave.style, pl = this.player;
@@ -10257,7 +10791,7 @@ class Game {
   roarP(p) {
     if (this.state !== "playing" || p.dead || p.roarCd > 0) return;
     p.roarCd = p.roarCdMax = this.mode.roarCooldown;
-    p.roarWave = { t: 0, lane: p.logicalLane, style: roarStyle(p.skinId) };
+    p.roarWave = { t: 0, lane: p.logicalLane, style: p.num === 1 ? roarStyleFor(p.skinId) : roarStyle(p.skinId) };
     p.roarAnim = 0.6; this.addShake(0.25, 5); this.sfx.roar();
     const st = p.roarWave.style;
     if (st) { for (let i = 0; i < 24; i++) this.particles.push(new Particle(p.logicalLane, p.x + 66, p.y + rand(20, 60), rand(150, 650), rand(-150, 350), rand(0.4, 0.9), choice(st.colors), rand(3, 7))); this.sfx.roarSpecial(st.type); }
@@ -10353,7 +10887,7 @@ class Game {
     }
     const sh = this.versus ? 0 : this.stat("startShield");   // Escudo inicial
     if (sh > 0) { this.effects.shield = this.effectMax.shield = sh; }
-    this.mounts.planLevel(level);
+    this.mounts.planLevel(level); this.weather.planLevel(level);
     if (this.rogue) this.rogue.onLevelStart(level);
   }
   // Llamados por la clase Boss
@@ -10473,7 +11007,7 @@ class Game {
     this.updateAmbient(this.state === "paused" ? 0 : dt);
 
     if (MENU_STATES.includes(this.state)) {
-      this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt);
+      this.scroll += 120 * dt; this.player.anim += dt; this.player.tickSkin(dt, 120); this.updateParticles(dt); this.pets.update(dt, false);
       if ((this.menuT = (this.menuT || 0) + dt) > 8) { this.menuT = 0; this.level.setBiome((this.level.cur + 1) % BIOMES.length); }   // la portada recorre los biomas
       return;
     }
@@ -10538,11 +11072,12 @@ class Game {
     if (this.roarWave && !this.roarHits(this.roarWave, dt)) this.roarWave = null;
     if (this.echoT > 0 && (this.echoT -= dt) <= 0 && this.state === "playing") {   // Eco: se repite con la mitad de alcance
       const w0 = this.roarWave || {};
-      this.echoWave = { t: 0, lane: this.player.logicalLane, style: roarStyle(this.skinId), range: this.stat("roarRange") / 2, both: !!this.stat("roarBothLanes"), back: !!this.stat("roarEchoBack"), echo: true };
+      this.echoWave = { t: 0, lane: this.player.logicalLane, style: roarStyleFor(this.skinId), range: this.stat("roarRange") / 2, both: !!this.stat("roarBothLanes"), back: !!this.stat("roarEchoBack"), echo: true };
       this.sfx.roar();
     }
     if (this.echoWave && !this.roarHits(this.echoWave, dt)) this.echoWave = null;
     if (!this.versus) this.updatePerks(dt, gdt);
+    this.weather.update(dt); this.pets.update(gdt, true);   // clima del bioma y mascota (te trae monedas)
 
     if (this.versus) { for (const p of this.players) if (!p.dead && this.state === "playing") this.checkCollisions(p); }
     else this.checkCollisions();
@@ -10658,7 +11193,7 @@ class Game {
     const c = cv.getContext("2d"), s = Math.max(cw / W, ch / H), tx = clamp(cw / 2 - 200 * s, cw - W * s, 0), ty = ch - H * s;
     c.setTransform(s, 0, 0, s, tx, ty); c.imageSmoothingEnabled = false;
     this.level.drawBackground(c);
-    const p = this.player; this.drawEntity(c, p.laneT, p.x, () => p.draw(c));
+    const p = this.player; this.pets.draw(c); this.drawEntity(c, p.laneT, p.x, () => p.draw(c));
     for (const a of this.ambient) { c.fillStyle = a.color; c.globalAlpha = 0.8; c.fillRect(Math.round(a.x), Math.round(a.y), a.size, a.size); }
     c.globalAlpha = 1;
   }
@@ -10688,10 +11223,12 @@ class Game {
     c.save();
     if (this.shake > 0) { const m = this.shakeMag * clamp(this.shake / (this.shakeDur || 1), 0, 1); c.translate(rand(-m, m), rand(-m, m)); }
     this.level.drawBackground(c);
+    this.weather.drawBack(c);   // rayos de luz, meteoritos y relámpagos
     this.mounts.drawWater(c);   // río o mar de las monturas de agua
     const boss = this.bosses.boss;
     if (boss) boss.drawSky(c);
     this.drawLane(c, 0);
+    this.pets.draw(c);   // la mascota corre por el carril del medio
     this.drawLane(c, 1);
     if (this.versus) for (const p of this.players) if (p.ink > 0) {   // trampa de tinta: oscurece el carril de ese raptor por delante
       const a = Math.min(1, p.ink / 0.4) * 0.92, y0 = p.lane === 0 ? 150 : 246, y1 = p.lane === 0 ? 246 : 352;
@@ -10709,6 +11246,7 @@ class Game {
       this.ui.text(c, f.text, p.x, p.y - f.t * 45, f.size, f.color, "center");
     }
     c.globalAlpha = 1;
+    this.weather.drawFront(c);   // lluvia, arena, nieve, niebla…
     c.restore();
 
     if (!this.vignette) { const v = c.createRadialGradient(W / 2, H * 0.55, H * 0.45, W / 2, H * 0.55, W * 0.62);   // viñeta suave (se crea una vez)
