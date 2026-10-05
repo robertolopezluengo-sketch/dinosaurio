@@ -913,7 +913,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 26 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 27 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -922,7 +922,7 @@
   <div class="card scr-card play-card">
     <button class="mm-back" id="playBack">← Volver</button>
     <h2 class="scr-title" id="playTitle">Elige modo</h2>
-    <p class="touch-hint hidden" id="vsHint" style="margin:-4px 0 12px">J1 (carril de arriba): <kbd data-k="vs1.jump">W</kbd> saltar · <kbd data-k="vs1.slide">S</kbd> deslizarse · <kbd data-k="vs1.roar">E</kbd> rugido · <kbd data-k="vs1.trap">A</kbd> trampa — J2 (carril de abajo): <kbd data-k="vs2.jump">↑</kbd> saltar · <kbd data-k="vs2.slide">↓</kbd> deslizarse · <kbd data-k="vs2.roar">→</kbd> rugido · <kbd data-k="vs2.trap">←</kbd> trampa. Cada 6 s ganas una trampa para el rival. Sin jefes; gana quien aguante más.</p>
+    <p class="touch-hint hidden" id="vsHint" style="margin:-4px 0 12px">J1 (carril de arriba): <kbd data-k="vs1.jump">W</kbd> saltar · <kbd data-k="vs1.slide">S</kbd> deslizarse · <kbd data-k="vs1.roar">E</kbd> rugido · <kbd data-k="vs1.trap" data-all="1">A / Q</kbd> trampa — J2 (carril de abajo): <kbd data-k="vs2.jump">↑</kbd> saltar · <kbd data-k="vs2.slide">↓</kbd> deslizarse · <kbd data-k="vs2.roar">→</kbd> rugido · <kbd data-k="vs2.trap" data-all="1">←</kbd> trampa. Cada 6 s ganas una trampa para el rival (máximo 6 por partida). Sin jefes; gana quien aguante más.</p>
     <div class="modes">
       <button class="mode" data-mode="normal"><i>🦖</i><b>NORMAL</b><small id="descNormal"></small></button>
       <button class="mode" data-mode="easy"><i>🌱</i><b>FÁCIL</b><small id="descEasy"></small></button>
@@ -1101,7 +1101,7 @@
         <div class="mm-tile net-join"><i>🔑</i><b>Unirse a una sala</b><input id="netCodeIn" maxlength="4" placeholder="CÓDIGO" autocomplete="off" spellcheck="false"><button class="btn small purple" id="netJoin">Entrar</button></div>
       </div>
       <div id="netSearching" class="net-searching hidden"><span class="net-spin"></span><b id="netSearchTxt">Buscando rival…</b><button class="btn small" id="netCancel">Cancelar</button></div>
-      <p class="touch-hint">De 2 a 4 jugadores. Todos corréis el mismo recorrido a la vez, sin jefes ni mejoras; los rivales se ven como fantasmas. Cada 8 s ganas una <b>trampa</b> (tecla <kbd data-k="trap">Q</kbd> o botón 🎯) que aparece delante del rival que va justo por delante de ti. Gana quien llegue más lejos.</p>
+      <p class="touch-hint">De 2 a 4 jugadores. Todos corréis el mismo recorrido a la vez, sin jefes ni mejoras; los rivales se ven como fantasmas. Cada 8 s ganas una <b>trampa</b>, hasta 6 por carrera (tecla <kbd data-k="trap" data-all="1">Q</kbd> o botón 🎯) que aparece delante del rival que va justo por delante de ti. Gana quien llegue más lejos.</p>
     </div>
     <div id="netRoom" class="hidden">
       <div class="net-code">SALA <b id="netCode">ABCD</b><small>Pasa este código a tus amigos para que entren</small></div>
@@ -1567,6 +1567,7 @@ const CONFIG = {
   EGG_REPEAT_COINS: 20,      // si ya tienes todas las skins de un huevo: monedas por cada huevo gastado
   TRAP_RECHARGE: 6,          // multijugador: s para ganar una trampa
   TRAP_MAX: 2,               // trampas acumulables
+  TRAP_TOTAL: 6,             // trampas que puede lanzar cada jugador en toda la partida
   TRAP_INK_TIME: 3,          // s que la tinta oscurece el carril del rival
   TRAP_DISTANCE: 780,        // x de pantalla donde aparece la trampa en el carril del rival
   VERSUS_MODE: "normal",    // multijugador: velocidad y dificultad de este modo (sin jefes, power-ups ni huevos)
@@ -3020,7 +3021,7 @@ class Player {
     // Multijugador: cada raptor tiene su rugido, sus monedas y su puntuación
     this.dead = false; this.deadT = 0; this.lives = 1; this.grace = 0; this.score = 0; this.coins = 0; this.downHeld = false;
     this.roarCd = 0; this.roarCdMax = 1; this.roarWave = null; this.roarAnim = 0;
-    this.traps = 0; this.trapT = 0; this.nextTrap = randInt(0, TRAP_TYPES.length - 1); this.ink = 0;
+    this.traps = 0; this.thrown = 0; this.trapT = 0; this.nextTrap = randInt(0, TRAP_TYPES.length - 1); this.ink = 0;
     this.upHeld = false; this.glideT = 0; this.laneTime = CONFIG.LANE_SWITCH_TIME;
   }
   get mount() { return this.num === 1 && this.game.mounts ? this.game.mounts.active : null; }
@@ -3165,7 +3166,8 @@ class Player {
         if (this.traps > 0) {
           drawTrapIcon(ctx, TRAP_TYPES[this.nextTrap].id, 66, ty);
           ctx.fillStyle = UI_T.weak; ctx.textAlign = "left"; ctx.fillText("×" + this.traps, 76, ty + 1);
-        } else { ctx.fillStyle = "#3a2f50"; ctx.fillRect(60, ty - 2, 36, 4); ctx.fillStyle = UI_T.roar; ctx.fillRect(60, ty - 2, Math.round(36 * this.trapT / CONFIG.TRAP_RECHARGE), 4); }
+        } else if (this.thrown >= CONFIG.TRAP_TOTAL) { ctx.fillStyle = "#8a8098"; ctx.textAlign = "center"; ctx.fillText("—", 78, ty + 1); }   // ya no le quedan
+        else { ctx.fillStyle = "#3a2f50"; ctx.fillRect(60, ty - 2, 36, 4); ctx.fillStyle = UI_T.roar; ctx.fillRect(60, ty - 2, Math.round(36 * this.trapT / CONFIG.TRAP_RECHARGE), 4); }
       }
     }
     if (g.effects.magnet > 0) drawIcon(ctx, "magnet", 38, -(this.y + (this.sliding ? 44 : 84)) + Math.sin(g.time * 5) * 2, 7);
@@ -9084,7 +9086,7 @@ const MANUAL_SECTIONS = [
       <tr><td>Lanzar trampa al rival</td><td>${kbd("A")}</td><td>${kbd("←")}</td></tr>
     </table>
     <h4>Trampas</h4>
-    <p>Cada ${secs(CONFIG.TRAP_RECHARGE)} ganas una trampa (máximo ${CONFIG.TRAP_MAX}); la que tienes preparada se ve junto a tu etiqueta J1/J2. Al lanzarla aparece en el carril del rival con una banderita de quién la puso:</p>
+    <p>Cada ${secs(CONFIG.TRAP_RECHARGE)} ganas una trampa (puedes guardar ${CONFIG.TRAP_MAX} y lanzar como mucho ${CONFIG.TRAP_TOTAL} en toda la partida); la que tienes preparada se ve junto a tu etiqueta J1/J2. Al lanzarla aparece en el carril del rival con una banderita de quién la puso:</p>
     <ul>${TRAP_TYPES.map(t => `<li><b>${t.name}</b>: ${t.id === "ink" ? `le deja el carril a oscuras ${secs(CONFIG.TRAP_INK_TIME)}` : `obliga a ${t.tip}`}.</li>`).join("")}</ul>
     <p>No se pueden lanzar mientras se ve el portal de cambio de nivel.</p>`; } },
   { title: "Tienda", html: () => { const R = ["Común", "Raro", "Épico", "Legendario", "Supremo"]; return `
@@ -9180,7 +9182,7 @@ const MANUAL_SECTIONS = [
       <li>Todos corréis <b>el mismo recorrido</b> en Normal desde el nivel 1, sin mejoras roguelike y sin el árbol (igualdad para todos). Cada jugador tiene <b>un color</b>: los demás se ven como fantasmas con el contorno y la etiqueta de su color, y tu raptor lleva encima la marca <b>TÚ</b>. Si compartís carril, el fantasma se vuelve más transparente para que siempre sepas cuál eres. Si se alejan, una flecha indica la distancia.</li>
       <li>El anfitrión elige el <b>modo</b> en la sala:</li></ul>
     <p><b>🏁 Carrera</b> (sin jefes): gana quien llegue más lejos.</p>
-    <ul><li>Cada ${NET_CONFIG.TRAP_EVERY} s ganas una <b>trampa</b> (máximo ${NET_CONFIG.TRAP_MAX}): <kbd>Q</kbd> o el botón 🎯 la lanza al rival que va justo por delante de ti (o al primero si vas en cabeza).</li>
+    <ul><li>Cada ${NET_CONFIG.TRAP_EVERY} s ganas una <b>trampa</b> (puedes guardar ${NET_CONFIG.TRAP_MAX} y lanzar como mucho <b>${NET_CONFIG.TRAP_TOTAL} por carrera</b>; el marcador dice cuántas te quedan): <kbd>Q</kbd> o el botón 🎯 la lanza al rival que va justo por delante de ti (o al primero si vas en cabeza).</li>
       <li><b>💨 Rebufo</b>: si vas en el mismo carril justo detrás de un rival, corres un ${Math.round((NET_CONFIG.DRAFT_SPEED - 1) * 100)} % más rápido para alcanzarle.</li>
       <li>Premios: ${NET_CONFIG.PRIZE_COINS.map((c, i) => `${i + 1}º ${c} monedas`).join(", ")} y XP del pase.</li></ul>
     <p><b>🤝 Cooperativo</b> (con jefes): jugáis en equipo.</p>
@@ -11257,7 +11259,7 @@ SaveBackup.prototype.setupCloud = function () {
 //  Por el canal de la sala viajan: quién está (presence), la salida, la posición de cada raptor (~8 veces por
 //  segundo) y las trampas. Los rivales se ven como fantasmas. Gana quien llegue más lejos.
 // =====================================================================
-const NET_CONFIG = { MAX: 4, SEND_MS: 200, JOIN_WAIT: 3000, AUTO_START: 7, COUNTDOWN: 3.5, TRAP_EVERY: 8, TRAP_MAX: 2, QUICK_WAIT: 4, HEARTBEAT: 25000,
+const NET_CONFIG = { MAX: 4, SEND_MS: 200, JOIN_WAIT: 3000, AUTO_START: 7, COUNTDOWN: 3.5, TRAP_EVERY: 8, TRAP_MAX: 2, TRAP_TOTAL: 6, QUICK_WAIT: 4, HEARTBEAT: 25000,
   PRIZE_COINS: [150, 80, 50, 30], PRIZE_XP: [80, 50, 30, 20],
   DRAFT_MIN: 30, DRAFT_MAX: 260, DRAFT_SPEED: 1.1,            // rebufo: ir justo detrás de un rival en tu carril
   BOSS_HP_PER_PLAYER: 0.6, REVIVE: 15, GIFT_TIME: 6,          // cooperativo: vida extra del jefe por jugador, revivir y regalos
@@ -11404,7 +11406,7 @@ class NetPlay {
   }
   onStart(d) {
     if (!d.players || !d.players.includes(this.uid) || this.mode === "racing") return;
-    this.mode = "racing"; this.ready = false; this.result = null; this.traps = 1; this.trapT = 0; this.finishedSent = false; this.lost = false; this.expect = 0; clearTimeout(this.autoT);
+    this.mode = "racing"; this.ready = false; this.result = null; this.traps = 1; this.thrown = 0; this.trapT = 0; this.finishedSent = false; this.lost = false; this.expect = 0; clearTimeout(this.autoT);
     this.coop = d.mode === "coop"; this.roomMode = d.mode || "race";
     this.remotes = {}; this.colors = {}; this.teamDmg = {}; this.applied = {}; this.dmgBy = {}; this.bossLv = new Set(); this.down = false; this.reviveT = 0; this.revives = 0; this.watchers = new Set(); this.spec = null;
     d.players.forEach((u, i) => { this.colors[u] = NET_CONFIG.COLORS[i % NET_CONFIG.COLORS.length]; this.dmgBy[u] = 0; });
@@ -11416,7 +11418,7 @@ class NetPlay {
   update(dt) {
     if (this.mode !== "racing") return;
     const g = this.g, now = performance.now(), dead = g.state === "over";
-    if (!dead && g.netWait <= 0 && this.traps < NET_CONFIG.TRAP_MAX && (this.trapT += dt) >= NET_CONFIG.TRAP_EVERY) { this.traps++; this.trapT = 0; g.sfx.tick(); }
+    if (!dead && g.netWait <= 0 && this.traps < NET_CONFIG.TRAP_MAX && this.traps + this.thrown < NET_CONFIG.TRAP_TOTAL && (this.trapT += dt) >= NET_CONFIG.TRAP_EVERY) { this.traps++; this.trapT = 0; g.sfx.tick(); }
     if (this.coop) {
       // Daño del equipo al jefe del nivel: se aplica a mi jefe en cuanto está peleando
       const B = g.bosses.boss, lv = g.level.level, pend = (this.teamDmg[lv] || 0) - (this.applied[lv] || 0);
@@ -11446,12 +11448,17 @@ class NetPlay {
     if (d.dead && !r.dead) { r.dead = true; g.floatText(g.player.laneT, g.player.x + 40, 160, this.coop ? `¡${r.n.toUpperCase()} HA CAÍDO!` : `¡${r.n.toUpperCase()} ELIMINADO!`, "#ff8a8a", 16); this.checkEnd(); }
     else if (!d.dead && r.dead && this.coop) { r.dead = false; g.floatText(g.player.laneT, g.player.x + 40, 160, `¡${r.n.toUpperCase()} HA VUELTO!`, UI_T.go, 16); }
   }
+  // Trampas (o escudos) que aún puedes lanzar en esta partida, contando las que tienes preparadas
+  get trapsLeft() { return NET_CONFIG.TRAP_TOTAL - (this.thrown || 0); }
   // Distancia estimada de un rival ahora mismo (extrapola entre mensajes)
   remoteDist(r) { if (r.dead) return r.d; const v = r.t > r.pt ? (r.d - r.pd) / (r.t - r.pt) : 0; return r.d + Math.max(0, v) * Math.min(400, performance.now() - r.t); }
   // Botón de acción (Q / 🎯): trampa al rival de delante en la carrera, escudo para el compañero más atrasado en el cooperativo
   throwTrap() {
     const g = this.g; if (this.mode !== "racing" || g.state !== "playing" || g.netWait > 0 || !this.room) return;
-    const alive = Object.values(this.remotes).filter(r => !r.dead); if (!alive.length || this.traps <= 0) { g.sfx.denied(); return; }
+    const alive = Object.values(this.remotes).filter(r => !r.dead);
+    if (this.trapsLeft <= 0) { g.sfx.denied(); g.floatText(g.player.laneT, g.player.x + 40, g.player.y + 120, this.coop ? "¡YA NO TE QUEDAN ESCUDOS!" : "¡YA NO TE QUEDAN TRAMPAS!", "#ff8a8a", 14); return; }
+    if (!alive.length || this.traps <= 0) { g.sfx.denied(); return; }
+    this.thrown++;   // cuenta para el máximo de la partida
     if (this.coop) {
       const target = alive.sort((a, b) => this.remoteDist(a) - this.remoteDist(b))[0]; this.traps--;
       this.room.send("gift", { to: target.u, type: "shield", n: this.nick });
@@ -11603,7 +11610,8 @@ class NetPlay {
     });
     if (this.coop) ui.text(c, `JEFES DERROTADOS: ${this.bossLv.size} · EQUIPO ${fmtInt(list.reduce((a, p) => a + p.s, 0))}`, x + 10, y + h - 12, 9, UI_T.weak);
     const ty = y + h + 18, key = this.g.touchMode ? "" : " · " + this.g.controls.label("trap");
-    ui.pill(c, this.coop ? `🎁 ESCUDOS ×${this.traps}${key}` : `🎯 TRAMPAS ×${this.traps}${key}`, x + 98, ty, 9, this.traps ? "#16111f" : UI_T.dim, this.traps ? (this.coop ? UI_T.go : UI_T.weak) : UI_T.pill);
+    const left = this.trapsLeft, txt = left <= 0 ? (this.coop ? "🎁 SIN ESCUDOS" : "🎯 SIN TRAMPAS") : `${this.coop ? "🎁 ESCUDOS" : "🎯 TRAMPAS"} ×${this.traps}${key} · QUEDAN ${left}`;
+    ui.pill(c, txt, x + 98, ty, 9, this.traps ? "#16111f" : UI_T.dim, this.traps ? (this.coop ? UI_T.go : UI_T.weak) : UI_T.pill);
     const sb = this.spec && this.spec.boss;
     if (sb) {   // espectando un combate: vida del jefe del compañero
       const bw = 320, bx = Math.round(W / 2 - bw / 2), by = 40;
@@ -11838,12 +11846,12 @@ const CONTROL_PRESETS = {
   wasd:   { name: "WASD", desc: "W saltar · S deslizarse · A/D carril · E rugido",
             solo: { jump: ["w", ""], slide: ["s", ""], laneUp: ["a", ""], laneDown: ["d", ""], roar: ["e", ""], trap: ["q", ""], pause: ["p", ""] } },
   arrows: { name: "Flechas", desc: "↑ saltar · ↓ deslizarse · ←/→ carril · Espacio rugido",
-            solo: { jump: ["ArrowUp", ""], slide: ["ArrowDown", ""], laneUp: ["ArrowLeft", ""], laneDown: ["ArrowRight", ""], roar: ["Space", ""], trap: ["ShiftRight", ""], pause: ["p", ""] } },
+            solo: { jump: ["ArrowUp", ""], slide: ["ArrowDown", ""], laneUp: ["ArrowLeft", ""], laneDown: ["ArrowRight", ""], roar: ["Space", ""], trap: ["q", "ShiftRight"], pause: ["p", ""] } },
   both:   { name: "WASD + flechas", desc: "Las dos a la vez: juega como te resulte más cómodo",
             solo: { jump: ["w", "ArrowUp"], slide: ["s", "ArrowDown"], laneUp: ["a", "ArrowLeft"], laneDown: ["d", "ArrowRight"], roar: ["e", "Space"], trap: ["q", "ShiftRight"], pause: ["p", ""] } },
 };
 const CONTROL_VS_DEFAULT = {
-  vs1: { jump: ["w", ""], slide: ["s", ""], roar: ["e", "d"], trap: ["a", ""] },
+  vs1: { jump: ["w", ""], slide: ["s", ""], roar: ["e", "d"], trap: ["a", "q"] },
   vs2: { jump: ["ArrowUp", ""], slide: ["ArrowDown", ""], roar: ["ArrowRight", "Enter"], trap: ["ArrowLeft", ""] },
 };
 const CONTROL_RESERVED = ["Escape", "m", "Tab"];   // Esc (pausa / volver), M (sonido) y Tab no se pueden asignar
@@ -11885,6 +11893,12 @@ class Controls {
       const def = set === "solo" ? CONTROL_PRESETS.both.solo : CONTROL_VS_DEFAULT[set];
       if (!c[set] || typeof c[set] !== "object") c[set] = clone(def);
       for (const [a] of CONTROL_ACTIONS[set]) if (!ok(c[set][a])) c[set][a] = def[a].slice();
+    }
+    if (!c.qTrap) {   // (v27) la Q lanza trampas también en configuraciones guardadas antes, si está libre
+      c.qTrap = 1;
+      const addQ = (sets, set) => { const used = sets.some(s => CONTROL_ACTIONS[s].some(([a]) => c[s][a].includes("q"))), t = c[set].trap;
+        if (!used) { if (!t[0]) t[0] = "q"; else if (!t[1]) t[1] = "q"; } };
+      addQ(["solo"], "solo"); addQ(["vs1", "vs2"], "vs1");
     }
     return c;
   }
@@ -12286,6 +12300,7 @@ class Game {
   throwTrap(p) {
     if (this.state !== "playing" || !this.versus || p.dead) return;
     const rival = p === this.player ? this.p2 : this.player;
+    if (p.thrown >= CONFIG.TRAP_TOTAL) { this.sfx.denied(); this.floatText(p.laneT, p.x + 40, p.y + 110, `J${p.num}: ¡SIN TRAMPAS!`, "#ff8a8a", 14); return; }
     if (rival.dead || p.traps <= 0 || this.level.portal) { this.sfx.denied(); return; }
     const type = TRAP_TYPES[p.nextTrap], lane = rival.lane, biome = this.level.biome;
     if (type.id === "ink") rival.ink = CONFIG.TRAP_INK_TIME;
@@ -12298,7 +12313,7 @@ class Game {
       if (o.kind === "flyer") o.extra = this.level.flyerExtra(false);
       o.trapBy = p.num; this.obstacles.push(o);
     }
-    p.traps--; p.nextTrap = (p.nextTrap + randInt(1, TRAP_TYPES.length - 1)) % TRAP_TYPES.length;
+    p.traps--; p.thrown++; p.nextTrap = (p.nextTrap + randInt(1, TRAP_TYPES.length - 1)) % TRAP_TYPES.length;
     this.sfx.toss(); this.sfx.trap();
     this.floatText(rival.laneT, rival.x + 40, rival.y + 110, `¡TRAMPA DE J${p.num}! ${type.name.toUpperCase()}`, p.num === 1 ? UI_T.go : UI_T.info, 18);
   }
@@ -12557,7 +12572,7 @@ class Game {
     if (this.versus) for (const p of this.players) {   // rugidos de los dos raptores
       p.roarCd = Math.max(0, p.roarCd - dt); p.roarAnim = Math.max(0, p.roarAnim - dt); p.grace = Math.max(0, p.grace - dt);
       p.ink = Math.max(0, p.ink - dt);
-      if (!p.dead && p.traps < CONFIG.TRAP_MAX && (p.trapT += dt) >= CONFIG.TRAP_RECHARGE) { p.traps++; p.trapT = 0; this.sfx.tick(); }
+      if (!p.dead && p.traps < CONFIG.TRAP_MAX && p.traps + p.thrown < CONFIG.TRAP_TOTAL && (p.trapT += dt) >= CONFIG.TRAP_RECHARGE) { p.traps++; p.trapT = 0; this.sfx.tick(); }
       const w = p.roarWave; if (!w) continue;
       w.t += dt;
       const reach = p.x + 70 + CONFIG.ROAR_RANGE * Math.min(1, w.t / CONFIG.ROAR_WAVE_TIME);
