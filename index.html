@@ -873,7 +873,7 @@
   <div class="mm-bottom">
     <button class="bk-remind hidden" id="bkRemind">💾 Haz una copia de tu progreso</button>
     <span class="hidden" id="debugHint" style="color:#ff8a8a">MODO PRUEBA: 1–9 y 0 = nivel · B = boss · M montura · U mejora · K altar</span>
-    <span class="mm-ver">Versión 22 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
+    <span class="mm-ver">Versión 23 · <a href="privacy.html" style="color:inherit">Privacidad</a></span>
   </div>
 </div>
 
@@ -1359,12 +1359,12 @@
     this.p = this.p.filter(function (q) { return q.life > 0; });
   };
   Trail.prototype.draw = function (ctx, sc, t) {
-    var tr = (byId[this.id].fx || {}).trail || {};
+    var tr = (byId[this.id].fx || {}).trail || {}, a0 = ctx.globalAlpha;
     this.p.forEach(function (q, i) {
       var f = q.life / q.max, col = q.c;
       if (q.fire) { var C = tr.colors; col = C[Math.min(C.length - 1, Math.floor((1 - f) * C.length))]; }
       if (q.blink && (i + t) % 4 === 0) return;
-      ctx.globalAlpha = q.w ? Math.min(1, f * 1.6) : Math.min(1, .35 + f);
+      ctx.globalAlpha = a0 * (q.w ? Math.min(1, f * 1.6) : Math.min(1, .35 + f));
       ctx.fillStyle = col;
       var x = Math.round(q.x), y = Math.round(q.y);
       if (q.w) ctx.fillRect(x * sc, y * sc, q.w * sc, sc);
@@ -1372,7 +1372,7 @@
       else if (q.shape === "big") ctx.fillRect(x * sc, y * sc, 2 * sc, 2 * sc);
       else ctx.fillRect(x * sc, y * sc, sc, sc);
     });
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = a0;
   };
   // Ecos: siluetas de frames anteriores detrás del raptor (solo skins con fx.echo).
   Trail.prototype.drawEchoes = function (ctx, ox, sc, t) {
@@ -2296,7 +2296,7 @@ function drawRaptor(ctx, id, st, jumpY, dead, advance, sc = CONFIG.RAPTOR_SCALE,
   const acc = SKIN_ACCESSORIES[id], oy = Math.round(groundY - SE.H + 1 - jumpY);
   st.duck = !!st.duck && !dead && !(jumpY > 0);
   const frame = dead ? "idle" : jumpY > 0 ? "jump" : st.duck ? (st.tick % 4 < 2 ? "duck1" : "duck2") : SE.runFrame(id, st.tick).frame;
-  const shifted = (fn, d) => { if (!st.duck) return fn(); ctx.save(); ctx.translate(d.x * sc, d.y * sc); fn(); ctx.restore(); };
+  const shifted = (fn, d) => { ctx.save(); if (st.duck) ctx.translate(d.x * sc, d.y * sc); fn(); ctx.restore(); };   // save/restore: los adornos no cambian la opacidad del resto
   const eq = st.hat === null ? null : (st.hat || HAT_EQUIPPED);   // accesorios: { head, back, feet } (null = sin accesorios)
   if (st.trailFx !== null) drawShopTrail(ctx, st, ox, oy, sc, frame, advance && !dead);     // estela comprada
   if (eq && eq.back) drawHat(ctx, eq.back, id, ox, oy, sc, st.tick, frame, st.duck);   // espalda: por detrás del raptor
@@ -2976,7 +2976,7 @@ class Player {
   get center() { return { x: this.x + 38, y: this.y + (this.sliding ? 12 : 27) }; }
 
   jump() {
-    const g = this.game, M = this.mount;
+    const g = this.game, M = this.mount; if (g.netWait > 0) return;   // cuenta atrás online
     if (M) return M.jump();   // montado: cada montura decide qué hace W
     const k = g.versus ? 1 : g.stat("jumpMult");
     if (this.onGround) {
@@ -2990,14 +2990,14 @@ class Player {
     }
   }
   slide() {
-    const M = this.mount; if (M) return M.down(true);
+    const M = this.mount; if (this.game.netWait > 0) return; if (M) return M.down(true);
     if (this.onGround) {
       if (!this.sliding) { this.game.sfx.slide(); this.game.ach.event("slide"); }
       this.slideTime = CONFIG.SLIDE_DURATION * (this.game.versus ? 1 : this.game.stat("slideMult"));
     } else { if (!this.fastFall) this.game.ach.event("fastFall"); this.fastFall = true; }
   }
   changeLane(dir) {
-    if (this.game.versus) return;   // en multijugador cada raptor tiene su carril
+    if (this.game.versus || this.game.netWait > 0) return;   // en multijugador cada raptor tiene su carril
     if (this.game.stat("swapLanes")) dir = -dir;   // modo Aleatorio: carriles cruzados
     const target = clamp(this.lane + dir, 0, 1), M = this.mount;
     if (target === this.lane || (M && !M.canChangeLane())) return;
@@ -10816,7 +10816,7 @@ SaveBackup.prototype.setupCloud = function () {
 //  Por el canal de la sala viajan: quién está (presence), la salida, la posición de cada raptor (~8 veces por
 //  segundo) y las trampas. Los rivales se ven como fantasmas. Gana quien llegue más lejos.
 // =====================================================================
-const NET_CONFIG = { MAX: 4, SEND_MS: 125, COUNTDOWN: 3.5, TRAP_EVERY: 8, TRAP_MAX: 2, QUICK_WAIT: 4, HEARTBEAT: 25000,
+const NET_CONFIG = { MAX: 4, SEND_MS: 200, JOIN_WAIT: 3000, AUTO_START: 7, COUNTDOWN: 3.5, TRAP_EVERY: 8, TRAP_MAX: 2, QUICK_WAIT: 4, HEARTBEAT: 25000,
   PRIZE_COINS: [150, 80, 50, 30], PRIZE_XP: [80, 50, 30, 20] };
 // ---------- Cliente mínimo de Supabase Realtime (protocolo Phoenix, JSON vsn 1.0.0) ----------
 class RealtimeClient {
@@ -10845,8 +10845,12 @@ class RealtimeClient {
     await this.connect();
     const topic = "realtime:" + name, c = new RealtimeChannel(this, topic, key); this.chans.set(topic, c);
     c.joinRef = String(this.ref + 1);
-    const r = await this.push(topic, "phx_join", { config: { broadcast: { ack: false, self: false }, presence: { key }, private: false } }, true);
-    if (!r || r.status !== "ok") { this.chans.delete(topic); throw new Error("No se ha podido entrar en la sala."); }
+    const r = await this.push(topic, "phx_join", { config: { broadcast: { ack: false, self: false }, presence: { key, enabled: true }, private: false } }, true);
+    if (!r || r.status !== "ok") {
+      this.chans.delete(topic);
+      const why = r && r.response && (r.response.reason || r.response.message);
+      throw new Error(r && r.status === "timeout" ? "El servidor no responde. Revisa tu conexión." : `No se ha podido entrar en la sala${why ? ` (${why})` : ""}.`);
+    }
     return c;
   }
   close() { try { if (this.ws) this.ws.close(); } catch (e) {} this.ws = null; }
@@ -10876,33 +10880,46 @@ class NetPlay {
     this.members = {}; this.remotes = {}; this.ready = false; this.traps = 0; this.trapT = 0; this.lastSend = 0;
     this.uidLocal = "p-" + Math.random().toString(36).slice(2, 10);
   }
-  get uid() { return this.g.online.uid || this.uidLocal; }
+  get uid() { return this.uidLocal; }   // uno por pestaña: dos pestañas del mismo navegador son dos jugadores distintos
   get nick() { return this.g.online.nick || "Raptor"; }
   get url() { return window.__RT_URL || `${ONLINE_CONFIG.URL.replace(/^http/, "ws")}/realtime/v1/websocket?apikey=${ONLINE_CONFIG.KEY}&vsn=1.0.0`; }
-  get host() { const l = Object.values(this.members).sort((a, b) => a.j - b.j || (a.u < b.u ? -1 : 1)); return l[0] && l[0].u === this.uid; }
-  meta() { const s = this.g.save.data; return { u: this.uid, n: this.nick, sk: this.g.skinId, h: Object.assign({}, s.acc), ready: this.ready, j: this.joinedAt, racing: this.mode === "racing" }; }
+  sortedMembers() { return Object.values(this.members).sort((a, b) => (b.c || 0) - (a.c || 0) || a.j - b.j || (a.u < b.u ? -1 : 1)); }
+  get host() { const l = this.sortedMembers(); return !!l[0] && l[0].u === this.uid; }
+  // Mi ficha en la sala. Los diseños del editor no existen en otros móviles: se envía la skin por defecto
+  meta() {
+    const s = this.g.save.data, sk = /^(design-|editor-)/.test(this.g.skinId) ? CONFIG.DEFAULT_SKIN : this.g.skinId;
+    return { u: this.uid, n: this.nick, sk, h: Object.assign({}, s.acc), ready: this.ready, j: this.joinedAt, c: this.creator ? 1 : 0, racing: this.mode === "racing" };
+  }
   async ensureRt() { if (!this.rt) this.rt = new RealtimeClient(this.url); await this.rt.connect(); }
   // ----- Salas -----
   async createRoom() { return this.joinRoom(roomCode(), true); }
   async joinRoom(code, creating = false, auto = false) {
     code = String(code || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4);
     if (code.length !== 4) throw new Error("El código de sala tiene 4 letras.");
+    if (this.mode === "quick" && !auto) this.stopQuick();
     await this.ensureRt(); if (this.room) this.leaveRoom();
-    this.code = code; this.joinedAt = Date.now(); this.ready = auto; this.members = {}; this.remotes = {};
+    this.code = code; this.joinedAt = Date.now(); this.ready = auto; this.creator = creating; this.members = {}; this.remotes = {}; this.expect = auto ? this.expect : 0;
+    let gotState; const stateIn = new Promise(r => { gotState = r; });
     const ch = this.room = await this.rt.channel("dino-room-" + code, this.uid);
-    ch.on("presence", p => this.onPresence(p));
+    ch.on("presence", p => { gotState(); this.onPresence(p); });
     ch.on("b:start", d => this.onStart(d));
     ch.on("b:st", d => this.onState(d));
     ch.on("b:trap", d => { if (d.to === this.uid && this.mode === "racing") this.g.receiveNetTrap(d.type, d.n); });
-    ch.on("close", () => { if (this.room === ch) { this.room = null; this.say("Se ha perdido la conexión con la sala.", "err"); if (this.mode !== "racing") this.mode = "idle"; this.render(); } });
-    await new Promise(r => setTimeout(r, 250));   // llega el estado de la sala
+    ch.on("close", () => this.onLost(ch));
+    await Promise.race([stateIn, new Promise(r => setTimeout(r, NET_CONFIG.JOIN_WAIT))]);   // quién hay ya en la sala
     const others = Object.values(this.members).filter(m => m.u !== this.uid);
     if (others.some(m => m.racing)) { this.leaveRoom(); throw new Error("Esa sala ya está jugando una carrera. Espera a que acabe."); }
     if (others.length >= NET_CONFIG.MAX) { this.leaveRoom(); throw new Error("La sala está llena (máximo 4)."); }
-    if (!creating && !auto && !others.length) this.say("Sala vacía: espera a que entren tus amigos con el mismo código.");
     this.mode = "room"; await ch.track(this.meta()); this.render();
   }
-  leaveRoom() { if (this.room) { try { this.room.leave(); } catch (e) {} } this.room = null; this.members = {}; this.mode = "idle"; this.code = ""; }
+  leaveRoom() { if (this.room) { const r = this.room; this.room = null; try { r.leave(); } catch (e) {} } this.members = {}; this.mode = "idle"; this.code = ""; this.expect = 0; clearTimeout(this.autoT); }
+  // Conexión perdida: en la sala se vuelve al inicio; en carrera, la partida sigue y al acabar se dan los resultados conocidos
+  onLost(ch) {
+    if (this.room !== ch) return;
+    this.room = null; this.lost = true;
+    if (this.mode === "racing") { this.g.floatText(this.g.player.laneT, this.g.player.x + 40, 170, "SIN CONEXIÓN CON LA SALA", "#ff8a8a", 16); for (const r of Object.values(this.remotes)) if (!r.dead) { r.dead = true; r.left = true; } this.checkEnd(); }
+    else { this.mode = "idle"; this.say("Se ha perdido la conexión con la sala.", "err"); this.render(); }
+  }
   leaveAll() { this.leaveRoom(); this.stopQuick(); if (this.rt) { this.rt.close(); this.rt = null; } this.g.netRace = false; }
   setReady(v) { this.ready = v; if (this.room) this.room.track(this.meta()); this.render(); this.maybeAutoStart(); }
   onPresence(p) {
@@ -10912,9 +10929,12 @@ class NetPlay {
   }
   // Partida rápida: el anfitrión arranca solo cuando todos los emparejados han entrado y están listos
   maybeAutoStart() {
-    if (!this.host || this.mode !== "room") return;
+    if (!this.host || this.mode !== "room" || !this.expect) return;
     const l = Object.values(this.members);
-    if (this.expect && l.length >= this.expect && l.every(m => m.ready)) { this.expect = 0; this.startRace(); }
+    if (l.length >= this.expect && l.every(m => m.ready)) { this.expect = 0; clearTimeout(this.autoT); this.startRace(); }
+    else if (!this.autoT) this.autoT = setTimeout(() => {   // si alguien del emparejamiento no llega, se empieza con los que hay
+      this.autoT = null; if (this.mode === "room" && this.host && this.expect && Object.keys(this.members).length >= 2) { this.expect = 0; this.startRace(); }
+    }, NET_CONFIG.AUTO_START * 1000);
   }
   startRace() {
     const l = Object.values(this.members); if (!this.host || l.length < 2) return;
@@ -10922,8 +10942,8 @@ class NetPlay {
     this.room.send("start", d); this.onStart(d);
   }
   onStart(d) {
-    if (!d.players || !d.players.includes(this.uid)) return;
-    this.mode = "racing"; this.ready = false; this.result = null; this.traps = 1; this.trapT = 0; this.finishedSent = false;
+    if (!d.players || !d.players.includes(this.uid) || this.mode === "racing") return;
+    this.mode = "racing"; this.ready = false; this.result = null; this.traps = 1; this.trapT = 0; this.finishedSent = false; this.lost = false; this.expect = 0; clearTimeout(this.autoT);
     this.remotes = {};
     for (const u of d.players) if (u !== this.uid) { const m = this.members[u] || {}; this.remotes[u] = { u, n: m.n || "Rival", sk: m.sk, h: m.h || {}, d: 0, pd: 0, t: performance.now(), pt: performance.now(), l: 0, y: 0, sl: 0, s: 0, dead: false, st: { tick: 0, speed: 2, trail: null, trailFx: null } }; }
     this.g.closeScreens(); this.g.startNet(d.seed);
@@ -10934,49 +10954,57 @@ class NetPlay {
     if (this.mode !== "racing" || !this.room) return;
     const g = this.g, now = performance.now(), dead = g.state === "over";
     if (!dead && g.netWait <= 0 && this.traps < NET_CONFIG.TRAP_MAX && (this.trapT += dt) >= NET_CONFIG.TRAP_EVERY) { this.traps++; this.trapT = 0; g.sfx.tick(); }
-    if (now - this.lastSend >= NET_CONFIG.SEND_MS && !this.finishedSent) this.sendState();
+    if (now - this.lastSend >= NET_CONFIG.SEND_MS && !this.finishedSent) { this.sendState(); this.checkWin(); }
   }
   // Envía mi posición (al morir, una última vez con la puntuación final)
   sendState() {
-    const g = this.g, p = g.player, dead = g.state === "over"; if (!this.room) return;
+    const g = this.g, p = g.player, dead = g.state === "over"; if (!this.room) { if (dead) this.finishedSent = true; return; }
     this.lastSend = performance.now(); if (dead) this.finishedSent = true;
     this.room.send("st", { u: this.uid, d: Math.round(g.distance), l: Math.round(p.laneT * 100) / 100, y: Math.round(p.y), sl: p.sliding ? 1 : 0, s: g.score, dead: dead ? 1 : 0, lv: g.level.level });
   }
   onState(d) {
     const r = this.remotes[d.u]; if (!r || this.mode !== "racing") return;
-    const now = performance.now(); r.pd = r.d; r.pt = r.t; r.d = d.d; r.t = now; r.l = d.l; r.y = d.y; r.sl = d.sl; r.s = d.s; r.lv = d.lv;
+    const now = performance.now(); if (d.d < r.d - 5) return;   // mensaje viejo que llega tarde
+    r.pd = r.d; r.pt = r.t; r.d = d.d; r.t = now; r.l = d.l; r.y = d.y; r.sl = d.sl; r.s = d.s; r.lv = d.lv;
     if (d.dead && !r.dead) { r.dead = true; this.g.floatText(this.g.player.laneT, this.g.player.x + 40, 160, `¡${r.n.toUpperCase()} ELIMINADO!`, "#ff8a8a", 16); this.checkEnd(); }
   }
   // Distancia estimada de un rival ahora mismo (extrapola entre mensajes)
-  remoteDist(r) { if (r.dead) return r.d; const v = r.t > r.pt ? (r.d - r.pd) / (r.t - r.pt) : 0; return r.d + v * Math.min(300, performance.now() - r.t); }
+  remoteDist(r) { if (r.dead) return r.d; const v = r.t > r.pt ? (r.d - r.pd) / (r.t - r.pt) : 0; return r.d + Math.max(0, v) * Math.min(400, performance.now() - r.t); }
   throwTrap() {
     const g = this.g; if (this.mode !== "racing" || g.state !== "playing" || g.netWait > 0) return;
     const alive = Object.values(this.remotes).filter(r => !r.dead); if (!alive.length || this.traps <= 0) { g.sfx.denied(); return; }
     const me = g.distance, ahead = alive.filter(r => this.remoteDist(r) >= me).sort((a, b) => this.remoteDist(a) - this.remoteDist(b));
     const target = ahead[0] || alive.sort((a, b) => this.remoteDist(b) - this.remoteDist(a))[0];
     const type = choice(TRAP_TYPES).id; this.traps--;
-    this.room.send("trap", { to: target.u, type, n: this.nick });
+    if (!this.room) return; this.room.send("trap", { to: target.u, type, n: this.nick });
     g.sfx.toss(); g.floatText(g.player.laneT, g.player.x + 40, g.player.y + 120, `TRAMPA PARA ${target.n.toUpperCase()}`, UI_T.weak, 16);
   }
   onLocalDeath() { if (this.mode === "racing") this.sendState(); this.checkEnd(); }
+  // Comprueba si el último que queda ya ha superado a todos: entonces gana y se acaba la carrera
+  checkWin() {
+    const g = this.g, rs = Object.values(this.remotes);
+    if (this.mode !== "racing" || g.state !== "playing" || !rs.length || rs.some(r => !r.dead)) return;
+    if (g.score > Math.max(...rs.map(r => r.s))) { g.floatText(g.player.laneT, g.player.x + 40, 150, "¡ERES EL ÚLTIMO EN PIE!", UI_T.weak, 22); g.netFinish(); }
+  }
   standings() {
     const g = this.g, me = { u: this.uid, n: this.nick, s: g.score, dead: g.state === "over", me: true, d: g.distance };
     return [me, ...Object.values(this.remotes).map(r => ({ u: r.u, n: r.n, s: r.s, dead: r.dead, left: r.left, d: this.remoteDist(r) }))].sort((a, b) => b.s - a.s);
   }
   checkEnd() {
-    if (this.mode !== "racing" || this.g.state !== "over" || Object.values(this.remotes).some(r => !r.dead)) { this.renderWait(); return; }
+    if (this.mode !== "racing") return;
+    if (this.g.state !== "over" || Object.values(this.remotes).some(r => !r.dead)) { this.renderWait(); return; }
     this.mode = "done"; const list = this.standings(), place = list.findIndex(x => x.me), n = list.length;
-    const coins = n > 1 ? NET_CONFIG.PRIZE_COINS[place] || 0 : 0, xp = n > 1 ? NET_CONFIG.PRIZE_XP[place] || 0 : 0;
+    const lost = !!this.lost, coins = n > 1 && !lost ? NET_CONFIG.PRIZE_COINS[place] || 0 : 0, xp = n > 1 && !lost ? NET_CONFIG.PRIZE_XP[place] || 0 : 0;   // sin conexión no hay premio
     const s = this.g.save; s.data.coins += coins; const ups = this.g.season.addXP(xp); s.save();
-    s.data.netWins = (s.data.netWins || 0) + (place === 0 && n > 1 ? 1 : 0); s.save();
-    this.result = { list, place, coins, xp, ups };
+    s.data.netWins = (s.data.netWins || 0) + (place === 0 && n > 1 && !lost ? 1 : 0); s.save();
+    this.result = { list, place, coins, xp, ups, lost };
     if (this.room) this.room.track(this.meta());
     this.showResult();
   }
   // ----- Pantallas -----
   say(t, k = "") { const m = document.getElementById("netMsg"); if (m) { m.textContent = t; m.className = "bk-msg " + k; } }
   render() { if (this.g.netScreen) this.g.netScreen.render(); }
-  renderWait() { if (this.g.state === "over" && this.mode === "racing") this.g.netScreen.showWaiting(); }
+  renderWait() { if (this.g.state === "over" && this.g.overShown && this.mode === "racing") this.g.netScreen.showWaiting(); }
   showResult() { this.g.netScreen.showResult(this.result); }
   // ----- Partida rápida (sala de espera común) -----
   async quickMatch() {
@@ -11012,20 +11040,20 @@ class NetPlay {
       if (x < -60 || x > W + 10) {   // fuera de la pantalla: flecha con la distancia
         if (r.dead) return;
         const right = x > W, pts = Math.round(Math.abs(this.remoteDist(r) - myD) / CONFIG.PX_PER_POINT), p = toScreen(lane, right ? W - 40 : 40, 60);
-        g.ui.pill(c, `${right ? "" : "◀ "}${r.n} ${right ? "+" : "-"}${pts}${right ? " ▶" : ""}`, right ? W - 80 : 80, p.y - idx * 22, 9, "#e8f4ff", "rgba(30,60,110,0.85)");
+        g.ui.pill(c, `${right ? "" : "◀ "}${r.n} ${right ? "+" : "-"}${pts}${right ? " ▶" : ""}`, right ? W - 90 : 90, 230 + idx * 24, 9, "#e8f4ff", "rgba(30,60,110,0.85)");
         return;
       }
       r.st.tick = Math.floor(g.time / CONFIG.SKIN_TICK); r.st.duck = !!r.sl; r.st.hat = r.h || null;
       c.save(); applyLane(c, lane); c.translate(x, 0); c.globalAlpha = r.dead ? 0.25 : 0.55;
       drawRaptor(c, sk, r.st, r.y / S, r.dead, false); c.restore();
       const tp = toScreen(lane, x + 36, r.y + (r.sl ? 50 : 90) + idx * 20);   // etiquetas escalonadas si van a la par
-      g.ui.pill(c, r.n.toUpperCase() + (r.dead ? " ✖" : ""), tp.x, tp.y, 9, r.dead ? "#ff8a8a" : "#e8f4ff", "rgba(30,60,110,0.8)");
+      g.ui.pill(c, r.n.toUpperCase() + (r.dead ? " ✖" : ""), clamp(tp.x, 70, W - 70), tp.y, 9, r.dead ? "#ff8a8a" : "#e8f4ff", "rgba(30,60,110,0.8)");
     });
   }
   // Marcador de la carrera (debajo del panel de puntos)
   drawHud(c, ui) {
     const g = this.g; if (this.mode !== "racing" && this.mode !== "done") return;
-    const list = this.standings(), x = 10, y = 96 + (g.mode.id === "easy" ? 30 : 0), h = 18 * list.length + 30;
+    const list = this.standings(), x = W - 210, y = 132, h = 18 * list.length + 30;
     ui.panel(c, x, y, 196, h);
     ui.text(c, `🌐 CARRERA · SALA ${this.code}`, x + 10, y + 12, 9, UI_T.dim);
     list.forEach((p, i) => {
@@ -11034,7 +11062,7 @@ class NetPlay {
       ui.text(c, fmtInt(p.s), x + 186, yy, 10, col, "right");
     });
     const ty = y + h + 18;
-    ui.pill(c, `🎯 TRAMPAS ×${this.traps} · Q`, x + 80, ty, 9, this.traps ? "#16111f" : UI_T.dim, this.traps ? UI_T.weak : UI_T.pill);
+    ui.pill(c, `🎯 TRAMPAS ×${this.traps}${this.g.touchMode ? "" : " · Q"}`, x + 98, ty, 9, this.traps ? "#16111f" : UI_T.dim, this.traps ? UI_T.weak : UI_T.pill);
   }
 }
 // ---------- Pantalla Online (apodo, partida rápida, crear / unirse a sala, sala de espera) y resultados ----------
@@ -11044,20 +11072,32 @@ class NetScreen {
     this.el = $("net"); this.res = $("netResult");
     const bind = (id, fn) => $(id).addEventListener("click", async e => { e.currentTarget.blur(); game.sfx.unlock(); game.sfx.click(); try { await fn(); } catch (err) { net.say(err.message, "err"); game.sfx.denied(); this.render(); } });
     bind("netBack", () => this.close());
-    bind("netNickOk", async () => { const n = await game.online.setNick($("netNick").value); net.say(`¡Hola, ${n}!`, "ok"); this.render(); });
+    bind("netNickOk", async () => {
+      const n = Online.cleanNick($("netNick").value);
+      if (n.length < 3) throw new Error("El apodo necesita al menos 3 caracteres.");
+      game.save.data.nick = n; game.save.save(); net.say(`¡Hola, ${n}!`, "ok"); this.render();
+      game.online.setNick(n).catch(() => {});   // también para el ranking (si el servidor lo permite)
+    });
     bind("netQuick", async () => { this.needNick(); net.say("Buscando rival…"); await net.quickMatch(); });
     bind("netCreate", async () => { this.needNick(); await net.createRoom(); net.say("Sala creada. Pasa el código a tus amigos.", "ok"); });
-    bind("netJoin", async () => { this.needNick(); await net.joinRoom($("netCodeIn").value); net.say("¡Dentro! Pulsa «Estoy listo».", "ok"); });
+    bind("netJoin", async () => { this.needNick(); await net.joinRoom($("netCodeIn").value);
+      if (Object.keys(net.members).length < 2) net.say("No hay nadie en esa sala todavía: comprueba el código o espera a tus amigos.", "err"); else net.say("¡Dentro! Pulsa «Estoy listo».", "ok"); });
     bind("netCancel", () => { net.stopQuick(); net.say(""); this.render(); });
     bind("netReady", () => net.setReady(!net.ready));
     bind("netStart", () => { if (Object.keys(net.members).length < 2) throw new Error("Hacen falta al menos 2 jugadores."); net.startRace(); });
     bind("netLeave", () => { net.leaveRoom(); net.say(""); this.render(); });
-    bind("nrAgain", () => { this.res.classList.add("hidden"); net.mode = "room"; net.ready = false; game.netRace = false; game.state = "net"; game.reset(); game.closeScreens(); this.el.classList.remove("hidden"); if (net.room) net.room.track(net.meta()); this.render(); });
+    bind("nrAgain", () => { if (!net.room) { net.leaveAll(); this.g.showMenu(); return; } this.res.classList.add("hidden"); net.mode = "room"; net.ready = false; game.netRace = false; game.state = "net"; game.reset(); game.closeScreens(); this.el.classList.remove("hidden"); if (net.room) net.room.track(net.meta()); this.render(); });
     bind("nrExit", () => { this.res.classList.add("hidden"); net.leaveAll(); game.showMenu(); });
-    for (const id of ["netNick", "netCodeIn"]) $(id).addEventListener("keydown", e => e.stopPropagation());
+    for (const id of ["netNick", "netCodeIn"]) $(id).addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") $(id === "netNick" ? "netNickOk" : "netJoin").click(); });
   }
   get visible() { return !this.el.classList.contains("hidden"); }
-  needNick() { if (!this.g.online.nick) throw new Error("Primero elige un apodo."); }
+  // Si has escrito el apodo pero no has pulsado Guardar, se guarda solo
+  needNick() {
+    if (this.g.online.nick) return;
+    const n = Online.cleanNick(document.getElementById("netNick").value);
+    if (n.length < 3) throw new Error("Primero elige un apodo (mínimo 3 caracteres).");
+    this.g.save.data.nick = n; this.g.save.save(); this.g.online.setNick(n).catch(() => {});
+  }
   open() { document.getElementById("netNick").value = this.g.online.nick; this.el.classList.remove("hidden"); this.render(); }
   close() { this.g.net.leaveAll(); this.el.classList.add("hidden"); this.g.showMenu(); }
   render() {
@@ -11067,7 +11107,7 @@ class NetScreen {
     if (net.mode === "quick") $("netSearchTxt").textContent = `Buscando rival… (${Math.max(0, (net.lobbyCount || 1) - 1)} esperando)`;
     if (!inRoom) return;
     $("netCode").textContent = net.code;
-    const list = Object.values(net.members).sort((a, b) => a.j - b.j), box = $("netPlayers"); box.innerHTML = "";
+    const list = net.sortedMembers(), box = $("netPlayers"); box.innerHTML = "";
     list.forEach((m, i) => {
       const d = document.createElement("div"); d.className = "net-p" + (m.ready ? " ready" : "") + (m.u === net.uid ? " me" : "");
       d.innerHTML = `<canvas width="96" height="60"></canvas><b>${escapeHtml(m.n)}${i === 0 ? " 👑" : ""}</b><small>${m.ready ? "✔ Listo" : "Esperando…"}</small>`;
@@ -11089,11 +11129,12 @@ class NetScreen {
   }
   showResult(r) {
     const $ = id => document.getElementById(id), n = r.list.length;
-    $("nrTitle").textContent = n < 2 ? "FIN DE LA CARRERA" : r.place === 0 ? "¡HAS GANADO!" : `${r.place + 1}º PUESTO`;
-    $("nrSub").textContent = n < 2 ? "Te has quedado solo en la sala." : `+${r.coins} monedas · +${r.xp} XP del pase${r.ups.length ? " · ¡subes de nivel en el pase!" : ""}`;
+    $("nrTitle").textContent = r.lost ? "CONEXIÓN PERDIDA" : n < 2 ? "FIN DE LA CARRERA" : r.place === 0 ? "¡HAS GANADO!" : `${r.place + 1}º PUESTO`;
+    $("nrSub").textContent = r.lost ? "Se cortó la conexión con la sala: la carrera no cuenta (las monedas recogidas sí)." : n < 2 ? "Te has quedado solo en la sala." : `+${r.coins} monedas · +${r.xp} XP del pase${r.ups.length ? " · ¡subes de nivel en el pase!" : ""}`;
     $("nrList").innerHTML = r.list.map((p, i) => `<div class="${p.me ? "me" : ""} p${i + 1}"><b>${["🥇", "🥈", "🥉", "4º"][i] || i + 1 + "º"}</b><span>${escapeHtml(p.n)}</span><em>${fmtInt(p.s)}</em><small>${p.left ? "se fue" : ""}</small></div>`).join("");
+    $("nrAgain").classList.toggle("hidden", !this.g.net.room);   // sin conexión no hay revancha
     $("nrActions").classList.remove("hidden"); this.res.classList.remove("hidden");
-    if (r.place === 0 && n > 1) this.g.sfx.jackpot();
+    if (r.place === 0 && n > 1 && !r.lost) this.g.sfx.jackpot();
   }
 }
 
@@ -11295,6 +11336,11 @@ class Game {
     this.ach.event("runStart"); this.onLevelStart(1);
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
+  // Carrera online ganada (eres el último y ya vas primero): se acaba como una partida normal, sin choque
+  netFinish() {
+    if (this.state !== "playing") return;
+    this.state = "over"; this.overTime = 0; this.overShown = false; this.sfx.victory(); this.bankRun(); this.net.onLocalDeath();
+  }
   // Trampa que te lanza un rival online (aparece en tu carril, delante de ti)
   receiveNetTrap(typeId, from) {
     if (this.state !== "playing") return;
@@ -11309,7 +11355,7 @@ class Game {
     }
     this.sfx.trap(); this.floatText(p.laneT, p.x + 40, p.y + 110, `¡TRAMPA DE ${String(from || "RIVAL").toUpperCase()}! ${type.name.toUpperCase()}`, UI_T.info, 18);
   }
-  retry() { if (this.versus) this.startVersus(); else if (this.tutorial) this.startTutorial(); else if (this.daily) this.startDaily(); else this.start(); }
+  retry() { if (this.netRace) return; if (this.versus) this.startVersus(); else if (this.tutorial) this.startTutorial(); else if (this.daily) this.startDaily(); else this.start(); }
   startDaily() { this.start("normal", 1, true); }
   // Coloca la partida al inicio de un nivel (checkpoints y modo prueba), con su velocidad y bioma
   jumpToLevel(level, extraPoints = 0) {
@@ -11347,7 +11393,7 @@ class Game {
     else this.jump();
   }
   roar() {
-    if (this.state !== "playing") return;
+    if (this.state !== "playing" || this.netWait > 0) return;
     const boss = this.bosses.boss, M = this.mounts.active;
     if (this.fury.full && !this.bosses.active) return this.superRoar();   // con la furia llena: súper rugido
     if (this.roarCd > 0) return;
@@ -11700,6 +11746,7 @@ class Game {
     }
     if (this.echoWave && !this.roarHits(this.echoWave, dt)) this.echoWave = null;
     if (!this.versus) this.updatePerks(dt, gdt);
+    if (this.netRace) this.player.ink = Math.max(0, (this.player.ink || 0) - dt);   // trampa de tinta online
     this.weather.update(dt); this.pets.update(gdt, true);   // clima del bioma y mascota (te trae monedas)
 
     if (this.versus) { for (const p of this.players) if (!p.dead && this.state === "playing") this.checkCollisions(p); }
@@ -11855,7 +11902,7 @@ class Game {
     this.pets.draw(c);   // la mascota corre por el carril del medio
     this.drawLane(c, 1);
     this.net.drawGhosts(c);   // rivales online
-    if (this.versus) for (const p of this.players) if (p.ink > 0) {   // trampa de tinta: oscurece el carril de ese raptor por delante
+    if (this.versus || this.netRace) for (const p of this.players) if (p.ink > 0) {   // trampa de tinta: oscurece el carril de ese raptor por delante
       const a = Math.min(1, p.ink / 0.4) * 0.92, y0 = p.lane === 0 ? 150 : 246, y1 = p.lane === 0 ? 246 : 352;
       c.fillStyle = `rgba(10,6,24,${a})`; c.fillRect(300, y0, W - 300, y1 - y0);
       c.fillStyle = `rgba(10,6,24,${a * 0.5})`; c.fillRect(250, y0, 50, y1 - y0);
@@ -12015,6 +12062,7 @@ addEventListener("keydown", e => {
     if (k === "Escape") game.shop.close();
   } else if (st === "over") {
     if (game.overTime < 0.7) return;
+    if (game.netRace) { if (k === "Escape" && game.net.mode !== "racing") { game.net.leaveAll(); game.showMenu(); } return; }   // online: se usan los botones del podio
     if (k === "w") game.retry();
     else if (k === "t") game.openShop("over");
     else if (k === "Escape") game.showMenu();
